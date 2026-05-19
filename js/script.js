@@ -1,5 +1,5 @@
 // ===== КОНФИГУРАЦИЯ =====
-const GOOGLE_SCRIPT_URL = ''; // Замените на ваш URL для отправки в Google Таблицу (опционально)
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZT7dsLRkNLE0Lp7zzi1oWfGhqdxFhydKV_B-B6GZMBHp7r6OND6LgduyP89YclZQo/exec'; // Замените на ваш URL для отправки в Google Таблицу (опционально)
 const MAP_CENTER = [55.018, 82.92]; // Центр Новосибирска
 const MAP_ZOOM = 12;
 
