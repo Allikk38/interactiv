@@ -1,5 +1,5 @@
 // ===== КОНФИГУРАЦИЯ =====
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZT7dsLRkNLE0Lp7zzi1oWfGhqdxFhydKV_B-B6GZMBHp7r6OND6LgduyP89YclZQo/exec'; // Замените на ваш URL для отправки в Google Таблицу (опционально)
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZT7dsLRkNLE0Lp7zzi1oWfGhqdxFhydKV_B-B6GZMBHp7r6OND6LgduyP89YclZQo/exec'; /
 const MAP_CENTER = [55.018, 82.92];
 const MAP_ZOOM = 12;
 
@@ -89,7 +89,6 @@ function renderScenarios() {
     scenariosGrid.innerHTML = '';
 
     scenarios.forEach(scenario => {
-        const stepsCount = scenario.steps.length;
         const mapSteps = scenario.steps.filter(s => s.type === 'map').length;
         const quizSteps = scenario.steps.filter(s => s.type === 'quiz').length;
         const interactiveSteps = scenario.steps.filter(s => !['map', 'quiz', 'finish'].includes(s.type)).length;
@@ -104,7 +103,7 @@ function renderScenarios() {
         card.innerHTML = `
             <div class="scenario-card__name">${scenario.name}</div>
             <div class="scenario-card__description">${scenario.description}</div>
-            <div class="scenario-card__steps">📋 ${stepsDesc.join(' + ') || stepsCount + ' шагов'}</div>
+            <div class="scenario-card__steps">📋 ${stepsDesc.join(' + ') || scenario.steps.length + ' шагов'}</div>
         `;
 
         card.addEventListener('click', () => startScenario(scenario));
@@ -138,41 +137,20 @@ function runStep() {
     finishScreen.classList.add('hidden');
 
     switch (step.type) {
-        case 'map':
-            runMapStep(step);
-            break;
-        case 'quiz':
-            runQuizStep(step);
-            break;
-        case 'platforms':
-            runPlatformsStep(step);
-            break;
-        case 'rule3t':
-            runRule3tStep(step);
-            break;
-        case 'profile':
-            runProfileStep(step);
-            break;
-        case 'content-plan':
-            runContentPlanStep(step);
-            break;
-        case 'funnel':
-            runFunnelStep(step);
-            break;
-        case 'ai-tools':
-            runAiToolsStep(step);
-            break;
-        case 'analytics':
-            runAnalyticsStep(step);
-            break;
-        case 'finish':
-            showFinish();
-            break;
-        default:
-            currentStepIndex++;
-            runStep();
+        case 'map': runMapStep(step); break;
+        case 'quiz': runQuizStep(step); break;
+        case 'platforms': runPlatformsStep(step); break;
+        case 'rule3t': runRule3tStep(step); break;
+        case 'profile': runProfileStep(step); break;
+        case 'content-plan': runContentPlanStep(step); break;
+        case 'funnel': runFunnelStep(step); break;
+        case 'ai-tools': runAiToolsStep(step); break;
+        case 'analytics': runAnalyticsStep(step); break;
+        case 'finish': showFinish(); break;
+        default: currentStepIndex++; runStep();
     }
 }
+
 // ===== ШАГ: КАРТА =====
 function runMapStep(step) {
     mapScreen.classList.remove('hidden');
@@ -318,7 +296,7 @@ function renderQuestion(index) {
     window.currentQuestionIndex = index;
     const q = questions[index];
     quizNextBtn.disabled = true;
-    quizNextBtn.textContent = 'Далее';
+    quizNextBtn.textContent = 'Проверить';
     const isCheckbox = q.type === 'multiple';
     let optionsHTML = '';
     q.options.forEach((opt, i) => {
@@ -339,8 +317,11 @@ function renderQuestion(index) {
     `;
     const options = quizContainer.querySelectorAll('.quiz-option');
     const hintEl = document.getElementById('quiz-hint');
+    let checked = false;
+
     options.forEach(opt => {
         opt.addEventListener('click', () => {
+            if (checked) return;
             const input = opt.querySelector('input');
             if (isCheckbox) {
                 input.checked = !input.checked;
@@ -353,28 +334,37 @@ function renderQuestion(index) {
             quizNextBtn.disabled = !quizContainer.querySelectorAll('input:checked').length;
         });
     });
+
     quizNextBtn.onclick = () => {
-        const selectedInputs = quizContainer.querySelectorAll('input:checked');
-        const userAnswers = Array.from(selectedInputs).map(inp => inp.value);
-        const isCorrect = checkQuizAnswer(q, userAnswers);
-        window.quizAnswers.push({ questionId: q.id, userAnswers, isCorrect });
-        options.forEach(opt => {
-            opt.style.pointerEvents = 'none';
-            const inp = opt.querySelector('input');
-            const value = inp.value;
-            if (q.type === 'single') {
-                if (value === q.correct) opt.classList.add('quiz-option--correct');
-                if (value === userAnswers[0] && value !== q.correct) opt.classList.add('quiz-option--wrong');
-            } else {
-                if (q.correct.includes(value)) opt.classList.add('quiz-option--correct');
-                if (userAnswers.includes(value) && !q.correct.includes(value)) opt.classList.add('quiz-option--wrong');
+        if (!checked) {
+            const selectedInputs = quizContainer.querySelectorAll('input:checked');
+            const userAnswers = Array.from(selectedInputs).map(inp => inp.value);
+            const isCorrect = checkQuizAnswer(q, userAnswers);
+            window.quizAnswers.push({ questionId: q.id, userAnswers, isCorrect });
+
+            options.forEach(opt => {
+                opt.style.pointerEvents = 'none';
+                const inp = opt.querySelector('input');
+                const value = inp.value;
+                if (q.type === 'single') {
+                    if (value === q.correct) opt.classList.add('quiz-option--correct');
+                    if (value === userAnswers[0] && value !== q.correct) opt.classList.add('quiz-option--wrong');
+                } else {
+                    if (q.correct.includes(value)) opt.classList.add('quiz-option--correct');
+                    if (userAnswers.includes(value) && !q.correct.includes(value)) opt.classList.add('quiz-option--wrong');
+                }
+            });
+
+            if (!isCorrect) {
+                hintEl.textContent = '💡 ' + q.hint;
+                hintEl.classList.remove('hidden');
             }
-        });
-        if (!isCorrect) {
-            hintEl.textContent = '💡 ' + q.hint;
-            hintEl.classList.remove('hidden');
+
+            checked = true;
+            quizNextBtn.textContent = index < questions.length - 1 ? 'Далее' : 'Завершить';
+        } else {
+            renderQuestion(index + 1);
         }
-        quizNextBtn.onclick = () => renderQuestion(index + 1);
     };
 }
 
@@ -397,7 +387,8 @@ function finishQuizStep() {
     showToast('🎉', `Викторина пройдена! ${correctCount}/${totalCount} правильно.`, 'success');
     setTimeout(() => { currentStepIndex++; runStep(); }, 2000);
 }
-// ===== ШАГ: PLATFORMS (Instagram vs Telegram) =====
+
+// ===== ШАГ: PLATFORMS (drag-and-drop) =====
 function runPlatformsStep(step) {
     quizScreen.classList.remove('hidden');
     quizStepTitle.textContent = step.title;
@@ -407,7 +398,7 @@ function runPlatformsStep(step) {
     const items = [...data.items].sort(() => Math.random() - 0.5);
 
     let itemsHTML = items.map(item => `
-        <div class="platform-item" data-id="${item.id}" data-platform="${item.platform}">
+        <div class="platform-item drag-item" data-id="${item.id}" data-platform="${item.platform}" draggable="true">
             ${item.text}
         </div>
     `).join('');
@@ -419,60 +410,65 @@ function runPlatformsStep(step) {
             <div class="platform-zones">
                 <div class="platform-zone" data-zone="instagram">
                     <h3>📸 Instagram</h3>
-                    <div class="platform-zone__drop" id="zone-instagram"></div>
+                    <div class="platform-zone__drop drag-zone" id="zone-instagram" data-zone="instagram"></div>
                 </div>
                 <div class="platform-zone" data-zone="telegram">
                     <h3>📱 Telegram</h3>
-                    <div class="platform-zone__drop" id="zone-telegram"></div>
+                    <div class="platform-zone__drop drag-zone" id="zone-telegram" data-zone="telegram"></div>
                 </div>
                 <div class="platform-zone" data-zone="both">
                     <h3>🔄 Обе платформы</h3>
-                    <div class="platform-zone__drop" id="zone-both"></div>
+                    <div class="platform-zone__drop drag-zone" id="zone-both" data-zone="both"></div>
                 </div>
             </div>
             <div class="quiz-hint hidden" id="interactive-hint"></div>
-            <button class="btn btn--primary" id="platforms-check-btn" disabled>Проверить</button>
+            <button class="btn btn--primary" id="interactive-check-btn">Проверить</button>
         </div>
     `;
 
-    let selectedItem = null;
+    const checkBtn = document.getElementById('interactive-check-btn');
+    let stepChecked = false;
 
-    document.querySelectorAll('.platform-item').forEach(item => {
-        item.addEventListener('click', () => {
-            document.querySelectorAll('.platform-item').forEach(i => i.classList.remove('platform-item--selected'));
-            item.classList.add('platform-item--selected');
-            selectedItem = item;
-        });
+    DragDrop.init({
+        itemsSelector: '.drag-item',
+        zonesSelector: '.drag-zone'
     });
 
-    document.querySelectorAll('.platform-zone__drop').forEach(zone => {
-        zone.addEventListener('click', () => {
-            if (!selectedItem) return;
-            zone.appendChild(selectedItem);
-            selectedItem.classList.remove('platform-item--selected');
-            selectedItem = null;
-            document.getElementById('platforms-check-btn').disabled =
-                document.querySelectorAll('#platform-items .platform-item').length > 0;
-        });
-    });
+    checkBtn.addEventListener('click', () => {
+        if (stepChecked) {
+            currentStepIndex++;
+            runStep();
+            return;
+        }
 
-    document.getElementById('platforms-check-btn').addEventListener('click', () => {
         let correct = 0;
-        let total = data.items.length;
+        const total = data.items.length;
         const hintEl = document.getElementById('interactive-hint');
 
         document.querySelectorAll('.platform-zone__drop .platform-item').forEach(item => {
             const zone = item.parentElement.parentElement.dataset.zone;
             const expectedPlatform = item.dataset.platform;
-            if (zone === expectedPlatform || (expectedPlatform === 'both' && (zone === 'instagram' || zone === 'telegram'))) {
+
+            if (zone === expectedPlatform) {
+                item.classList.add('platform-item--correct');
+                correct++;
+            } else if (expectedPlatform === 'both' && (zone === 'instagram' || zone === 'telegram')) {
                 item.classList.add('platform-item--correct');
                 correct++;
             } else {
                 item.classList.add('platform-item--wrong');
             }
+
+            item.setAttribute('draggable', 'false');
+            item.style.pointerEvents = 'none';
         });
 
-        const allCorrect = correct === total;
+        document.querySelectorAll('#platform-items .platform-item').forEach(item => {
+            item.setAttribute('draggable', 'false');
+            item.style.pointerEvents = 'none';
+            item.classList.add('platform-item--wrong');
+        });
+
         stepStats.push({
             step: currentStepIndex + 1,
             type: 'platforms',
@@ -481,15 +477,15 @@ function runPlatformsStep(step) {
             total: total,
         });
 
-        if (!allCorrect) {
+        if (correct < total) {
             hintEl.textContent = '💡 ' + data.hint;
             hintEl.classList.remove('hidden');
+        } else {
+            showToast('✅', 'Всё верно!', 'success');
         }
 
-        setTimeout(() => {
-            currentStepIndex++;
-            runStep();
-        }, allCorrect ? 1500 : 3000);
+        stepChecked = true;
+        checkBtn.textContent = 'Далее';
     });
 }
 
@@ -500,13 +496,13 @@ function runRule3tStep(step) {
     quizStepCounter.textContent = `Шаг ${currentStepIndex + 1} из ${currentScenario.steps.length}`;
 
     const data = marketingData.rule3t;
-    let selectedLetter = null;
+    const selections = {};
 
     let pairsHTML = data.pairs.map(p => {
         const shuffledOptions = [...p.options].sort(() => Math.random() - 0.5);
         return `
             <div class="rule3t-row">
-                <div class="rule3t-letter" data-letter="${p.letter}">${p.label}</div>
+                <div class="rule3t-letter">${p.label}</div>
                 <div class="rule3t-options">
                     ${shuffledOptions.map(opt => `
                         <div class="rule3t-option" data-letter="${p.letter}" data-value="${opt}">${opt}</div>
@@ -521,32 +517,40 @@ function runRule3tStep(step) {
             <p class="interactive-step__instruction">${data.instruction}</p>
             <div class="rule3t-container">${pairsHTML}</div>
             <div class="quiz-hint hidden" id="interactive-hint"></div>
-            <button class="btn btn--primary" id="rule3t-check-btn" disabled>Проверить</button>
+            <button class="btn btn--primary" id="interactive-check-btn" disabled>Проверить</button>
         </div>
     `;
 
-    const selections = {};
+    const checkBtn = document.getElementById('interactive-check-btn');
+    let stepChecked = false;
 
     document.querySelectorAll('.rule3t-option').forEach(opt => {
         opt.addEventListener('click', () => {
+            if (stepChecked) return;
             const letter = opt.dataset.letter;
             document.querySelectorAll(`.rule3t-option[data-letter="${letter}"]`).forEach(o => o.classList.remove('rule3t-option--selected'));
             opt.classList.add('rule3t-option--selected');
             selections[letter] = opt.dataset.value;
-            document.getElementById('rule3t-check-btn').disabled = Object.keys(selections).length < 3;
+            checkBtn.disabled = Object.keys(selections).length < 3;
         });
     });
 
-    document.getElementById('rule3t-check-btn').addEventListener('click', () => {
+    checkBtn.addEventListener('click', () => {
+        if (stepChecked) {
+            currentStepIndex++;
+            runStep();
+            return;
+        }
+
         let correct = 0;
         const hintEl = document.getElementById('interactive-hint');
 
         data.pairs.forEach(p => {
             const selected = selections[p.letter];
-            const opts = document.querySelectorAll(`.rule3t-option[data-letter="${p.letter}"]`);
-            opts.forEach(o => {
+            document.querySelectorAll(`.rule3t-option[data-letter="${p.letter}"]`).forEach(o => {
                 if (o.dataset.value === p.correct) o.classList.add('rule3t-option--correct');
                 if (o.dataset.value === selected && selected !== p.correct) o.classList.add('rule3t-option--wrong');
+                o.style.pointerEvents = 'none';
             });
             if (selected === p.correct) correct++;
         });
@@ -562,16 +566,16 @@ function runRule3tStep(step) {
         if (correct < 3) {
             hintEl.textContent = '💡 ' + data.hint;
             hintEl.classList.remove('hidden');
+        } else {
+            showToast('✅', 'Правило 3Т собрано верно!', 'success');
         }
 
-        setTimeout(() => {
-            currentStepIndex++;
-            runStep();
-        }, correct === 3 ? 1500 : 3000);
+        stepChecked = true;
+        checkBtn.textContent = 'Далее';
     });
 }
 
-// ===== ШАГ: PROFILE (оформление профиля) =====
+// ===== ШАГ: PROFILE =====
 function runProfileStep(step) {
     quizScreen.classList.remove('hidden');
     quizStepTitle.textContent = step.title;
@@ -598,21 +602,31 @@ function runProfileStep(step) {
             <p class="interactive-step__instruction">${data.instruction}</p>
             <div class="profile-container">${sectionsHTML}</div>
             <div class="quiz-hint hidden" id="interactive-hint"></div>
-            <button class="btn btn--primary" id="profile-check-btn" disabled>Проверить</button>
+            <button class="btn btn--primary" id="interactive-check-btn" disabled>Проверить</button>
         </div>
     `;
 
+    const checkBtn = document.getElementById('interactive-check-btn');
+    let stepChecked = false;
+
     document.querySelectorAll('.profile-option').forEach(opt => {
         opt.addEventListener('click', () => {
+            if (stepChecked) return;
             const section = opt.dataset.section;
             document.querySelectorAll(`.profile-option[data-section="${section}"]`).forEach(o => o.classList.remove('profile-option--selected'));
             opt.classList.add('profile-option--selected');
             selections[section] = opt.dataset.correct === 'true';
-            document.getElementById('profile-check-btn').disabled = Object.keys(selections).length < data.sections.length;
+            checkBtn.disabled = Object.keys(selections).length < data.sections.length;
         });
     });
 
-    document.getElementById('profile-check-btn').addEventListener('click', () => {
+    checkBtn.addEventListener('click', () => {
+        if (stepChecked) {
+            currentStepIndex++;
+            runStep();
+            return;
+        }
+
         let correct = 0;
         const hintEl = document.getElementById('interactive-hint');
 
@@ -621,6 +635,7 @@ function runProfileStep(step) {
             if (isCorrect) opt.classList.add('profile-option--correct');
             if (opt.classList.contains('profile-option--selected') && !isCorrect) opt.classList.add('profile-option--wrong');
             if (opt.classList.contains('profile-option--selected') && isCorrect) correct++;
+            opt.style.pointerEvents = 'none';
         });
 
         stepStats.push({
@@ -634,15 +649,16 @@ function runProfileStep(step) {
         if (correct < data.sections.length) {
             hintEl.textContent = '💡 ' + data.hint;
             hintEl.classList.remove('hidden');
+        } else {
+            showToast('✅', 'Профиль оформлен правильно!', 'success');
         }
 
-        setTimeout(() => {
-            currentStepIndex++;
-            runStep();
-        }, correct === data.sections.length ? 1500 : 3000);
+        stepChecked = true;
+        checkBtn.textContent = 'Далее';
     });
 }
-// ===== ШАГ: CONTENT PLAN (контент-план на неделю) =====
+
+// ===== ШАГ: CONTENT PLAN =====
 function runContentPlanStep(step) {
     quizScreen.classList.remove('hidden');
     quizStepTitle.textContent = step.title;
@@ -650,11 +666,10 @@ function runContentPlanStep(step) {
 
     const data = marketingData.contentPlan;
     const allFormats = [...data.goodFormats, ...data.badFormats].sort(() => Math.random() - 0.5);
-    const selectedFormats = [];
 
     let formatsHTML = allFormats.map(f => `
-        <div class="content-format-item ${data.badFormats.includes(f) ? 'content-format-item--bad-hidden' : ''}" data-id="${f.id}">
-            <span class="content-format-item__text">${f.text}</span>
+        <div class="content-format-item drag-item" data-id="${f.id}" data-good="${!data.badFormats.includes(f)}" draggable="true">
+            ${f.text}
         </div>
     `).join('');
 
@@ -664,56 +679,51 @@ function runContentPlanStep(step) {
             <div class="content-plan-formats" id="content-formats">${formatsHTML}</div>
             <div class="content-plan-days" id="content-days">
                 ${['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => `
-                    <div class="content-day" data-day="${day}">
+                    <div class="content-day">
                         <span class="content-day__label">${day}</span>
-                        <div class="content-day__slot" data-day="${day}"></div>
+                        <div class="content-day__slot drag-zone" data-day="${day}" data-max-items="1"></div>
                     </div>
                 `).join('')}
             </div>
             <div class="quiz-hint hidden" id="interactive-hint"></div>
-            <button class="btn btn--primary" id="content-plan-check-btn" disabled>Проверить</button>
+            <button class="btn btn--primary" id="interactive-check-btn">Проверить</button>
         </div>
     `;
 
-    let selectedItem = null;
+    const checkBtn = document.getElementById('interactive-check-btn');
+    let stepChecked = false;
 
-    document.querySelectorAll('.content-format-item').forEach(item => {
-        item.addEventListener('click', () => {
-            if (item.parentElement.classList.contains('content-day__slot')) return;
-            document.querySelectorAll('.content-format-item').forEach(i => i.classList.remove('content-format-item--selected'));
-            item.classList.add('content-format-item--selected');
-            selectedItem = item;
-        });
+    DragDrop.init({
+        itemsSelector: '.drag-item',
+        zonesSelector: '.drag-zone'
     });
 
-    document.querySelectorAll('.content-day__slot').forEach(slot => {
-        slot.addEventListener('click', () => {
-            if (!selectedItem) return;
-            if (slot.children.length > 0) {
-                const old = slot.children[0];
-                document.getElementById('content-formats').appendChild(old);
-            }
-            slot.appendChild(selectedItem);
-            selectedItem.classList.remove('content-format-item--selected');
-            selectedItem = null;
-            document.getElementById('content-plan-check-btn').disabled =
-                document.querySelectorAll('.content-day__slot:empty').length > 0;
-        });
-    });
+    checkBtn.addEventListener('click', () => {
+        if (stepChecked) {
+            currentStepIndex++;
+            runStep();
+            return;
+        }
 
-    document.getElementById('content-plan-check-btn').addEventListener('click', () => {
         let correct = 0;
         const total = 7;
         const hintEl = document.getElementById('interactive-hint');
-        const badIds = data.badFormats.map(f => f.id);
 
         document.querySelectorAll('.content-day__slot .content-format-item').forEach(item => {
-            if (badIds.includes(item.dataset.id)) {
-                item.classList.add('content-format-item--wrong');
-            } else {
+            const isGood = item.dataset.good === 'true';
+            if (isGood) {
                 item.classList.add('content-format-item--correct');
                 correct++;
+            } else {
+                item.classList.add('content-format-item--wrong');
             }
+            item.setAttribute('draggable', 'false');
+            item.style.pointerEvents = 'none';
+        });
+
+        document.querySelectorAll('#content-formats .content-format-item').forEach(item => {
+            item.setAttribute('draggable', 'false');
+            item.style.pointerEvents = 'none';
         });
 
         stepStats.push({
@@ -727,16 +737,16 @@ function runContentPlanStep(step) {
         if (correct < total) {
             hintEl.textContent = '💡 ' + data.hint;
             hintEl.classList.remove('hidden');
+        } else {
+            showToast('✅', 'Контент-план составлен отлично!', 'success');
         }
 
-        setTimeout(() => {
-            currentStepIndex++;
-            runStep();
-        }, correct === total ? 1500 : 3000);
+        stepChecked = true;
+        checkBtn.textContent = 'Далее';
     });
 }
 
-// ===== ШАГ: FUNNEL (воронка привлечения) =====
+// ===== ШАГ: FUNNEL (drag-and-drop) =====
 function runFunnelStep(step) {
     quizScreen.classList.remove('hidden');
     quizStepTitle.textContent = step.title;
@@ -746,7 +756,7 @@ function runFunnelStep(step) {
     const steps = [...data.steps].sort(() => Math.random() - 0.5);
 
     let stepsHTML = steps.map(s => `
-        <div class="funnel-item" data-id="${s.id}" data-order="${s.order}">
+        <div class="funnel-item drag-item" data-id="${s.id}" data-order="${s.order}" draggable="true">
             <span class="funnel-item__handle">☰</span>
             <span class="funnel-item__text">${s.text}</span>
         </div>
@@ -755,27 +765,35 @@ function runFunnelStep(step) {
     quizContainer.innerHTML = `
         <div class="interactive-step">
             <p class="interactive-step__instruction">${data.instruction}</p>
-            <p class="interactive-step__sub">Перетащите шаги в правильном порядке (от 1 к 6)</p>
-            <div class="funnel-container" id="funnel-container">${stepsHTML}</div>
+            <p class="interactive-step__sub">Перетащите шаги в правильном порядке (сверху вниз: 1 → 6)</p>
+            <div class="funnel-container drag-zone" id="funnel-container" data-zone="funnel">${stepsHTML}</div>
             <div class="quiz-hint hidden" id="interactive-hint"></div>
-            <button class="btn btn--primary" id="funnel-check-btn">Проверить</button>
+            <button class="btn btn--primary" id="interactive-check-btn">Проверить</button>
         </div>
     `;
 
     const container = document.getElementById('funnel-container');
+    const checkBtn = document.getElementById('interactive-check-btn');
+    let stepChecked = false;
     let draggedItem = null;
 
     container.querySelectorAll('.funnel-item').forEach(item => {
-        item.setAttribute('draggable', 'true');
         item.addEventListener('dragstart', (e) => {
             draggedItem = item;
             item.classList.add('funnel-item--dragging');
+            e.dataTransfer.effectAllowed = 'move';
         });
+
         item.addEventListener('dragend', () => {
             item.classList.remove('funnel-item--dragging');
             draggedItem = null;
         });
-        item.addEventListener('dragover', (e) => e.preventDefault());
+
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+
         item.addEventListener('drop', (e) => {
             e.preventDefault();
             if (draggedItem && draggedItem !== item) {
@@ -791,13 +809,18 @@ function runFunnelStep(step) {
         });
     });
 
-    document.getElementById('funnel-check-btn').addEventListener('click', () => {
+    checkBtn.addEventListener('click', () => {
+        if (stepChecked) {
+            currentStepIndex++;
+            runStep();
+            return;
+        }
+
         let correct = 0;
         const total = data.steps.length;
         const hintEl = document.getElementById('interactive-hint');
-        const items = container.querySelectorAll('.funnel-item');
 
-        items.forEach((item, index) => {
+        container.querySelectorAll('.funnel-item').forEach((item, index) => {
             const expectedOrder = parseInt(item.dataset.order);
             if (expectedOrder === index + 1) {
                 item.classList.add('funnel-item--correct');
@@ -805,6 +828,8 @@ function runFunnelStep(step) {
             } else {
                 item.classList.add('funnel-item--wrong');
             }
+            item.setAttribute('draggable', 'false');
+            item.style.pointerEvents = 'none';
         });
 
         stepStats.push({
@@ -818,16 +843,16 @@ function runFunnelStep(step) {
         if (correct < total) {
             hintEl.textContent = '💡 ' + data.hint;
             hintEl.classList.remove('hidden');
+        } else {
+            showToast('✅', 'Порядок верный!', 'success');
         }
 
-        setTimeout(() => {
-            currentStepIndex++;
-            runStep();
-        }, correct === total ? 1500 : 3000);
+        stepChecked = true;
+        checkBtn.textContent = 'Далее';
     });
 }
 
-// ===== ШАГ: AI TOOLS (мэтчинг) =====
+// ===== ШАГ: AI TOOLS =====
 function runAiToolsStep(step) {
     quizScreen.classList.remove('hidden');
     quizStepTitle.textContent = step.title;
@@ -835,17 +860,16 @@ function runAiToolsStep(step) {
 
     const data = marketingData.aiTools;
     const allTasks = [...data.allTasks].sort(() => Math.random() - 0.5);
-    const selections = {};
 
     let toolsHTML = data.tools.map(t => `
-        <div class="ai-tool" data-tool="${t.name}">
+        <div class="ai-tool">
             <h3>🛠️ ${t.name}</h3>
-            <div class="ai-tool__tasks" data-tool="${t.name}"></div>
+            <div class="ai-tool__tasks drag-zone" data-tool="${t.name}" data-max-items="3"></div>
         </div>
     `).join('');
 
     let tasksHTML = allTasks.map(task => `
-        <div class="ai-task" data-task="${task}">${task}</div>
+        <div class="ai-task drag-item" data-task="${task}" draggable="true">${task}</div>
     `).join('');
 
     quizContainer.innerHTML = `
@@ -854,38 +878,25 @@ function runAiToolsStep(step) {
             <div class="ai-tools-container">${toolsHTML}</div>
             <div class="ai-tasks-container" id="ai-tasks">${tasksHTML}</div>
             <div class="quiz-hint hidden" id="interactive-hint"></div>
-            <button class="btn btn--primary" id="ai-check-btn" disabled>Проверить</button>
+            <button class="btn btn--primary" id="interactive-check-btn">Проверить</button>
         </div>
     `;
 
-    let selectedTask = null;
+    const checkBtn = document.getElementById('interactive-check-btn');
+    let stepChecked = false;
 
-    document.querySelectorAll('.ai-task').forEach(task => {
-        task.addEventListener('click', () => {
-            document.querySelectorAll('.ai-task').forEach(t => t.classList.remove('ai-task--selected'));
-            task.classList.add('ai-task--selected');
-            selectedTask = task;
-        });
+    DragDrop.init({
+        itemsSelector: '.drag-item',
+        zonesSelector: '.drag-zone'
     });
 
-    document.querySelectorAll('.ai-tool__tasks').forEach(zone => {
-        zone.addEventListener('click', () => {
-            if (!selectedTask) return;
-            const toolName = zone.dataset.tool;
-            const taskName = selectedTask.dataset.task;
-            if (!selections[toolName]) selections[toolName] = [];
-            if (selections[toolName].length >= 3) return;
-            selections[toolName].push(taskName);
-            zone.appendChild(selectedTask);
-            selectedTask.classList.remove('ai-task--selected');
-            selectedTask = null;
+    checkBtn.addEventListener('click', () => {
+        if (stepChecked) {
+            currentStepIndex++;
+            runStep();
+            return;
+        }
 
-            const totalPlaced = Object.values(selections).reduce((sum, arr) => sum + arr.length, 0);
-            document.getElementById('ai-check-btn').disabled = totalPlaced < 9;
-        });
-    });
-
-    document.getElementById('ai-check-btn').addEventListener('click', () => {
         let correct = 0;
         const total = 9;
         const hintEl = document.getElementById('interactive-hint');
@@ -900,6 +911,14 @@ function runAiToolsStep(step) {
             } else {
                 task.classList.add('ai-task--wrong');
             }
+            task.setAttribute('draggable', 'false');
+            task.style.pointerEvents = 'none';
+        });
+
+        document.querySelectorAll('#ai-tasks .ai-task').forEach(task => {
+            task.setAttribute('draggable', 'false');
+            task.style.pointerEvents = 'none';
+            task.classList.add('ai-task--wrong');
         });
 
         stepStats.push({
@@ -913,16 +932,16 @@ function runAiToolsStep(step) {
         if (correct < total) {
             hintEl.textContent = '💡 ' + data.hint;
             hintEl.classList.remove('hidden');
+        } else {
+            showToast('✅', 'Все инструменты верно!', 'success');
         }
 
-        setTimeout(() => {
-            currentStepIndex++;
-            runStep();
-        }, correct === total ? 1500 : 3000);
+        stepChecked = true;
+        checkBtn.textContent = 'Далее';
     });
 }
 
-// ===== ШАГ: ANALYTICS (выбор метрик) =====
+// ===== ШАГ: ANALYTICS =====
 function runAnalyticsStep(step) {
     quizScreen.classList.remove('hidden');
     quizStepTitle.textContent = step.title;
@@ -944,21 +963,29 @@ function runAnalyticsStep(step) {
             <p class="interactive-step__instruction">${data.instruction}</p>
             <div class="analytics-container">${optionsHTML}</div>
             <div class="quiz-hint hidden" id="interactive-hint"></div>
-            <button class="btn btn--primary" id="analytics-check-btn" disabled>Проверить</button>
+            <button class="btn btn--primary" id="interactive-check-btn" disabled>Проверить</button>
         </div>
     `;
 
+    const checkBtn = document.getElementById('interactive-check-btn');
     const checkboxes = quizContainer.querySelectorAll('input[type="checkbox"]');
-    const checkBtn = document.getElementById('analytics-check-btn');
+    let stepChecked = false;
 
     checkboxes.forEach(cb => {
         cb.addEventListener('change', () => {
+            if (stepChecked) return;
             const checked = quizContainer.querySelectorAll('input:checked');
             checkBtn.disabled = checked.length !== 3;
         });
     });
 
     checkBtn.addEventListener('click', () => {
+        if (stepChecked) {
+            currentStepIndex++;
+            runStep();
+            return;
+        }
+
         let correct = 0;
         const total = 3;
         const hintEl = document.getElementById('interactive-hint');
@@ -989,14 +1016,15 @@ function runAnalyticsStep(step) {
         if (correct < total) {
             hintEl.textContent = '💡 ' + data.hint;
             hintEl.classList.remove('hidden');
+        } else {
+            showToast('✅', 'Метрики выбраны верно!', 'success');
         }
 
-        setTimeout(() => {
-            currentStepIndex++;
-            runStep();
-        }, correct === total ? 1500 : 3000);
+        stepChecked = true;
+        checkBtn.textContent = 'Далее';
     });
 }
+
 // ===== ФИНИШ =====
 function showFinish() {
     mapScreen.classList.add('hidden');
