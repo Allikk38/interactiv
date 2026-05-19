@@ -192,6 +192,7 @@
     display: block;
     margin: 0 auto;
     min-width: 180px;
+    text-align: center;
 }
 
 /* ===== Platforms (исправлено) ===== */
