@@ -1,3 +1,4 @@
+// ===== КОНФИГУРАЦИЯ =====
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHh9o63J7uFn6KaiYyDgCSee4L_3tV1NH6iqox7-QtTsx-B-uYapu-wUrtwWyBPxgI/exec';
 const MAP_CENTER = [55.018, 82.92];
 const MAP_ZOOM = 12;
@@ -36,51 +37,66 @@ let placedJks = new Map();
 let map;
 let toastTimer;
 let stepStats = [];
+let currentMarkers = [];
 
-// ===== ИНИЦИАЛИЗАЦИЯ КАРТЫ (Яндекс.Карты) =====
+// ===== ИНИЦИАЛИЗАЦИЯ КАРТЫ (Яндекс.Карты — неинтерактивная) =====
 function initMap() {
-    // Очищаем контейнер перед созданием новой карты
     const mapContainer = document.getElementById('map');
     mapContainer.innerHTML = '';
-    
-    // Создаём карту
+
     map = new ymaps.Map('map', {
         center: MAP_CENTER,
         zoom: MAP_ZOOM,
-        controls: ['zoomControl', 'fullscreenControl']
+        controls: [] // убираем все контролы (зум, поиск, линейка и т.д.)
+    }, {
+        // Отключаем интерактивность
+        suppressMapOpenBlock: true,               // не показывать "Открыть в Яндекс.Картах"
+        yandexMapDisablePoiInteractivity: true,   // отключить кликабельность POI (дома, улицы, организации)
+        suppressObsoleteBrowserNotifier: true,     // не показывать предупреждение о старом браузере
+        // Отключаем поведение по умолчанию
+        autoFitToViewport: 'none'
     });
-    
-    // Подписываемся на клик
+
+    // Отключаем все события мыши, кроме клика
+    map.behaviors.disable([
+        'drag',
+        'scrollZoom', 
+        'dblClickZoom',
+        'multiTouch',
+        'rightMouseButtonMagnifier',
+        'leftMouseButtonMagnifier',
+        'ruler'
+    ]);
+
+    // Отключаем подсказки при наведении на объекты карты
+    map.hint.hide();
+
+    // Подписываемся ТОЛЬКО на клик
     map.events.add('click', onMapClick);
-    
-    // Если есть уже расставленные метки — отрисовываем их
-    renderMarkers();
 }
 
-// Отрисовка маркеров (вызывается после каждого правильного ответа)
+// Отрисовка маркеров
 function renderMarkers() {
     if (!map) return;
-    
-    // Удаляем старые метки (если есть)
-    if (window.currentMarkers) {
-        window.currentMarkers.forEach(marker => map.geoObjects.remove(marker));
-    }
-    window.currentMarkers = [];
-    
+
+    // Удаляем старые метки
+    currentMarkers.forEach(marker => map.geoObjects.remove(marker));
+    currentMarkers = [];
+
+    // Рисуем правильные метки
     placedJks.forEach((data, id) => {
         const jk = allJks.find(j => j.id === id);
         if (!jk) return;
-        
+
         const marker = new ymaps.Placemark([data.lat, data.lng], {
-            balloonContent: `<b>${jk.name}</b><br>${jk.developer}`,
             hintContent: jk.name
         }, {
             preset: 'islands#greenIcon',
             draggable: false
         });
-        
+
         map.geoObjects.add(marker);
-        window.currentMarkers.push(marker);
+        currentMarkers.push(marker);
     });
 }
 
@@ -102,7 +118,6 @@ async function loadData() {
             allQuestions = await questionsRes.json();
         }
 
-        // Опционально: marketing-steps.json
         try {
             const marketingRes = await fetch('data/marketing-steps.json');
             if (marketingRes.ok) {
@@ -119,12 +134,10 @@ async function loadData() {
             });
         } else {
             renderScenarios();
-            // Показываем приветствие
             const user = User.get();
             showToast('👋', `С возвращением, ${user.name}!`, 'success');
         }
 
-        // Кнопка смены пользователя в шапке
         addUserChangeButton();
 
     } catch (error) {
@@ -138,7 +151,6 @@ function addUserChangeButton() {
     const user = User.get();
     if (!user) return;
 
-    // Удаляем старую кнопку если есть
     const oldBtn = document.getElementById('user-change-btn');
     if (oldBtn) oldBtn.remove();
 
@@ -257,7 +269,6 @@ function runMapStep(step) {
     placedJks.clear();
 
     if (!map) {
-        // Ждём загрузку Яндекс.Карт
         const waitForYmaps = () => {
             if (typeof ymaps !== 'undefined') {
                 initMap();
@@ -305,22 +316,27 @@ function selectJk(id) {
     selectedJkId = id;
     const filteredJks = window.currentStepJks || allJks;
     renderJkList(filteredJks);
+    // Визуально подсвечиваем выбранный ЖК в списке
+    document.querySelectorAll('.jk-list__item').forEach(item => {
+        item.classList.remove('jk-list__item--active');
+    });
+    const activeItem = document.querySelector(`.jk-list__item--selected`);
+    if (activeItem) activeItem.classList.add('jk-list__item--active');
 }
 
-// Обработчик клика по карте (Яндекс.Карты)
+// Обработчик клика по карте
 function onMapClick(e) {
     if (selectedJkId === null) return;
     const jk = allJks.find(j => j.id === selectedJkId);
     if (!jk) return;
-    
-    // Координаты клика в формате [широта, долгота]
+
     const coords = e.get('coords');
     const lat = coords[0];
     const lng = coords[1];
-    
+
     const distance = getDistance(lat, lng, jk.lat, jk.lng);
     const isCorrect = distance <= jk.radius;
-    
+
     if (isCorrect) {
         placedJks.set(jk.id, { lat, lng, correct: true });
         showToast('✅', `Правильно! ${jk.name} на месте.`, 'success');
@@ -331,15 +347,16 @@ function onMapClick(e) {
         const wrongMarker = new ymaps.Placemark([lat, lng], {
             hintContent: `${jk.name} (неверно)`
         }, {
-            preset: 'islands#redIcon'
+            preset: 'islands#redIcon',
+            draggable: false
         });
         map.geoObjects.add(wrongMarker);
-        
+
         showToast('❌', `Неправильно. ${jk.hint}`, 'error');
         setTimeout(() => map.geoObjects.remove(wrongMarker), 3000);
         if (GOOGLE_SCRIPT_URL) sendToGoogle(currentScenario?.name || '', jk.name, false, distance);
     }
-    
+
     const filteredJks = window.currentStepJks || allJks;
     renderJkList(filteredJks);
     renderMarkers();
