@@ -40,6 +40,7 @@ let stepStats = [];
 let currentMarkers = [];
 
 // ===== ИНИЦИАЛИЗАЦИЯ КАРТЫ (Яндекс.Карты — неинтерактивная) =====
+// ===== ИНИЦИАЛИЗАЦИЯ КАРТЫ (Яндекс.Карты — без кликабельности объектов) =====
 function initMap() {
     const mapContainer = document.getElementById('map');
     mapContainer.innerHTML = '';
@@ -47,34 +48,27 @@ function initMap() {
     map = new ymaps.Map('map', {
         center: MAP_CENTER,
         zoom: MAP_ZOOM,
-        controls: [] // убираем все контролы (зум, поиск, линейка и т.д.)
+        controls: ['zoomControl'] // только зум
     }, {
-        // Отключаем интерактивность
-        suppressMapOpenBlock: true,               // не показывать "Открыть в Яндекс.Картах"
-        yandexMapDisablePoiInteractivity: true,   // отключить кликабельность POI (дома, улицы, организации)
-        suppressObsoleteBrowserNotifier: true,     // не показывать предупреждение о старом браузере
-        // Отключаем поведение по умолчанию
-        autoFitToViewport: 'none'
+        // Отключаем кликабельность POI (дома, улицы, организации)
+        yandexMapDisablePoiInteractivity: true,
+        suppressMapOpenBlock: true,
+        suppressObsoleteBrowserNotifier: true
     });
 
-    // Отключаем все события мыши, кроме клика
+    // Отключаем ТОЛЬКО нежелательные поведения
     map.behaviors.disable([
-        'drag',
-        'scrollZoom', 
-        'dblClickZoom',
-        'multiTouch',
-        'rightMouseButtonMagnifier',
-        'leftMouseButtonMagnifier',
-        'ruler'
+        'dblClickZoom',                   // двойной клик — зумит (мешает расстановке)
+        'rightMouseButtonMagnifier',      // правая кнопка — увеличительное стекло
+        'leftMouseButtonMagnifier',       // левая кнопка долгим нажатием — стекло
+        'ruler'                           // измерение расстояний
     ]);
 
-    // Отключаем подсказки при наведении на объекты карты
-    map.hint.hide();
+    // drag (перетаскивание) и scrollZoom (зум колесом) — ОСТАВЛЕНЫ!
+    // multiTouch — ОСТАВЛЕН для мобильных!
 
-    // Подписываемся ТОЛЬКО на клик
     map.events.add('click', onMapClick);
 }
-
 // Отрисовка маркеров
 function renderMarkers() {
     if (!map) return;
