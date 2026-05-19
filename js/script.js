@@ -99,19 +99,23 @@ function renderScenarios() {
     scenarios.forEach(scenario => {
         const mapSteps = scenario.steps.filter(s => s.type === 'map').length;
         const quizSteps = scenario.steps.filter(s => s.type === 'quiz').length;
-        const interactiveSteps = scenario.steps.filter(s => !['map', 'quiz', 'finish'].includes(s.type)).length;
+        const interactiveSteps = scenario.steps.filter(s => !['map', 'quiz', 'finish', 'brief'].includes(s.type)).length;
 
         let stepsDesc = [];
         if (mapSteps > 0) stepsDesc.push(`${mapSteps} карт`);
         if (quizSteps > 0) stepsDesc.push(`${quizSteps} тестов`);
         if (interactiveSteps > 0) stepsDesc.push(`${interactiveSteps} заданий`);
 
+        const icon = scenario.icon || '📋';
+        const hasBadge = Badges.has(scenario.badge);
+
         const card = document.createElement('div');
         card.className = 'scenario-card';
         card.innerHTML = `
+            <div class="scenario-card__icon">${icon}${hasBadge ? ' 🏅' : ''}</div>
             <div class="scenario-card__name">${scenario.name}</div>
             <div class="scenario-card__description">${scenario.description}</div>
-            <div class="scenario-card__steps">📋 ${stepsDesc.join(' + ') || scenario.steps.length + ' шагов'}</div>
+            <div class="scenario-card__steps">${stepsDesc.join(' + ') || scenario.steps.length + ' шагов'}</div>
         `;
 
         card.addEventListener('click', () => startScenario(scenario));
@@ -126,7 +130,10 @@ function startScenario(scenario) {
     stepStats = [];
 
     scenarioScreen.classList.add('hidden');
-    headerInfo.textContent = scenario.name;
+    headerInfo.textContent = `${scenario.icon || '📋'} ${scenario.name}`;
+
+    ProgressBar.init();
+    ProgressBar.update(0, scenario.steps.length - 1, scenario.steps);
 
     runStep();
 }
@@ -1040,12 +1047,12 @@ function runAnalyticsStep(step) {
     });
 }
 
-// ===== ФИНИШ =====
 function showFinish() {
     mapScreen.classList.add('hidden');
     quizScreen.classList.add('hidden');
     finishScreen.classList.remove('hidden');
     headerInfo.textContent = currentScenario?.name || '';
+    ProgressBar.hide();
 
     const totalCorrect = stepStats.reduce((sum, s) => {
         if (s.type === 'map') return sum + s.placed;
@@ -1057,8 +1064,28 @@ function showFinish() {
         return sum + (s.total || 0);
     }, 0);
 
+    const isPerfect = totalCorrect === totalItems && totalItems > 0;
+
     finishText.textContent = `Вы успешно завершили сценарий «${currentScenario?.name}»!`;
     finishStats.textContent = `Правильно: ${totalCorrect} из ${totalItems}`;
+
+    // Выдача бейджа
+    if (currentScenario?.badge) {
+        const isNew = Badges.award(currentScenario.badge);
+        if (isNew) {
+            Badges.showBadgeToast(currentScenario.badge);
+        }
+        Badges.renderOnFinish('.finish-content');
+    }
+
+    // Бонусный бейдж за идеальное прохождение
+    if (isPerfect && totalItems > 5) {
+        const perfectBadge = '🎯 Идеальное прохождение';
+        const isNewPerfect = Badges.award(perfectBadge);
+        if (isNewPerfect) {
+            setTimeout(() => Badges.showBadgeToast(perfectBadge), 2000);
+        }
+    }
 }
 
 // ===== ОБЩИЕ ФУНКЦИИ =====
