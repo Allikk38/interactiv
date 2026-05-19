@@ -144,7 +144,14 @@ function runStep() {
     quizScreen.classList.add('hidden');
     finishScreen.classList.add('hidden');
 
+    // Прогресс-бар: показываем на всех шагах кроме финиша
+    if (step.type !== 'finish') {
+        ProgressBar.show();
+        ProgressBar.update(currentStepIndex, currentScenario.steps.length - 1, currentScenario.steps);
+    }
+    
     switch (step.type) {
+        case 'brief': runBriefStep(step); break;
         case 'map': runMapStep(step); break;
         case 'quiz': runQuizStep(step); break;
         case 'platforms': runPlatformsStep(step); break;
