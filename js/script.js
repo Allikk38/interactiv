@@ -34,26 +34,54 @@ let currentStepIndex = 0;
 let selectedJkId = null;
 let placedJks = new Map();
 let map;
-let markersLayer;
 let toastTimer;
 let stepStats = [];
 
-// ===== ИНИЦИАЛИЗАЦИЯ КАРТЫ =====
+// ===== ИНИЦИАЛИЗАЦИЯ КАРТЫ (Яндекс.Карты) =====
 function initMap() {
-    map = L.map('map', {
+    // Очищаем контейнер перед созданием новой карты
+    const mapContainer = document.getElementById('map');
+    mapContainer.innerHTML = '';
+    
+    // Создаём карту
+    map = new ymaps.Map('map', {
         center: MAP_CENTER,
         zoom: MAP_ZOOM,
-        zoomControl: true,
-        scrollWheelZoom: true,
+        controls: ['zoomControl', 'fullscreenControl']
     });
+    
+    // Подписываемся на клик
+    map.events.add('click', onMapClick);
+    
+    // Если есть уже расставленные метки — отрисовываем их
+    renderMarkers();
+}
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 19,
-    }).addTo(map);
-
-    markersLayer = L.layerGroup().addTo(map);
-    map.on('click', onMapClick);
+// Отрисовка маркеров (вызывается после каждого правильного ответа)
+function renderMarkers() {
+    if (!map) return;
+    
+    // Удаляем старые метки (если есть)
+    if (window.currentMarkers) {
+        window.currentMarkers.forEach(marker => map.geoObjects.remove(marker));
+    }
+    window.currentMarkers = [];
+    
+    placedJks.forEach((data, id) => {
+        const jk = allJks.find(j => j.id === id);
+        if (!jk) return;
+        
+        const marker = new ymaps.Placemark([data.lat, data.lng], {
+            balloonContent: `<b>${jk.name}</b><br>${jk.developer}`,
+            hintContent: jk.name
+        }, {
+            preset: 'islands#greenIcon',
+            draggable: false
+        });
+        
+        map.geoObjects.add(marker);
+        window.currentMarkers.push(marker);
+    });
 }
 
 // ===== ЗАГРУЗКА ДАННЫХ =====
@@ -166,7 +194,7 @@ function startScenario(scenario) {
     currentScenario = scenario;
     currentStepIndex = 0;
     stepStats = [];
-    window.scenarioStartTime = Date.now(); // ← таймер для отправки результата
+    window.scenarioStartTime = Date.now();
 
     scenarioScreen.classList.add('hidden');
     headerInfo.textContent = `${scenario.icon || '📋'} ${scenario.name}`;
@@ -190,7 +218,6 @@ function runStep() {
     quizScreen.classList.add('hidden');
     finishScreen.classList.add('hidden');
 
-    // Прогресс-бар: показываем на всех шагах кроме финиша
     if (step.type !== 'finish') {
         ProgressBar.show();
         ProgressBar.update(currentStepIndex, currentScenario.steps.length - 1, currentScenario.steps);
@@ -230,12 +257,19 @@ function runMapStep(step) {
     placedJks.clear();
 
     if (!map) {
-        setTimeout(() => {
-            initMap();
-            renderMapStep(filteredJks);
-        }, 100);
+        // Ждём загрузку Яндекс.Карт
+        const waitForYmaps = () => {
+            if (typeof ymaps !== 'undefined') {
+                initMap();
+                renderMapStep(filteredJks);
+            } else {
+                setTimeout(waitForYmaps, 100);
+            }
+        };
+        waitForYmaps();
     } else {
-        map.invalidateSize();
+        map.setCenter(MAP_CENTER);
+        map.setZoom(MAP_ZOOM);
         renderMapStep(filteredJks);
     }
 
@@ -245,7 +279,6 @@ function runMapStep(step) {
 }
 
 function renderMapStep(filteredJks) {
-    markersLayer.clearLayers();
     renderJkList(filteredJks);
 }
 
@@ -274,43 +307,43 @@ function selectJk(id) {
     renderJkList(filteredJks);
 }
 
+// Обработчик клика по карте (Яндекс.Карты)
 function onMapClick(e) {
     if (selectedJkId === null) return;
     const jk = allJks.find(j => j.id === selectedJkId);
     if (!jk) return;
-    const { lat, lng } = e.latlng;
+    
+    // Координаты клика в формате [широта, долгота]
+    const coords = e.get('coords');
+    const lat = coords[0];
+    const lng = coords[1];
+    
     const distance = getDistance(lat, lng, jk.lat, jk.lng);
     const isCorrect = distance <= jk.radius;
+    
     if (isCorrect) {
         placedJks.set(jk.id, { lat, lng, correct: true });
         showToast('✅', `Правильно! ${jk.name} на месте.`, 'success');
         selectedJkId = null;
         if (GOOGLE_SCRIPT_URL) sendToGoogle(currentScenario?.name || '', jk.name, true, distance);
     } else {
-        const wrongMarker = L.marker([lat, lng], {
-            icon: L.divIcon({ className: 'marker-wrong' }),
-        }).addTo(markersLayer);
-        wrongMarker.bindTooltip(jk.name, { permanent: true, direction: 'bottom', className: 'marker-label' }).openTooltip();
+        // Временная красная метка
+        const wrongMarker = new ymaps.Placemark([lat, lng], {
+            hintContent: `${jk.name} (неверно)`
+        }, {
+            preset: 'islands#redIcon'
+        });
+        map.geoObjects.add(wrongMarker);
+        
         showToast('❌', `Неправильно. ${jk.hint}`, 'error');
-        setTimeout(() => markersLayer.removeLayer(wrongMarker), 3000);
+        setTimeout(() => map.geoObjects.remove(wrongMarker), 3000);
         if (GOOGLE_SCRIPT_URL) sendToGoogle(currentScenario?.name || '', jk.name, false, distance);
     }
+    
     const filteredJks = window.currentStepJks || allJks;
     renderJkList(filteredJks);
     renderMarkers();
     checkMapStepComplete(filteredJks);
-}
-
-function renderMarkers() {
-    markersLayer.clearLayers();
-    placedJks.forEach((data, id) => {
-        const jk = allJks.find(j => j.id === id);
-        if (!jk) return;
-        const marker = L.marker([data.lat, data.lng], {
-            icon: L.divIcon({ className: 'marker-correct' }),
-        }).addTo(markersLayer);
-        marker.bindTooltip(jk.name, { permanent: true, direction: 'bottom', className: 'marker-label' }).openTooltip();
-    });
 }
 
 function checkMapStepComplete(filteredJks) {
@@ -330,7 +363,9 @@ function checkMapStepComplete(filteredJks) {
 function resetMapStep() {
     placedJks.clear();
     selectedJkId = null;
-    markersLayer.clearLayers();
+    if (map) {
+        renderMarkers();
+    }
     const filteredJks = window.currentStepJks || allJks;
     renderJkList(filteredJks);
     showToast('🔄', 'Шаг сброшен. Начните заново.', 'success');
@@ -1109,7 +1144,6 @@ function showFinish() {
 
     const isPerfect = totalCorrect === totalItems && totalItems > 0;
 
-    // Вычисляем время прохождения
     const durationSec = window.scenarioStartTime
         ? Math.round((Date.now() - window.scenarioStartTime) / 1000)
         : 0;
@@ -1117,7 +1151,6 @@ function showFinish() {
     finishText.textContent = `Вы успешно завершили сценарий «${currentScenario?.name}»!`;
     finishStats.textContent = `Правильно: ${totalCorrect} из ${totalItems}`;
 
-    // Отправляем результат в Google Sheets
     User.sendResult(
         currentScenario?.name || '',
         stepStats,
@@ -1126,7 +1159,6 @@ function showFinish() {
         durationSec
     );
 
-    // Выдача бейджа
     if (currentScenario?.badge) {
         const isNew = Badges.award(currentScenario.badge);
         if (isNew) {
@@ -1135,7 +1167,6 @@ function showFinish() {
         Badges.renderOnFinish('.finish-content');
     }
 
-    // Бонусный бейдж за идеальное прохождение
     if (isPerfect && totalItems > 5) {
         const perfectBadge = '🎯 Идеальное прохождение';
         const isNewPerfect = Badges.award(perfectBadge);
