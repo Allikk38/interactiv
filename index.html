@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тренажёр: Расставь ЖК на карте Новосибирска</title>
+    <title>Тренажёр агента недвижимости</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -11,49 +11,76 @@
     <div class="container">
         <!-- Шапка -->
         <header class="header">
-            <h1 class="header__title">🏙️ Расставь ЖК на карте Новосибирска</h1>
-            <div class="header__counter">
-                Расставлено: <span id="placed-count">0</span> из <span id="total-count">8</span>
-            </div>
+            <h1 class="header__title">🏙️ Тренажёр агента недвижимости</h1>
+            <div class="header__info" id="header-info"></div>
         </header>
 
         <!-- Основной контент -->
         <main class="main">
-            <!-- Панель с ЖК -->
-            <aside class="sidebar" id="sidebar">
-                <h2 class="sidebar__title">Жилые комплексы</h2>
-                <ul class="jk-list" id="jk-list">
+            <!-- Экран выбора сценария -->
+            <section class="screen" id="scenario-screen">
+                <h2 class="screen__title">Выберите сценарий обучения</h2>
+                <div class="scenarios-grid" id="scenarios-grid">
                     <!-- Заполняется из JS -->
-                </ul>
-                <div class="sidebar__actions">
-                    <button class="btn btn--secondary" id="hint-btn" disabled>💡 Подсказка</button>
-                    <button class="btn btn--danger" id="reset-all-btn">🔄 Сбросить всё</button>
                 </div>
-            </aside>
+            </section>
 
-            <!-- Карта -->
-            <section class="map-section">
-                <div class="map-container" id="map"></div>
-                <p class="map-hint">Выберите ЖК из списка слева, затем кликните на карту</p>
+            <!-- Экран шага (карта) -->
+            <section class="screen hidden" id="map-screen">
+                <div class="step-header">
+                    <button class="btn btn--small btn--secondary" id="back-to-scenarios-btn">← К сценариям</button>
+                    <h2 class="step-title" id="map-step-title"></h2>
+                    <div class="step-counter" id="map-step-counter"></div>
+                </div>
+                <div class="main main--map">
+                    <aside class="sidebar" id="sidebar">
+                        <h3 class="sidebar__title">Жилые комплексы</h3>
+                        <ul class="jk-list" id="jk-list"></ul>
+                        <div class="sidebar__actions">
+                            <button class="btn btn--secondary" id="hint-btn" disabled>💡 Подсказка</button>
+                            <button class="btn btn--danger" id="reset-step-btn">🔄 Сбросить шаг</button>
+                        </div>
+                    </aside>
+                    <section class="map-section">
+                        <div class="map-container" id="map"></div>
+                        <p class="map-hint">Выберите ЖК из списка слева, затем кликните на карту</p>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Экран шага (викторина) -->
+            <section class="screen hidden" id="quiz-screen">
+                <div class="step-header">
+                    <button class="btn btn--small btn--secondary" id="quiz-back-btn">← К сценариям</button>
+                    <h2 class="step-title" id="quiz-step-title"></h2>
+                    <div class="step-counter" id="quiz-step-counter"></div>
+                </div>
+                <div class="quiz-container" id="quiz-container">
+                    <!-- Заполняется из JS -->
+                </div>
+                <div class="quiz-actions">
+                    <button class="btn btn--primary" id="quiz-next-btn" disabled>Далее</button>
+                </div>
+            </section>
+
+            <!-- Экран завершения сценария -->
+            <section class="screen hidden" id="finish-screen">
+                <div class="finish-content">
+                    <h2 class="finish__title">🎉 Сценарий пройден!</h2>
+                    <p class="finish__text" id="finish-text"></p>
+                    <div class="finish__stats" id="finish-stats"></div>
+                    <div class="finish__actions">
+                        <button class="btn btn--primary" id="finish-restart-btn">Пройти заново</button>
+                        <button class="btn btn--secondary" id="finish-scenarios-btn">К списку сценариев</button>
+                    </div>
+                </div>
             </section>
         </main>
 
-        <!-- Тосты для подсказок -->
+        <!-- Тосты -->
         <div class="toast hidden" id="toast">
             <span class="toast__icon" id="toast-icon"></span>
             <span class="toast__message" id="toast-message"></span>
-        </div>
-
-        <!-- Модальное окно завершения -->
-        <div class="modal hidden" id="finish-modal">
-            <div class="modal__content">
-                <h2 class="modal__title">🎉 Поздравляем!</h2>
-                <p class="modal__text">Вы успешно расставили все жилые комплексы!</p>
-                <p class="modal__stats" id="modal-stats"></p>
-                <div class="modal__actions">
-                    <button class="btn btn--primary" id="restart-btn">Пройти заново</button>
-                </div>
-            </div>
         </div>
     </div>
 
