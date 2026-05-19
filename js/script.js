@@ -1,28 +1,43 @@
 // ===== КОНФИГУРАЦИЯ =====
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZT7dsLRkNLE0Lp7zzi1oWfGhqdxFhydKV_B-B6GZMBHp7r6OND6LgduyP89YclZQo/exec'; // Замените на ваш URL для отправки в Google Таблицу (опционально)
-const MAP_CENTER = [55.018, 82.92]; // Центр Новосибирска
+const MAP_CENTER = [55.018, 82.92];
 const MAP_ZOOM = 12;
 
 // ===== DOM-ЭЛЕМЕНТЫ =====
+const headerInfo = document.getElementById('header-info');
+const scenarioScreen = document.getElementById('scenario-screen');
+const scenariosGrid = document.getElementById('scenarios-grid');
+const mapScreen = document.getElementById('map-screen');
+const mapStepTitle = document.getElementById('map-step-title');
+const mapStepCounter = document.getElementById('map-step-counter');
+const quizScreen = document.getElementById('quiz-screen');
+const quizStepTitle = document.getElementById('quiz-step-title');
+const quizStepCounter = document.getElementById('quiz-step-counter');
+const quizContainer = document.getElementById('quiz-container');
+const quizNextBtn = document.getElementById('quiz-next-btn');
+const finishScreen = document.getElementById('finish-screen');
+const finishText = document.getElementById('finish-text');
+const finishStats = document.getElementById('finish-stats');
 const jkListEl = document.getElementById('jk-list');
-const placedCountEl = document.getElementById('placed-count');
-const totalCountEl = document.getElementById('total-count');
 const hintBtn = document.getElementById('hint-btn');
-const resetAllBtn = document.getElementById('reset-all-btn');
+const resetStepBtn = document.getElementById('reset-step-btn');
 const toast = document.getElementById('toast');
 const toastIcon = document.getElementById('toast-icon');
 const toastMessage = document.getElementById('toast-message');
-const finishModal = document.getElementById('finish-modal');
-const modalStats = document.getElementById('modal-stats');
-const restartBtn = document.getElementById('restart-btn');
 
 // ===== СОСТОЯНИЕ =====
-let jks = [];
+let allJks = [];
+let allQuestions = [];
+let scenarios = [];
+let currentScenario = null;
+let currentStepIndex = 0;
 let selectedJkId = null;
-let placedJks = new Map(); // id -> { lat, lng, correct }
+let placedJks = new Map();
 let map;
 let markersLayer;
 let toastTimer;
+let quizAnswers = [];
+let stepStats = [];
 
 // ===== ИНИЦИАЛИЗАЦИЯ КАРТЫ =====
 function initMap() {
@@ -39,32 +54,140 @@ function initMap() {
     }).addTo(map);
 
     markersLayer = L.layerGroup().addTo(map);
-
     map.on('click', onMapClick);
 }
 
 // ===== ЗАГРУЗКА ДАННЫХ =====
-async function loadJks() {
+async function loadData() {
     try {
-        const response = await fetch('data/jks.json');
-        if (!response.ok) throw new Error('Ошибка загрузки данных');
-        jks = await response.json();
-        totalCountEl.textContent = jks.length;
-        restoreState();
-        renderJkList();
-        renderMarkers();
-        updateCounter();
+        const [jksRes, questionsRes, scenariosRes] = await Promise.all([
+            fetch('data/jks.json'),
+            fetch('data/questions.json'),
+            fetch('data/scenarios.json'),
+        ]);
+
+        if (!jksRes.ok || !scenariosRes.ok) throw new Error('Ошибка загрузки данных');
+
+        allJks = await jksRes.json();
+        scenarios = await scenariosRes.json();
+
+        if (questionsRes.ok) {
+            allQuestions = await questionsRes.json();
+        }
+
+        renderScenarios();
     } catch (error) {
-        console.error('Ошибка загрузки ЖК:', error);
+        console.error('Ошибка загрузки:', error);
         showToast('❌', 'Не удалось загрузить данные. Обновите страницу.', 'error');
     }
 }
 
-// ===== РЕНДЕР СПИСКА ЖК =====
-function renderJkList() {
+// ===== РЕНДЕР СЦЕНАРИЕВ =====
+function renderScenarios() {
+    scenariosGrid.innerHTML = '';
+
+    scenarios.forEach(scenario => {
+        const stepsCount = scenario.steps.length;
+        const mapSteps = scenario.steps.filter(s => s.type === 'map').length;
+        const quizSteps = scenario.steps.filter(s => s.type === 'quiz').length;
+
+        let stepsDesc = [];
+        if (mapSteps > 0) stepsDesc.push(`${mapSteps} карт`);
+        if (quizSteps > 0) stepsDesc.push(`${quizSteps} вопросов`);
+        const stepsText = stepsDesc.join(' + ') || `${stepsCount} шагов`;
+
+        const card = document.createElement('div');
+        card.className = 'scenario-card';
+        card.innerHTML = `
+            <div class="scenario-card__name">${scenario.name}</div>
+            <div class="scenario-card__description">${scenario.description}</div>
+            <div class="scenario-card__steps">📋 ${stepsText}</div>
+        `;
+
+        card.addEventListener('click', () => startScenario(scenario));
+        scenariosGrid.appendChild(card);
+    });
+}
+
+// ===== ЗАПУСК СЦЕНАРИЯ =====
+function startScenario(scenario) {
+    currentScenario = scenario;
+    currentStepIndex = 0;
+    stepStats = [];
+
+    scenarioScreen.classList.add('hidden');
+    headerInfo.textContent = scenario.name;
+
+    runStep();
+}
+
+// ===== ЗАПУСК ШАГА =====
+function runStep() {
+    if (currentStepIndex >= currentScenario.steps.length) {
+        showFinish();
+        return;
+    }
+
+    const step = currentScenario.steps[currentStepIndex];
+
+    mapScreen.classList.add('hidden');
+    quizScreen.classList.add('hidden');
+    finishScreen.classList.add('hidden');
+
+    switch (step.type) {
+        case 'map':
+            runMapStep(step);
+            break;
+        case 'quiz':
+            runQuizStep(step);
+            break;
+        case 'finish':
+            showFinish();
+            break;
+        default:
+            currentStepIndex++;
+            runStep();
+    }
+}
+
+// ===== ШАГ: КАРТА =====
+function runMapStep(step) {
+    mapScreen.classList.remove('hidden');
+
+    const jkIds = step.jk_ids;
+    const filteredJks = jkIds.length > 0
+        ? allJks.filter(jk => jkIds.includes(jk.id))
+        : allJks;
+
+    mapStepTitle.textContent = step.title;
+    mapStepCounter.textContent = `Шаг ${currentStepIndex + 1} из ${currentScenario.steps.length}`;
+    selectedJkId = null;
+    placedJks.clear();
+
+    if (!map) {
+        setTimeout(() => {
+            initMap();
+            renderMapStep(filteredJks);
+        }, 100);
+    } else {
+        map.invalidateSize();
+        renderMapStep(filteredJks);
+    }
+
+    window.currentStepJks = filteredJks;
+    renderJkList(filteredJks);
+    renderMarkers();
+}
+
+function renderMapStep(filteredJks) {
+    markersLayer.clearLayers();
+    renderJkList(filteredJks);
+}
+
+function renderJkList(filteredJks) {
     jkListEl.innerHTML = '';
 
-    jks.forEach(jk => {
+    filteredJks.forEach(jk => {
         const isPlaced = placedJks.has(jk.id);
         const li = document.createElement('li');
         li.className = 'jk-list__item';
@@ -86,18 +209,17 @@ function renderJkList() {
     hintBtn.disabled = selectedJkId === null;
 }
 
-// ===== ВЫБОР ЖК =====
 function selectJk(id) {
     if (placedJks.has(id)) return;
     selectedJkId = id;
-    renderJkList();
+    const filteredJks = window.currentStepJks || allJks;
+    renderJkList(filteredJks);
 }
 
-// ===== КЛИК ПО КАРТЕ =====
 function onMapClick(e) {
     if (selectedJkId === null) return;
 
-    const jk = jks.find(j => j.id === selectedJkId);
+    const jk = allJks.find(j => j.id === selectedJkId);
     if (!jk) return;
 
     const { lat, lng } = e.latlng;
@@ -105,12 +227,14 @@ function onMapClick(e) {
     const isCorrect = distance <= jk.radius;
 
     if (isCorrect) {
-        // Правильный ответ
         placedJks.set(jk.id, { lat, lng, correct: true });
         showToast('✅', `Правильно! ${jk.name} на месте.`, 'success');
         selectedJkId = null;
+
+        if (GOOGLE_SCRIPT_URL) {
+            sendToGoogle(currentScenario?.name || '', jk.name, true, distance);
+        }
     } else {
-        // Неправильный ответ
         const wrongMarker = L.marker([lat, lng], {
             icon: L.divIcon({ className: 'marker-wrong' }),
         }).addTo(markersLayer);
@@ -123,25 +247,26 @@ function onMapClick(e) {
 
         showToast('❌', `Неправильно. ${jk.hint}`, 'error');
 
-        // Удаляем неправильный маркер через 3 секунды
         setTimeout(() => {
             markersLayer.removeLayer(wrongMarker);
         }, 3000);
+
+        if (GOOGLE_SCRIPT_URL) {
+            sendToGoogle(currentScenario?.name || '', jk.name, false, distance);
+        }
     }
 
-    saveState();
-    renderJkList();
+    const filteredJks = window.currentStepJks || allJks;
+    renderJkList(filteredJks);
     renderMarkers();
-    updateCounter();
-    checkFinish();
+    checkMapStepComplete(filteredJks);
 }
 
-// ===== РЕНДЕР МАРКЕРОВ =====
 function renderMarkers() {
     markersLayer.clearLayers();
 
     placedJks.forEach((data, id) => {
-        const jk = jks.find(j => j.id === id);
+        const jk = allJks.find(j => j.id === id);
         if (!jk) return;
 
         const marker = L.marker([data.lat, data.lng], {
@@ -156,22 +281,200 @@ function renderMarkers() {
     });
 }
 
-// ===== ОБНОВЛЕНИЕ СЧЁТЧИКА =====
-function updateCounter() {
-    placedCountEl.textContent = placedJks.size;
-}
+function checkMapStepComplete(filteredJks) {
+    if (placedJks.size === filteredJks.length && filteredJks.length > 0) {
+        stepStats.push({
+            step: currentStepIndex + 1,
+            type: 'map',
+            title: currentScenario.steps[currentStepIndex].title,
+            placed: placedJks.size,
+            total: filteredJks.length,
+        });
 
-// ===== ПРОВЕРКА ЗАВЕРШЕНИЯ =====
-function checkFinish() {
-    if (placedJks.size === jks.length && jks.length > 0) {
+        showToast('🎉', 'Все ЖК расставлены! Переходим дальше.', 'success');
         setTimeout(() => {
-            modalStats.textContent = `Правильно расставлено: ${placedJks.size} из ${jks.length}`;
-            finishModal.classList.remove('hidden');
-        }, 500);
+            currentStepIndex++;
+            runStep();
+        }, 2000);
     }
 }
 
-// ===== ПОКАЗ ТОСТА =====
+function resetMapStep() {
+    placedJks.clear();
+    selectedJkId = null;
+    markersLayer.clearLayers();
+    const filteredJks = window.currentStepJks || allJks;
+    renderJkList(filteredJks);
+    showToast('🔄', 'Шаг сброшен. Начните заново.', 'success');
+}
+
+// ===== ШАГ: ВИКТОРИНА =====
+function runQuizStep(step) {
+    quizScreen.classList.remove('hidden');
+
+    const questionIds = step.question_ids || [];
+    const filteredQuestions = questionIds.length > 0
+        ? allQuestions.filter(q => questionIds.includes(q.id))
+        : allQuestions;
+
+    quizStepTitle.textContent = step.title;
+    quizStepCounter.textContent = `Шаг ${currentStepIndex + 1} из ${currentScenario.steps.length}`;
+    quizAnswers = [];
+    window.currentStepQuestions = filteredQuestions;
+    window.currentQuestionIndex = 0;
+
+    renderQuestion(0);
+}
+
+function renderQuestion(index) {
+    const questions = window.currentStepQuestions;
+    if (index >= questions.length) {
+        finishQuizStep();
+        return;
+    }
+
+    window.currentQuestionIndex = index;
+    const q = questions[index];
+    quizNextBtn.disabled = true;
+
+    let optionsHTML = '';
+    q.options.forEach((opt, i) => {
+        const isCheckbox = q.type === 'multiple';
+        optionsHTML += `
+            <label class="quiz-option" data-index="${i}">
+                <input type="${isCheckbox ? 'checkbox' : 'radio'}" name="quiz-option" value="${opt}">
+                <span class="quiz-option__indicator ${isCheckbox ? 'quiz-option__indicator--checkbox' : ''}"></span>
+                <span>${opt}</span>
+            </label>
+        `;
+    });
+
+    quizContainer.innerHTML = `
+        <div class="quiz-question">
+            <div class="quiz-question__text">${index + 1}. ${q.text}</div>
+            <div class="quiz-question__options">${optionsHTML}</div>
+            <div class="quiz-hint hidden" id="quiz-hint"></div>
+        </div>
+    `;
+
+    const options = quizContainer.querySelectorAll('.quiz-option');
+    const hintEl = document.getElementById('quiz-hint');
+
+    options.forEach(opt => {
+        opt.addEventListener('click', () => {
+            const isCheckbox = q.type === 'multiple';
+            const input = opt.querySelector('input');
+
+            if (isCheckbox) {
+                input.checked = !input.checked;
+                opt.classList.toggle('quiz-option--selected', input.checked);
+            } else {
+                options.forEach(o => o.classList.remove('quiz-option--selected'));
+                input.checked = true;
+                opt.classList.add('quiz-option--selected');
+            }
+
+            const hasSelection = isCheckbox
+                ? quizContainer.querySelectorAll('input:checked').length > 0
+                : true;
+
+            quizNextBtn.disabled = !hasSelection;
+        });
+    });
+
+    quizNextBtn.onclick = () => {
+        const selectedInputs = quizContainer.querySelectorAll('input:checked');
+        const userAnswers = Array.from(selectedInputs).map(inp => inp.value);
+        const isCorrect = checkQuizAnswer(q, userAnswers);
+
+        quizAnswers.push({
+            questionId: q.id,
+            userAnswers,
+            isCorrect,
+        });
+
+        options.forEach(opt => {
+            opt.style.pointerEvents = 'none';
+            const inp = opt.querySelector('input');
+            const value = inp.value;
+
+            if (q.type === 'single') {
+                if (value === q.correct) opt.classList.add('quiz-option--correct');
+                if (value === userAnswers[0] && value !== q.correct) opt.classList.add('quiz-option--wrong');
+            } else {
+                if (q.correct.includes(value)) opt.classList.add('quiz-option--correct');
+                if (userAnswers.includes(value) && !q.correct.includes(value)) opt.classList.add('quiz-option--wrong');
+            }
+        });
+
+        if (!isCorrect) {
+            hintEl.textContent = '💡 ' + q.hint;
+            hintEl.classList.remove('hidden');
+        }
+
+        quizNextBtn.textContent = index < questions.length - 1 ? 'Далее' : 'Завершить';
+        quizNextBtn.onclick = () => {
+            renderQuestion(index + 1);
+            quizNextBtn.textContent = 'Далее';
+        };
+    };
+}
+
+function checkQuizAnswer(question, userAnswers) {
+    if (question.type === 'single') {
+        return userAnswers[0] === question.correct;
+    }
+    if (question.type === 'multiple') {
+        const correct = question.correct.sort().join(',');
+        const user = userAnswers.sort().join(',');
+        return correct === user;
+    }
+    return false;
+}
+
+function finishQuizStep() {
+    const correctCount = quizAnswers.filter(a => a.isCorrect).length;
+    const totalCount = quizAnswers.length;
+
+    stepStats.push({
+        step: currentStepIndex + 1,
+        type: 'quiz',
+        title: currentScenario.steps[currentStepIndex].title,
+        correct: correctCount,
+        total: totalCount,
+    });
+
+    showToast('🎉', `Викторина пройдена! ${correctCount}/${totalCount} правильно.`, 'success');
+    setTimeout(() => {
+        currentStepIndex++;
+        runStep();
+    }, 2000);
+}
+
+// ===== ФИНИШ =====
+function showFinish() {
+    mapScreen.classList.add('hidden');
+    quizScreen.classList.add('hidden');
+    finishScreen.classList.remove('hidden');
+    headerInfo.textContent = currentScenario?.name || '';
+
+    const totalCorrect = stepStats.reduce((sum, s) => {
+        if (s.type === 'map') return sum + s.placed;
+        if (s.type === 'quiz') return sum + s.correct;
+        return sum;
+    }, 0);
+
+    const totalItems = stepStats.reduce((sum, s) => {
+        if (s.type === 'map') return sum + s.total;
+        if (s.type === 'quiz') return sum + s.total;
+        return sum;
+    }, 0);
+
+    finishText.textContent = `Вы успешно завершили сценарий «${currentScenario?.name}»!`;
+    finishStats.textContent = `Правильно: ${totalCorrect} из ${totalItems}`;
+}
+
+// ===== ОБЩИЕ ФУНКЦИИ =====
 function showToast(icon, message, type) {
     clearTimeout(toastTimer);
     toastIcon.textContent = icon;
@@ -182,41 +485,8 @@ function showToast(icon, message, type) {
     }, 3000);
 }
 
-// ===== ПОДСКАЗКА =====
-function showHint() {
-    if (selectedJkId === null) return;
-    const jk = jks.find(j => j.id === selectedJkId);
-    if (jk) {
-        showToast('💡', jk.hint, 'error');
-    }
-}
-
-// ===== СБРОС ВСЕГО =====
-function resetAll() {
-    placedJks.clear();
-    selectedJkId = null;
-    saveState();
-    renderJkList();
-    renderMarkers();
-    updateCounter();
-    showToast('🔄', 'Прогресс сброшен. Начните заново.', 'success');
-}
-
-// ===== ПЕРЕЗАПУСК =====
-function restart() {
-    placedJks.clear();
-    selectedJkId = null;
-    localStorage.removeItem('mapTrainerState');
-    finishModal.classList.add('hidden');
-    renderJkList();
-    renderMarkers();
-    updateCounter();
-    showToast('🔄', 'Новая сессия начата!', 'success');
-}
-
-// ===== РАСЧЁТ РАССТОЯНИЯ (Гаверсинус) =====
 function getDistance(lat1, lng1, lat2, lng2) {
-    const R = 6371000; // радиус Земли в метрах
+    const R = 6371000;
     const dLat = toRad(lat2 - lat1);
     const dLng = toRad(lng2 - lng1);
     const a =
@@ -231,54 +501,61 @@ function toRad(deg) {
     return deg * (Math.PI / 180);
 }
 
-// ===== LOCALSTORAGE =====
-function saveState() {
-    const state = {
-        placedJks: Array.from(placedJks.entries()),
-    };
-    localStorage.setItem('mapTrainerState', JSON.stringify(state));
-}
-
-function restoreState() {
-    const saved = localStorage.getItem('mapTrainerState');
-    if (saved) {
-        try {
-            const state = JSON.parse(saved);
-            placedJks = new Map(state.placedJks);
-        } catch (e) {
-            console.error('Ошибка восстановления состояния:', e);
-            placedJks = new Map();
-        }
-    }
-}
-
-// ===== ОТПРАВКА В GOOGLE ТАБЛИЦУ (опционально) =====
 function sendToGoogle(agentName, jkName, isCorrect, distance) {
     if (!GOOGLE_SCRIPT_URL) return;
-
-    const data = {
-        agent_name: agentName || 'Аноним',
-        jk_name: jkName,
-        is_correct: isCorrect,
-        distance_m: Math.round(distance),
-        timestamp: new Date().toISOString(),
-    };
 
     fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    }).catch(err => console.error('Ошибка отправки в Google:', err));
+        body: JSON.stringify({
+            agent_name: agentName || 'Аноним',
+            jk_name: jkName,
+            is_correct: isCorrect,
+            distance_m: Math.round(distance),
+            timestamp: new Date().toISOString(),
+        }),
+    }).catch(err => console.error('Ошибка отправки:', err));
 }
 
 // ===== СОБЫТИЯ =====
-hintBtn.addEventListener('click', showHint);
-resetAllBtn.addEventListener('click', resetAll);
-restartBtn.addEventListener('click', restart);
+hintBtn.addEventListener('click', () => {
+    if (selectedJkId === null) return;
+    const jk = allJks.find(j => j.id === selectedJkId);
+    if (jk) showToast('💡', jk.hint, 'error');
+});
+
+resetStepBtn.addEventListener('click', resetMapStep);
+
+document.getElementById('back-to-scenarios-btn').addEventListener('click', () => {
+    currentScenario = null;
+    mapScreen.classList.add('hidden');
+    scenarioScreen.classList.remove('hidden');
+    headerInfo.textContent = '';
+});
+
+document.getElementById('quiz-back-btn').addEventListener('click', () => {
+    currentScenario = null;
+    quizScreen.classList.add('hidden');
+    scenarioScreen.classList.remove('hidden');
+    headerInfo.textContent = '';
+});
+
+document.getElementById('finish-restart-btn').addEventListener('click', () => {
+    if (currentScenario) {
+        currentStepIndex = 0;
+        stepStats = [];
+        finishScreen.classList.add('hidden');
+        runStep();
+    }
+});
+
+document.getElementById('finish-scenarios-btn').addEventListener('click', () => {
+    currentScenario = null;
+    finishScreen.classList.add('hidden');
+    scenarioScreen.classList.remove('hidden');
+    headerInfo.textContent = '';
+});
 
 // ===== СТАРТ =====
-document.addEventListener('DOMContentLoaded', () => {
-    initMap();
-    loadJks();
-});
+document.addEventListener('DOMContentLoaded', loadData);
