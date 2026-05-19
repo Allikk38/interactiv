@@ -1047,3 +1047,284 @@
 .progress-bar-container[style*="display: none"] {
     display: none;
 }
+/* ===== МАТЧИНГ ТЕРМИНОВ ===== */
+.matching-container {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 28px;
+}
+
+.matching-column {
+    flex: 1;
+    background-color: var(--color-surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+.matching-column__title {
+    text-align: center;
+    font-size: 1rem;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.matching-column__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.matching-item {
+    padding: 12px 16px;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    background-color: var(--color-bg);
+    text-align: center;
+    user-select: none;
+}
+
+.matching-item--term {
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.matching-item--term:hover {
+    border-color: var(--color-primary);
+    background-color: #eaf2fd;
+}
+
+.matching-item--active {
+    border-color: var(--color-primary) !important;
+    background-color: #eaf2fd !important;
+    box-shadow: 0 0 0 3px rgba(46, 134, 222, 0.3);
+    transform: scale(1.03);
+}
+
+.matching-item--def:hover {
+    border-color: var(--color-success);
+    background-color: #f0faf4;
+}
+
+.matching-item--matched {
+    opacity: 0.4;
+    pointer-events: none;
+    border-color: var(--color-success);
+    background-color: #eafaf1;
+    text-decoration: line-through;
+    text-decoration-color: var(--color-success);
+}
+
+.matching-item--correct {
+    border-color: var(--color-success) !important;
+    background-color: #eafaf1 !important;
+    pointer-events: none;
+}
+
+.matching-item--wrong {
+    border-color: var(--color-danger) !important;
+    background-color: #fdedec !important;
+    pointer-events: none;
+}
+
+.matching-item--shake {
+    animation: shake 0.5s ease;
+    border-color: var(--color-danger) !important;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+}
+
+/* ===== ПУТЬ СДЕЛКИ (PIPELINE) ===== */
+.pipeline-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 28px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.pipeline-item {
+    background-color: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all var(--transition);
+    user-select: none;
+}
+
+.pipeline-item:active {
+    cursor: grabbing;
+}
+
+.pipeline-item--dragging {
+    opacity: 0.3;
+    border-style: dashed;
+}
+
+.pipeline-item--correct {
+    border-color: var(--color-success) !important;
+    background-color: #eafaf1 !important;
+    pointer-events: none;
+}
+
+.pipeline-item--wrong {
+    border-color: var(--color-danger) !important;
+    background-color: #fdedec !important;
+    pointer-events: none;
+}
+
+.pipeline-item__num {
+    width: 28px;
+    height: 28px;
+    background-color: var(--color-primary);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    transition: background-color 0.3s;
+}
+
+.pipeline-item--correct .pipeline-item__num {
+    background-color: var(--color-success);
+}
+
+.pipeline-item--wrong .pipeline-item__num {
+    background-color: var(--color-danger);
+}
+
+.pipeline-item__text {
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+/* ===== ДИАЛОГ С КЛИЕНТОМ ===== */
+.dialogue-card {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: var(--color-surface);
+    border-radius: var(--radius);
+    padding: 32px;
+    box-shadow: 0 4px 16px var(--color-shadow);
+    text-align: center;
+}
+
+.dialogue-card__avatar {
+    font-size: 4rem;
+    margin-bottom: 8px;
+}
+
+.dialogue-card__client {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--color-primary);
+    margin-bottom: 16px;
+}
+
+.dialogue-card__question {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    padding: 18px 20px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 24px;
+    text-align: left;
+    font-style: italic;
+}
+
+.dialogue-card__options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.dialogue-option {
+    padding: 14px 18px;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background-color: var(--color-bg);
+    text-align: left;
+}
+
+.dialogue-option:hover {
+    border-color: var(--color-primary);
+    background-color: #f0f6ff;
+    transform: translateX(4px);
+}
+
+.dialogue-option--correct {
+    border-color: var(--color-success) !important;
+    background-color: #eafaf1 !important;
+    pointer-events: none;
+}
+
+.dialogue-option--wrong {
+    border-color: var(--color-danger) !important;
+    background-color: #fdedec !important;
+    pointer-events: none;
+}
+
+.dialogue-card__feedback {
+    padding: 14px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.dialogue-card__feedback--correct {
+    background-color: #eafaf1;
+    border-left: 4px solid var(--color-success);
+    color: #1e7e34;
+}
+
+.dialogue-card__feedback--wrong {
+    background-color: #fef9e7;
+    border-left: 4px solid var(--color-warning);
+    color: #7d6608;
+}
+
+/* ===== Адаптив для матчинга ===== */
+@media (max-width: 600px) {
+    .matching-container {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .pipeline-item__text {
+        font-size: 0.85rem;
+    }
+    
+    .dialogue-card {
+        padding: 20px 16px;
+    }
+    
+    .dialogue-card__question {
+        font-size: 0.95rem;
+    }
+}
