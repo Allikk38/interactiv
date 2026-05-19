@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажёр: Расставь ЖК на карте Новосибирска</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка -->
+        <header class="header">
+            <h1 class="header__title">🏙️ Расставь ЖК на карте Новосибирска</h1>
+            <div class="header__counter">
+                Расставлено: <span id="placed-count">0</span> из <span id="total-count">8</span>
+            </div>
+        </header>
+
+        <!-- Основной контент -->
+        <main class="main">
+            <!-- Панель с ЖК -->
+            <aside class="sidebar" id="sidebar">
+                <h2 class="sidebar__title">Жилые комплексы</h2>
+                <ul class="jk-list" id="jk-list">
+                    <!-- Заполняется из JS -->
+                </ul>
+                <div class="sidebar__actions">
+                    <button class="btn btn--secondary" id="hint-btn" disabled>💡 Подсказка</button>
+                    <button class="btn btn--danger" id="reset-all-btn">🔄 Сбросить всё</button>
+                </div>
+            </aside>
+
+            <!-- Карта -->
+            <section class="map-section">
+                <div class="map-wrapper" id="map-wrapper">
+                    <img 
+                        src="img/map-nsk.png" 
+                        alt="Карта Новосибирска" 
+                        class="map-image" 
+                        id="map-image"
+                        draggable="false"
+                    >
+                    <!-- Сетка секторов -->
+                    <div class="grid-overlay" id="grid-overlay">
+                        <!-- Генерируется из JS -->
+                    </div>
+                    <!-- Маркеры -->
+                    <div class="markers-layer" id="markers-layer">
+                        <!-- Маркеры добавляются динамически -->
+                    </div>
+                </div>
+                <p class="map-hint">Выберите ЖК из списка слева, затем кликните на карту</p>
+            </section>
+        </main>
+
+        <!-- Тосты для подсказок -->
+        <div class="toast hidden" id="toast">
+            <span class="toast__icon" id="toast-icon"></span>
+            <span class="toast__message" id="toast-message"></span>
+        </div>
+
+        <!-- Модальное окно завершения -->
+        <div class="modal hidden" id="finish-modal">
+            <div class="modal__content">
+                <h2 class="modal__title">🎉 Поздравляем!</h2>
+                <p class="modal__text">Вы успешно расставили все жилые комплексы!</p>
+                <p class="modal__stats" id="modal-stats"></p>
+                <div class="modal__actions">
+                    <button class="btn btn--primary" id="restart-btn">Пройти заново</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
