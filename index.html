@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тренажёр: Расставь ЖК на карте Новосибирска</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -32,23 +33,7 @@
 
             <!-- Карта -->
             <section class="map-section">
-                <div class="map-wrapper" id="map-wrapper">
-                    <img 
-                        src="img/map-nsk.png" 
-                        alt="Карта Новосибирска" 
-                        class="map-image" 
-                        id="map-image"
-                        draggable="false"
-                    >
-                    <!-- Сетка секторов -->
-                    <div class="grid-overlay" id="grid-overlay">
-                        <!-- Генерируется из JS -->
-                    </div>
-                    <!-- Маркеры -->
-                    <div class="markers-layer" id="markers-layer">
-                        <!-- Маркеры добавляются динамически -->
-                    </div>
-                </div>
+                <div class="map-container" id="map"></div>
                 <p class="map-hint">Выберите ЖК из списка слева, затем кликните на карту</p>
             </section>
         </main>
@@ -72,6 +57,7 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/script.js"></script>
 </body>
 </html>
