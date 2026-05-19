@@ -1,5 +1,4 @@
-// ===== КОНФИГУРАЦИЯ =====
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHh9o63J7uFn6KaiYyDgCSee4L_3tV1NH6iqox7-QtTsx-B-uYapu-wUrtwWyBPxgI/exec'; 
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHh9o63J7uFn6KaiYyDgCSee4L_3tV1NH6iqox7-QtTsx-B-uYapu-wUrtwWyBPxgI/exec';
 const MAP_CENTER = [55.018, 82.92];
 const MAP_ZOOM = 12;
 
@@ -85,10 +84,49 @@ async function loadData() {
             console.log('marketing-steps.json не загружен — интерактивные шаги недоступны');
         }
 
-        renderScenarios();
+        // Показываем экран ввода имени перед показом сценариев
+        if (!User.get()) {
+            User.showNamePrompt(() => {
+                renderScenarios();
+            });
+        } else {
+            renderScenarios();
+            // Показываем приветствие
+            const user = User.get();
+            showToast('👋', `С возвращением, ${user.name}!`, 'success');
+        }
+
+        // Кнопка смены пользователя в шапке
+        addUserChangeButton();
+
     } catch (error) {
         console.error('Ошибка загрузки:', error);
         showToast('❌', 'Не удалось загрузить данные. Обновите страницу.', 'error');
+    }
+}
+
+// ===== КНОПКА СМЕНЫ ПОЛЬЗОВАТЕЛЯ =====
+function addUserChangeButton() {
+    const user = User.get();
+    if (!user) return;
+
+    // Удаляем старую кнопку если есть
+    const oldBtn = document.getElementById('user-change-btn');
+    if (oldBtn) oldBtn.remove();
+
+    const changeBtn = document.createElement('button');
+    changeBtn.id = 'user-change-btn';
+    changeBtn.className = 'btn btn--small btn--secondary';
+    changeBtn.textContent = '🔁';
+    changeBtn.title = `Сменить пользователя (сейчас: ${user.name})`;
+    changeBtn.addEventListener('click', () => {
+        User.clear();
+        location.reload();
+    });
+
+    const headerInfoEl = document.getElementById('header-info');
+    if (headerInfoEl) {
+        headerInfoEl.after(changeBtn);
     }
 }
 
@@ -128,6 +166,7 @@ function startScenario(scenario) {
     currentScenario = scenario;
     currentStepIndex = 0;
     stepStats = [];
+    window.scenarioStartTime = Date.now(); // ← таймер для отправки результата
 
     scenarioScreen.classList.add('hidden');
     headerInfo.textContent = `${scenario.icon || '📋'} ${scenario.name}`;
@@ -156,12 +195,12 @@ function runStep() {
         ProgressBar.show();
         ProgressBar.update(currentStepIndex, currentScenario.steps.length - 1, currentScenario.steps);
     }
-    
+
     switch (step.type) {
         case 'brief': runBriefStep(step); break;
-        case 'matching': runMatchingStep(step); break;      // ← новое
-        case 'pipeline': runPipelineStep(step); break;       // ← новое
-        case 'dialogue': runDialogueStep(step); break; 
+        case 'matching': runMatchingStep(step); break;
+        case 'pipeline': runPipelineStep(step); break;
+        case 'dialogue': runDialogueStep(step); break;
         case 'map': runMapStep(step); break;
         case 'quiz': runQuizStep(step); break;
         case 'platforms': runPlatformsStep(step); break;
@@ -1050,6 +1089,7 @@ function runAnalyticsStep(step) {
     });
 }
 
+// ===== ФИНИШ =====
 function showFinish() {
     mapScreen.classList.add('hidden');
     quizScreen.classList.add('hidden');
@@ -1069,8 +1109,22 @@ function showFinish() {
 
     const isPerfect = totalCorrect === totalItems && totalItems > 0;
 
+    // Вычисляем время прохождения
+    const durationSec = window.scenarioStartTime
+        ? Math.round((Date.now() - window.scenarioStartTime) / 1000)
+        : 0;
+
     finishText.textContent = `Вы успешно завершили сценарий «${currentScenario?.name}»!`;
     finishStats.textContent = `Правильно: ${totalCorrect} из ${totalItems}`;
+
+    // Отправляем результат в Google Sheets
+    User.sendResult(
+        currentScenario?.name || '',
+        stepStats,
+        totalCorrect,
+        totalItems,
+        durationSec
+    );
 
     // Выдача бейджа
     if (currentScenario?.badge) {
@@ -1121,12 +1175,14 @@ function toRad(deg) {
 function sendToGoogle(agentName, jkName, isCorrect, distance) {
     if (!GOOGLE_SCRIPT_URL) return;
 
+    const user = User.get();
     fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            agent_name: agentName || 'Аноним',
+            action: 'map_click',
+            agent_name: user?.name || agentName || 'Аноним',
             jk_name: jkName,
             is_correct: isCorrect,
             distance_m: Math.round(distance),
@@ -1149,6 +1205,7 @@ document.getElementById('back-to-scenarios-btn').addEventListener('click', () =>
     mapScreen.classList.add('hidden');
     scenarioScreen.classList.remove('hidden');
     headerInfo.textContent = '';
+    ProgressBar.hide();
 });
 
 document.getElementById('quiz-back-btn').addEventListener('click', () => {
@@ -1156,12 +1213,14 @@ document.getElementById('quiz-back-btn').addEventListener('click', () => {
     quizScreen.classList.add('hidden');
     scenarioScreen.classList.remove('hidden');
     headerInfo.textContent = '';
+    ProgressBar.hide();
 });
 
 document.getElementById('finish-restart-btn').addEventListener('click', () => {
     if (currentScenario) {
         currentStepIndex = 0;
         stepStats = [];
+        window.scenarioStartTime = Date.now();
         finishScreen.classList.add('hidden');
         runStep();
     }
