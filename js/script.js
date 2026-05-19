@@ -60,21 +60,29 @@ function initMap() {
 // ===== ЗАГРУЗКА ДАННЫХ =====
 async function loadData() {
     try {
-        const [jksRes, questionsRes, scenariosRes, marketingRes] = await Promise.all([
+        const [jksRes, questionsRes, scenariosRes] = await Promise.all([
             fetch('data/jks.json'),
             fetch('data/questions.json'),
             fetch('data/scenarios.json'),
-            fetch('data/marketing-steps.json'),
         ]);
 
         if (!jksRes.ok || !scenariosRes.ok) throw new Error('Ошибка загрузки данных');
 
         allJks = await jksRes.json();
         scenarios = await scenariosRes.json();
-        marketingData = await marketingRes.json();
 
         if (questionsRes.ok) {
             allQuestions = await questionsRes.json();
+        }
+
+        // Опционально: marketing-steps.json
+        try {
+            const marketingRes = await fetch('data/marketing-steps.json');
+            if (marketingRes.ok) {
+                marketingData = await marketingRes.json();
+            }
+        } catch (e) {
+            console.log('marketing-steps.json не загружен — интерактивные шаги недоступны');
         }
 
         renderScenarios();
