@@ -1,72 +1,92 @@
+Не надо упрощать. Проверь файл
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Тренажёр агента недвижимости</title>
+    
+    <!-- PWA Meta -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2e86de">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Агент Недв">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- Иконки для iOS и Android -->
+    <link rel="apple-touch-icon" href="icons/icon-152.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+    
+    <!-- Стили -->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/map.css">
     <link rel="stylesheet" href="css/steps.css">
-    <!-- API Яндекс.Карт (твой ключ) -->
-    <script src="https://api-maps.yandex.ru/2.0-stable/?apikey=7d7f69f2-30f1-4a3c-93bd-b7b99354b7c5&load=package.standard&lang=ru-RU"></script>
+    <link rel="stylesheet" href="css/drawer.css">
+    
+    <!-- API Яндекс.Карт -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=7d7f69f2-30f1-4a3c-93bd-b7b99354b7c5&lang=ru_RU"></script>
 </head>
 <body>
     <div class="container">
-        <!-- Шапка -->
         <header class="header">
             <h1 class="header__title">🏙️ Тренажёр агента недвижимости</h1>
             <div class="header__info" id="header-info"></div>
         </header>
 
-        <!-- Основной контент -->
         <main class="main">
-            <!-- Экран выбора сценария -->
             <section class="screen" id="scenario-screen">
                 <h2 class="screen__title">Выберите сценарий обучения</h2>
-                <div class="scenarios-grid" id="scenarios-grid">
-                    <!-- Заполняется из JS -->
-                </div>
+                <div class="scenarios-grid" id="scenarios-grid"></div>
             </section>
 
-            <!-- Экран шага (карта) -->
             <section class="screen hidden" id="map-screen">
                 <div class="step-header">
                     <button class="btn btn--small btn--secondary" id="back-to-scenarios-btn">← К сценариям</button>
                     <h2 class="step-title" id="map-step-title"></h2>
                     <div class="step-counter" id="map-step-counter"></div>
                 </div>
+                
                 <div class="main main--map">
-                    <aside class="sidebar" id="sidebar">
-                        <h3 class="sidebar__title">Жилые комплексы</h3>
-                        <ul class="jk-list" id="jk-list"></ul>
-                        <div class="sidebar__actions">
+                    <aside class="jk-drawer" id="jk-drawer">
+                        <div class="jk-drawer__header">
+                            <h3 class="jk-drawer__title">Жилые комплексы</h3>
+                            <button class="jk-drawer__close" id="drawer-close-btn" aria-label="Закрыть">✕</button>
+                        </div>
+                        <ul class="jk-drawer__list" id="jk-list"></ul>
+                        <div class="jk-drawer__actions">
                             <button class="btn btn--secondary" id="hint-btn" disabled>💡 Подсказка</button>
                             <button class="btn btn--danger" id="reset-step-btn">🔄 Сбросить шаг</button>
                         </div>
                     </aside>
+                    
+                    <div class="drawer-overlay" id="drawer-overlay"></div>
+                    
                     <section class="map-section">
                         <div class="map-container" id="map"></div>
-                        <p class="map-hint">Выберите ЖК из списка слева, затем кликните на карту</p>
+                        <p class="map-hint">📍 Нажмите на карту, чтобы поставить метку для выбранного ЖК</p>
+                        <div class="map-progress" id="map-progress" style="display: none;">
+                            📍 Расставлено: <span class="map-progress__count" id="map-progress-count">0</span> 
+                            из <span id="map-progress-total">0</span>
+                        </div>
+                        <button class="floating-list-btn" id="floating-list-btn" aria-label="Показать список ЖК">☰</button>
                     </section>
                 </div>
             </section>
 
-            <!-- Экран шага (викторина) -->
             <section class="screen hidden" id="quiz-screen">
                 <div class="step-header">
                     <button class="btn btn--small btn--secondary" id="quiz-back-btn">← К сценариям</button>
                     <h2 class="step-title" id="quiz-step-title"></h2>
                     <div class="step-counter" id="quiz-step-counter"></div>
                 </div>
-                <div class="quiz-container" id="quiz-container">
-                    <!-- Заполняется из JS -->
-                </div>
-                <div class="quiz-actions">
+                <div class="quiz-container" id="quiz-container"></div>
+                <div class="quiz-actions" style="text-align:center; padding:20px;">
                     <button class="btn btn--primary" id="quiz-next-btn" disabled>Далее</button>
                 </div>
             </section>
 
-            <!-- Экран завершения сценария -->
             <section class="screen hidden" id="finish-screen">
                 <div class="finish-content">
                     <h2 class="finish__title">🎉 Сценарий пройден!</h2>
@@ -80,18 +100,41 @@
             </section>
         </main>
 
-        <!-- Тосты -->
         <div class="toast hidden" id="toast">
             <span class="toast__icon" id="toast-icon"></span>
             <span class="toast__message" id="toast-message"></span>
         </div>
     </div>
+
+    <!-- СКРИПТЫ -->
+    <script src="js/config.js"></script>
+    <script src="js/state.js"></script>
     <script src="js/dragdrop.js"></script>
     <script src="js/badges.js"></script>
     <script src="js/user.js"></script>
     <script src="js/progress.js"></script>
     <script src="js/brief.js"></script>
     <script src="js/interactive-lesson1.js"></script>
-    <script src="js/script.js"></script>
+    <script src="js/drawer.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/quiz.js"></script>
+    <script src="js/interactive.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- РЕГИСТРАЦИЯ SERVICE WORKER -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('Service Worker зарегистрирован:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Ошибка регистрации Service Worker:', error);
+                    });
+            });
+        }
+    </script>
 </body>
 </html>

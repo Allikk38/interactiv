@@ -1,0 +1,87 @@
+/* ===== Дополнительные стили для выезжающей панели ===== */
+
+/* Анимация при открытии/закрытии */
+@keyframes drawerSlideIn {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes drawerSlideOut {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes drawerSlideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes drawerSlideDown {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(100%);
+    }
+}
+
+/* Стили для скролла внутри панели */
+.jk-drawer__list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.jk-drawer__list::-webkit-scrollbar-track {
+    background: var(--color-bg);
+    border-radius: 3px;
+}
+
+.jk-drawer__list::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+}
+
+.jk-drawer__list::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-light);
+}
+
+/* Адаптация для очень широких экранов */
+@media (min-width: 1440px) {
+    .jk-drawer {
+        width: 350px;
+    }
+}
+
+/* Адаптация для планшетов в ландшафте */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+    .jk-drawer {
+        width: 280px;
+    }
+}
+
+/* Стиль для активного/выбранного ЖК */
+.jk-list__item--active {
+    border-color: var(--color-primary);
+    background-color: #eaf2fd;
+    animation: pulseActive 0.5s ease;
+}
+
+@keyframes pulseActive {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(46, 134, 222, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(46, 134, 222, 0.2);
+    }
+}
