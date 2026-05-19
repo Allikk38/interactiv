@@ -159,6 +159,9 @@ function runStep() {
     
     switch (step.type) {
         case 'brief': runBriefStep(step); break;
+        case 'matching': runMatchingStep(step); break;      // ← новое
+        case 'pipeline': runPipelineStep(step); break;       // ← новое
+        case 'dialogue': runDialogueStep(step); break; 
         case 'map': runMapStep(step); break;
         case 'quiz': runQuizStep(step); break;
         case 'platforms': runPlatformsStep(step); break;
