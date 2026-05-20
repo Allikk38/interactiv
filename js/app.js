@@ -201,5 +201,135 @@ if (resetBtn) {
     resetBtn.addEventListener('click', resetMapStep);
 }
 
+// ===== PWA: ОБРАБОТКА ОБНОВЛЕНИЙ =====
+function setupPWAUpdates() {
+  if (!('serviceWorker' in navigator)) return;
+  
+  let refreshing = false;
+  
+  // Обнаружение обновлений Service Worker
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    
+    // Показываем уведомление о обновлении
+    showToast('🔄', 'Доступна новая версия! Обновляем...', 'success');
+    
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+  });
+  
+  // Проверка обновлений при возвращении на страницу
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage('checkUpdate');
+    }
+  });
+}
+
+// Проверка поддержки PWA и установки на домашний экран
+function setupPWAInstall() {
+  let deferredPrompt;
+  
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Показываем кнопку установки через 10 секунд
+    setTimeout(() => {
+      if (deferredPrompt && !localStorage.getItem('pwa-install-dismissed')) {
+        showInstallButton(deferredPrompt);
+      }
+    }, 10000);
+  });
+  
+  // Обработка завершения установки
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    localStorage.setItem('pwa-installed', 'true');
+    showToast('✅', 'Приложение установлено на ваш телефон!', 'success');
+  });
+}
+
+function showInstallButton(promptEvent) {
+  // Проверяем, не установлено ли уже приложение
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  if (localStorage.getItem('pwa-installed')) return;
+  
+  const btn = document.createElement('button');
+  btn.textContent = '📱 Установить приложение';
+  btn.className = 'btn btn--primary';
+  btn.style.position = 'fixed';
+  btn.style.bottom = '80px';
+  btn.style.left = '50%';
+  btn.style.transform = 'translateX(-50%)';
+  btn.style.zIndex = '1000';
+  btn.style.padding = '12px 24px';
+  btn.style.borderRadius = '32px';
+  btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+  btn.style.animation = 'pulse 1.5s infinite';
+  
+  btn.addEventListener('click', async () => {
+    btn.remove();
+    localStorage.setItem('pwa-install-dismissed', 'true');
+    promptEvent.prompt();
+    const { outcome } = await promptEvent.userChoice;
+    if (outcome === 'accepted') {
+      showToast('🎉', 'Спасибо за установку!', 'success');
+    }
+    promptEvent = null;
+  });
+  
+  document.body.appendChild(btn);
+  
+  // Автоматическое скрытие через 15 секунд
+  setTimeout(() => {
+    if (document.body.contains(btn)) btn.remove();
+  }, 15000);
+}
+
+// Добавляем стиль для анимации
+const pulseStyle = document.createElement('style');
+pulseStyle.textContent = `
+  @keyframes pulse {
+    0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    50% { transform: translateX(-50%) scale(1.05); opacity: 0.9; }
+  }
+`;
+document.head.appendChild(pulseStyle);
+
+// Инициализация PWA
+if ('serviceWorker' in navigator) {
+  setupPWAUpdates();
+  setupPWAInstall();
+  
+  // Регистрация с отслеживанием обновлений
+  let swRegistration;
+  
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        swRegistration = registration;
+        console.log('Service Worker зарегистрирован:', registration.scope);
+        
+        // Периодическая проверка обновлений (каждый час)
+        setInterval(() => {
+          registration.update();
+        }, 60 * 60 * 1000);
+        
+        // Проверка при возвращении на страницу
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) {
+            registration.update();
+          }
+        });
+      })
+      .catch(error => {
+        console.error('Ошибка регистрации Service Worker:', error);
+      });
+  });
+}
+
 // ===== СТАРТ =====
 document.addEventListener('DOMContentLoaded', loadData);
