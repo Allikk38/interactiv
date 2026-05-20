@@ -194,8 +194,13 @@ function runMapStep(step) {
     AppState.placedJks.clear();
     AppState.currentStepJks = filteredJks;
     
-    // Создаём карусель
-    renderCarousel(filteredJks);
+    // Обновляем панель со списком ЖК для десктопа
+    updateDesktopDrawerList(filteredJks);
+    
+    // Создаём карусель только для мобильных
+    if (window.innerWidth <= 768) {
+        renderCarousel(filteredJks);
+    }
     
     // Показываем индикатор загрузки
     const mapContainer = document.getElementById('map');
@@ -248,6 +253,39 @@ function runMapStep(step) {
     }
 }
 
+function updateDesktopDrawerList(jks) {
+    const drawerList = document.getElementById('jk-drawer-list');
+    if (!drawerList) return;
+    
+    drawerList.innerHTML = '';
+    
+    jks.forEach(jk => {
+        const isPlaced = AppState.placedJks.has(jk.id);
+        const li = document.createElement('li');
+        li.className = `jk-list__item${isPlaced ? ' jk-list__item--placed' : ''}${AppState.selectedJkId === jk.id ? ' jk-list__item--selected' : ''}`;
+        li.dataset.id = jk.id;
+        li.innerHTML = `
+            <div class="jk-list__name">${escapeHtml(jk.name)}</div>
+            <div class="jk-list__developer">${escapeHtml(jk.developer)}</div>
+            ${jk.hint && jk.hint.trim() && !isPlaced ? `<div class="jk-list__hint" style="font-size:0.7rem; color:var(--color-warning); margin-top:4px;">💡 ${escapeHtml(jk.hint.substring(0, 40))}</div>` : ''}
+            ${isPlaced ? '<div style="font-size:0.7rem; color:var(--color-success); margin-top:4px;">✓ Расставлен</div>' : ''}
+        `;
+        
+        if (!isPlaced) {
+            li.addEventListener('click', () => {
+                selectJk(jk.id);
+                // Обновляем выделение в списке
+                document.querySelectorAll('.jk-list__item').forEach(item => {
+                    item.classList.remove('jk-list__item--selected');
+                });
+                li.classList.add('jk-list__item--selected');
+            });
+        }
+        
+        drawerList.appendChild(li);
+    });
+}
+
 function renderCarousel(jks) {
     const existingCarousel = document.querySelector('.jk-carousel');
     if (existingCarousel) existingCarousel.remove();
@@ -270,7 +308,6 @@ function renderCarousel(jks) {
         </div>
     `;
     
-    // Вставляем после прогресс-бара или в начало map-screen
     const mapScreen = document.getElementById('map-screen');
     const progressContainer = document.querySelector('.map-progress')?.parentElement;
     
@@ -303,7 +340,6 @@ function renderCarousel(jks) {
         track.appendChild(card);
     });
     
-    // Инициализация скролла карусели
     initCarouselScroll();
     updateCarouselCounter();
 }
@@ -362,6 +398,12 @@ function updateSelectedCard() {
             card.classList.add('jk-card--selected');
         }
     });
+    document.querySelectorAll('.jk-list__item').forEach(item => {
+        item.classList.remove('jk-list__item--selected');
+        if (item.dataset.id == AppState.selectedJkId) {
+            item.classList.add('jk-list__item--selected');
+        }
+    });
 }
 
 function selectJk(id) {
@@ -407,6 +449,10 @@ function updateMapProgress() {
     
     updateCarouselCounter();
     
+    if (window.innerWidth > 768) {
+        updateDesktopDrawerList(AppState.currentStepJks);
+    }
+    
     if (placed === total && total > 0) {
         showContinueButton();
     }
@@ -414,7 +460,7 @@ function updateMapProgress() {
 
 function onMapClick(e) {
     if (AppState.selectedJkId === null) {
-        showToast('👆', 'Сначала выберите ЖК из карусели (нажмите на карточку)', 'error');
+        showToast('👆', 'Сначала выберите ЖК из списка', 'error');
         return;
     }
     
@@ -437,7 +483,12 @@ function onMapClick(e) {
         sendToGoogle(jk.name, true, distance);
         updateMapProgress();
         renderMarkers();
-        renderCarousel(AppState.currentStepJks);
+        
+        if (window.innerWidth <= 768) {
+            renderCarousel(AppState.currentStepJks);
+        } else {
+            updateDesktopDrawerList(AppState.currentStepJks);
+        }
         
         if (window.navigator && window.navigator.vibrate) {
             window.navigator.vibrate(100);
@@ -501,7 +552,11 @@ function resetMapStep() {
             AppState.map.setCenter(MAP_CENTER, MAP_ZOOM, { duration: 300 });
         }
         
-        renderCarousel(AppState.currentStepJks);
+        if (window.innerWidth <= 768) {
+            renderCarousel(AppState.currentStepJks);
+        } else {
+            updateDesktopDrawerList(AppState.currentStepJks);
+        }
         updateMapProgress();
         
         const continueBtn = document.getElementById('step-continue-btn');
@@ -519,5 +574,4 @@ window.addEventListener('resize', () => {
     }
 });
 
-// Для совместимости с кнопками в HTML
 window.resetMapStep = resetMapStep;
