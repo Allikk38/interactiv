@@ -314,7 +314,11 @@ function selectJk(id) {
     AppState.selectedJkId = id;
     renderJkList(AppState.currentStepJks);
     
-    showToast('📍', `Выбран: ${jk.name}. Нажмите на карту, чтобы поставить метку`, 'success');
+    // Показываем тост с выбором
+    const jk = AppState.allJks.find(j => j.id === id);
+    if (jk) {
+        showToast('📍', `Выбран: ${jk.name}. Нажмите на карту, чтобы поставить метку`, 'success');
+    }
 }
 
 function updateMapProgress() {
