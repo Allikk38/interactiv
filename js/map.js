@@ -86,19 +86,41 @@ function renderMarkers() {
         const jk = AppState.allJks.find(j => j.id === id);
         if (!jk) return;
 
-        // ПОСЛЕ УСТАНОВКИ — показываем метку с НАЗВАНИЕМ ЖК
+        // Создаём HTML-содержимое для метки
+        const markerContent = `
+            <div style="
+                background-color: #27ae60;
+                color: white;
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: 600;
+                white-space: nowrap;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                border: 2px solid white;
+                font-family: sans-serif;
+            ">
+                📍 ${escapeHtml(jk.name)}
+            </div>
+        `;
+
         const marker = new ymaps.Placemark([data.lat, data.lng], {
             hintContent: jk.name,
-            balloonContent: `<b>${jk.name}</b><br>${jk.developer}`,
-            // Добавляем название прямо на карту через иконку с текстом
+            balloonContent: `<b>${escapeHtml(jk.name)}</b><br>${escapeHtml(jk.developer)}`
         }, {
-            // Используем метку с иконкой и текстом
-            preset: 'islands#greenStretchyIcon',
-            iconContent: jk.name.substring(0, 20), // Название ЖК на метке
-            iconColor: '#27ae60',
-            draggable: false
+            iconLayout: 'default#imageWithContent',
+            iconImageHref: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1" height="1"%3E%3C/svg%3E',
+            iconImageSize: [1, 1],
+            iconContentOffset: [-5, -20],
+            iconContentLayout: ymaps.templateLayoutFactory.createClass(
+                `<div style="background-color: #27ae60; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.2); border: 2px solid white; font-family: sans-serif;">
+                    📍 {{ properties.name }}
+                </div>`
+            )
         });
 
+        marker.properties.set('name', jk.name);
+        
         AppState.map.geoObjects.add(marker);
         AppState.currentMarkers.push(marker);
     });
