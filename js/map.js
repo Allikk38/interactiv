@@ -86,35 +86,34 @@ function renderMarkers() {
         const jk = AppState.allJks.find(j => j.id === id);
         if (!jk) return;
 
-        // Создаём HTML-содержимое для метки
-        const markerContent = `
-            <div style="
-                background-color: #27ae60;
-                color: white;
-                padding: 6px 12px;
-                border-radius: 20px;
-                font-size: 12px;
-                font-weight: 600;
-                white-space: nowrap;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                border: 2px solid white;
-                font-family: sans-serif;
-            ">
-                📍 ${escapeHtml(jk.name)}
-            </div>
-        `;
-
+        // Создаём кастомную HTML-метку с красивым дизайном
         const marker = new ymaps.Placemark([data.lat, data.lng], {
             hintContent: jk.name,
-            balloonContent: `<b>${escapeHtml(jk.name)}</b><br>${escapeHtml(jk.developer)}`
+            balloonContent: `<b>${escapeHtml(jk.name)}</b><br>${escapeHtml(jk.developer)}<br><br><button onclick="window.zoomToMarker(${jk.lat}, ${jk.lng})" style="padding: 8px 16px; background: #2e86de; color: white; border: none; border-radius: 8px; cursor: pointer;">📍 Показать на карте</button>`
         }, {
             iconLayout: 'default#imageWithContent',
             iconImageHref: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1" height="1"%3E%3C/svg%3E',
             iconImageSize: [1, 1],
-            iconContentOffset: [-5, -20],
+            iconContentOffset: [-5, -25],
             iconContentLayout: ymaps.templateLayoutFactory.createClass(
-                `<div style="background-color: #27ae60; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.2); border: 2px solid white; font-family: sans-serif;">
-                    📍 {{ properties.name }}
+                `<div style="
+                    background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+                    color: #ecf0f1;
+                    padding: 8px 16px;
+                    border-radius: 24px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    white-space: nowrap;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                    border: 1px solid rgba(255,255,255,0.2);
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    backdrop-filter: blur(2px);
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                ">
+                    <span style="font-size: 14px;">🏢</span>
+                    <span style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ properties.name }}</span>
                 </div>`
             )
         });
