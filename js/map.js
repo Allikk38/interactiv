@@ -375,23 +375,6 @@ function selectJk(id) {
     const jk = AppState.allJks.find(j => j.id === id);
     if (jk) {
         showToast('📍', `Выбран: ${jk.name}. Нажмите на карту, чтобы поставить метку`, 'success');
-        
-        // Подсветка примерного места на карте
-        if (AppState.map) {
-            if (AppState.highlightMarker) {
-                AppState.map.geoObjects.remove(AppState.highlightMarker);
-            }
-            AppState.highlightMarker = new ymaps.Placemark([jk.lat, jk.lng], {
-                hintContent: `Примерное расположение ${jk.name}`
-            }, {
-                preset: 'islands#blueCircleDotIcon',
-                iconColor: '#2e86de'
-            });
-            AppState.map.geoObjects.add(AppState.highlightMarker);
-            
-            // Плавно перемещаем карту к примерному месту
-            AppState.map.setCenter([jk.lat, jk.lng], 14, { duration: 500 });
-        }
     }
 }
 
@@ -448,11 +431,6 @@ function onMapClick(e) {
     if (isCorrect) {
         AppState.placedJks.set(jk.id, { lat, lng, correct: true });
         showToast('✅', `Правильно! ${jk.name} на месте.`, 'success');
-        
-        if (AppState.highlightMarker) {
-            AppState.map.geoObjects.remove(AppState.highlightMarker);
-            AppState.highlightMarker = null;
-        }
         
         AppState.selectedJkId = null;
         updateSelectedCard();
