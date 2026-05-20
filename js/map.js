@@ -14,46 +14,65 @@ function onYmapsReady(callback) {
 // ----- БАЗОВЫЕ ФУНКЦИИ КАРТЫ -----
 function initMap() {
     const mapContainer = document.getElementById('map');
-    if (!mapContainer) return;
-    
-    // Показываем индикатор загрузки
-    mapContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; background: #f5f6fa;"><div style="text-align: center;"><div style="width: 40px; height: 40px; border: 4px solid #dfe6e9; border-top-color: #2e86de; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div><p style="color: #636e72;">Загрузка карты...</p><style>@keyframes spin { to { transform: rotate(360deg); } }</style></div></div>';
-    
-    AppState.map = new ymaps.Map('map', {
-        center: MAP_CENTER,
-        zoom: MAP_ZOOM,
-        controls: ['zoomControl', 'geolocationControl']
-    }, {
-        yandexMapDisablePoiInteractivity: true,
-        suppressMapOpenBlock: true,
-        suppressObsoleteBrowserNotifier: true
-    });
-
-    // Настройка контролов для мобильных
-    if (window.innerWidth <= 768) {
-        AppState.map.controls.get('zoomControl').options.set({
-            size: 'large',
-            position: { right: 10, top: 10 }
-        });
-        AppState.map.controls.get('geolocationControl').options.set({
-            position: { right: 10, top: 70 }
-        });
+    if (!mapContainer) {
+        console.error('Контейнер карты не найден');
+        return;
     }
-
-    AppState.map.behaviors.disable([
-        'rightMouseButtonMagnifier',
-        'leftMouseButtonMagnifier',
-        'ruler'
-    ]);
     
-    // Включаем поведение для мобильных
-    AppState.map.behaviors.enable(['drag', 'scrollZoom', 'multiTouch']);
-
-    AppState.map.events.add('click', onMapClick);
+    // Проверяем, не инициализирована ли уже карта
+    if (AppState.map && AppState.map.destroy) {
+        try {
+            AppState.map.destroy();
+        } catch(e) {}
+        AppState.map = null;
+    }
     
-    // Добавляем увеличенную зону клика для мобильных
-    if (window.innerWidth <= 768) {
-        AppState.map.events.add('tap', onMapClick);
+    // Очищаем контейнер
+    mapContainer.innerHTML = '';
+    
+    try {
+        AppState.map = new ymaps.Map('map', {
+            center: MAP_CENTER,
+            zoom: MAP_ZOOM,
+            controls: ['zoomControl']
+        }, {
+            yandexMapDisablePoiInteractivity: true,
+            suppressMapOpenBlock: true,
+            suppressObsoleteBrowserNotifier: true
+        });
+
+        // Настройка контролов для мобильных
+        if (window.innerWidth <= 768) {
+            const zoomControl = AppState.map.controls.get('zoomControl');
+            if (zoomControl) {
+                zoomControl.options.set({
+                    size: 'large',
+                    position: { right: 10, top: 10 }
+                });
+            }
+        }
+
+        AppState.map.behaviors.disable([
+            'rightMouseButtonMagnifier',
+            'leftMouseButtonMagnifier',
+            'ruler'
+        ]);
+        
+        // Включаем мультитач для мобильных
+        AppState.map.behaviors.enable(['drag', 'scrollZoom', 'multiTouch']);
+
+        AppState.map.events.add('click', onMapClick);
+        
+        // Принудительно обновляем размер карты
+        setTimeout(() => {
+            if (AppState.map && AppState.map.container) {
+                AppState.map.container.fitToViewport();
+            }
+        }, 100);
+        
+    } catch (error) {
+        console.error('Ошибка инициализации карты:', error);
+        mapContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка загрузки карты. Проверьте подключение к интернету.</div>';
     }
 }
 
