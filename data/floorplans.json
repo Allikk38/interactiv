@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "name": "Студия Smart",
+    "rooms": "студия",
+    "area": 22,
+    "price": 5200000,
+    "complex": "Расцветай на Игарской",
+    "image": "images/floorplans/studio-smart.jpg",
+    "features": ["бюджетный", "тихий район"]
+  },
+  {
+    "id": 2,
+    "name": "1-комнатная",
+    "rooms": "1",
+    "area": 34,
+    "price": 7500000,
+    "complex": "Расцветай на Красном",
+    "image": "images/floorplans/one-room.jpg",
+    "features": ["субсидированная ставка", "близко к метро"]
+  },
+  {
+    "id": 3,
+    "name": "Евродвушка",
+    "rooms": "2",
+    "area": 45,
+    "price": 9800000,
+    "complex": "Гренландия",
+    "image": "images/floorplans/euro-two.jpg",
+    "features": ["семейный", "рядом парк"]
+  },
+  {
+    "id": 4,
+    "name": "2-комнатная",
+    "rooms": "2",
+    "area": 52,
+    "price": 11200000,
+    "complex": "Европейский Берег",
+    "image": "images/floorplans/two-room.jpg",
+    "features": ["премиум", "набережная"]
+  }
+]
