@@ -2,11 +2,16 @@
 
 // ----- МАТЧИНГ ТЕРМИНОВ -----
 function runMatchingStep(step) {
+    const quizScreen = document.getElementById('quiz-screen');
+    const quizStepTitle = document.getElementById('quiz-step-title');
+    const quizStepCounter = document.getElementById('quiz-step-counter');
+    const quizContainer = document.getElementById('quiz-container');
+    
     quizScreen.classList.remove('hidden');
     quizStepTitle.textContent = step.title;
-    quizStepCounter.textContent = `Шаг ${currentStepIndex + 1} из ${currentScenario.steps.length}`;
+    quizStepCounter.textContent = `Шаг ${AppState.currentStepIndex + 1} из ${AppState.currentScenario.steps.length}`;
 
-    const data = currentScenario.matching;
+    const data = AppState.currentScenario.matching;
     const pairs = [...data.pairs];
     const terms = pairs.map(p => p.term).sort(() => Math.random() - 0.5);
     const definitions = pairs.map(p => p.definition).sort(() => Math.random() - 0.5);
@@ -78,7 +83,7 @@ function runMatchingStep(step) {
 
     checkBtn.addEventListener('click', () => {
         if (stepChecked) {
-            currentStepIndex++;
+            AppState.currentStepIndex++;
             runStep();
             return;
         }
@@ -111,8 +116,8 @@ function runMatchingStep(step) {
             }
         });
 
-        stepStats.push({
-            step: currentStepIndex + 1,
+        AppState.stepStats.push({
+            step: AppState.currentStepIndex + 1,
             type: 'matching',
             title: step.title,
             correct: correct,
@@ -133,11 +138,16 @@ function runMatchingStep(step) {
 
 // ----- ПУТЬ СДЕЛКИ (PIPELINE) -----
 function runPipelineStep(step) {
+    const quizScreen = document.getElementById('quiz-screen');
+    const quizStepTitle = document.getElementById('quiz-step-title');
+    const quizStepCounter = document.getElementById('quiz-step-counter');
+    const quizContainer = document.getElementById('quiz-container');
+    
     quizScreen.classList.remove('hidden');
     quizStepTitle.textContent = step.title;
-    quizStepCounter.textContent = `Шаг ${currentStepIndex + 1} из ${currentScenario.steps.length}`;
+    quizStepCounter.textContent = `Шаг ${AppState.currentStepIndex + 1} из ${AppState.currentScenario.steps.length}`;
 
-    const data = currentScenario.pipeline;
+    const data = AppState.currentScenario.pipeline;
     const steps = [...data.steps].sort(() => Math.random() - 0.5);
 
     let stepsHTML = steps.map(s => `
@@ -196,7 +206,7 @@ function runPipelineStep(step) {
 
     checkBtn.addEventListener('click', () => {
         if (stepChecked) {
-            currentStepIndex++;
+            AppState.currentStepIndex++;
             runStep();
             return;
         }
@@ -219,8 +229,8 @@ function runPipelineStep(step) {
             item.style.pointerEvents = 'none';
         });
 
-        stepStats.push({
-            step: currentStepIndex + 1,
+        AppState.stepStats.push({
+            step: AppState.currentStepIndex + 1,
             type: 'pipeline',
             title: step.title,
             correct: correct,
@@ -241,11 +251,16 @@ function runPipelineStep(step) {
 
 // ----- ДИАЛОГ С КЛИЕНТОМ -----
 function runDialogueStep(step) {
+    const quizScreen = document.getElementById('quiz-screen');
+    const quizStepTitle = document.getElementById('quiz-step-title');
+    const quizStepCounter = document.getElementById('quiz-step-counter');
+    const quizContainer = document.getElementById('quiz-container');
+    
     quizScreen.classList.remove('hidden');
     quizStepTitle.textContent = step.title;
-    quizStepCounter.textContent = `Шаг ${currentStepIndex + 1} из ${currentScenario.steps.length}`;
+    quizStepCounter.textContent = `Шаг ${AppState.currentStepIndex + 1} из ${AppState.currentScenario.steps.length}`;
 
-    const data = currentScenario.dialogue;
+    const data = AppState.currentScenario.dialogue;
 
     quizContainer.innerHTML = `
         <div class="interactive-step">
@@ -289,8 +304,8 @@ function runDialogueStep(step) {
             feedbackEl.className = `dialogue-card__feedback dialogue-card__feedback--${isCorrect ? 'correct' : 'wrong'}`;
             nextBtn.classList.remove('hidden');
 
-            stepStats.push({
-                step: currentStepIndex + 1,
+            AppState.stepStats.push({
+                step: AppState.currentStepIndex + 1,
                 type: 'dialogue',
                 title: step.title,
                 correct: isCorrect ? 1 : 0,
@@ -300,7 +315,7 @@ function runDialogueStep(step) {
     });
 
     nextBtn.addEventListener('click', () => {
-        currentStepIndex++;
+        AppState.currentStepIndex++;
         runStep();
     });
 }
