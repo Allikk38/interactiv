@@ -33,19 +33,21 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1 class="header__title">🏙️ Тренажёр агента недвижимости</h1>
+            <h1 class="header__title"><i class="fas fa-building"></i> Тренажёр агента недвижимости</h1>
             <div class="header__info" id="header-info"></div>
         </header>
 
         <main class="main">
+            <!-- Экран выбора сценария -->
             <section class="screen" id="scenario-screen">
                 <h2 class="screen__title">Выберите сценарий обучения</h2>
                 <div class="scenarios-grid" id="scenarios-grid"></div>
             </section>
 
+            <!-- Экран карты -->
             <section class="screen hidden" id="map-screen">
                 <div class="step-header">
-                    <button class="btn btn--small btn--secondary" id="back-to-scenarios-btn">← К сценариям</button>
+                    <button class="btn btn--small btn--secondary" id="back-to-scenarios-btn"><i class="fas fa-arrow-left"></i> К сценариям</button>
                     <h2 class="step-title" id="map-step-title"></h2>
                     <div class="step-counter" id="map-step-counter"></div>
                 </div>
@@ -54,12 +56,12 @@
                     <aside class="jk-drawer" id="jk-drawer">
                         <div class="jk-drawer__header">
                             <h3 class="jk-drawer__title">Жилые комплексы</h3>
-                            <button class="jk-drawer__close" id="drawer-close-btn" aria-label="Закрыть">✕</button>
+                            <button class="jk-drawer__close" id="drawer-close-btn" aria-label="Закрыть"><i class="fas fa-times"></i></button>
                         </div>
                         <ul class="jk-drawer__list" id="jk-list"></ul>
                         <div class="jk-drawer__actions">
-                            <button class="btn btn--secondary" id="hint-btn" disabled>💡 Подсказка</button>
-                            <button class="btn btn--danger" id="reset-step-btn">🔄 Сбросить шаг</button>
+                            <button class="btn btn--secondary" id="hint-btn" disabled><i class="fas fa-lightbulb"></i> Подсказка</button>
+                            <button class="btn btn--danger" id="reset-step-btn"><i class="fas fa-undo-alt"></i> Сбросить шаг</button>
                         </div>
                     </aside>
                     
@@ -67,19 +69,20 @@
                     
                     <section class="map-section">
                         <div class="map-container" id="map"></div>
-                        <p class="map-hint">📍 Нажмите на карту, чтобы поставить метку для выбранного ЖК</p>
+                        <p class="map-hint"><i class="fas fa-map-marker-alt"></i> Нажмите на карту, чтобы поставить метку для выбранного ЖК</p>
                         <div class="map-progress" id="map-progress" style="display: none;">
-                            📍 Расставлено: <span class="map-progress__count" id="map-progress-count">0</span> 
+                            <i class="fas fa-map-pin"></i> Расставлено: <span class="map-progress__count" id="map-progress-count">0</span> 
                             из <span id="map-progress-total">0</span>
                         </div>
-                        <button class="floating-list-btn" id="floating-list-btn" aria-label="Показать список ЖК">☰</button>
+                        <button class="floating-list-btn" id="floating-list-btn" aria-label="Показать список ЖК"><i class="fas fa-list"></i></button>
                     </section>
                 </div>
             </section>
 
+            <!-- Экран тестов и интерактивов -->
             <section class="screen hidden" id="quiz-screen">
                 <div class="step-header">
-                    <button class="btn btn--small btn--secondary" id="quiz-back-btn">← К сценариям</button>
+                    <button class="btn btn--small btn--secondary" id="quiz-back-btn"><i class="fas fa-arrow-left"></i> К сценариям</button>
                     <h2 class="step-title" id="quiz-step-title"></h2>
                     <div class="step-counter" id="quiz-step-counter"></div>
                 </div>
@@ -89,14 +92,29 @@
                 </div>
             </section>
 
+            <!-- Экран сквозного сценария "Путь клиента" -->
+            <section class="screen hidden" id="client-journey-screen">
+                <div class="step-header">
+                    <button class="btn btn--small btn--secondary" id="journey-back-btn"><i class="fas fa-arrow-left"></i> К сценариям</button>
+                    <h2 class="step-title" id="journey-step-title"></h2>
+                    <div class="step-counter" id="journey-step-counter"></div>
+                </div>
+                <div class="journey-container" id="journey-container"></div>
+                <div class="journey-actions" style="text-align:center; padding:20px;">
+                    <button class="btn btn--primary hidden" id="journey-next-btn" disabled>Далее</button>
+                </div>
+            </section>
+
+            <!-- Экран финиша -->
             <section class="screen hidden" id="finish-screen">
                 <div class="finish-content">
-                    <h2 class="finish__title">🎉 Сценарий пройден!</h2>
+                    <div class="finish__icon"><i class="fas fa-flag-checkered"></i></div>
+                    <h2 class="finish__title">Сценарий пройден</h2>
                     <p class="finish__text" id="finish-text"></p>
                     <div class="finish__stats" id="finish-stats"></div>
                     <div class="finish__actions">
-                        <button class="btn btn--primary" id="finish-restart-btn">Пройти заново</button>
-                        <button class="btn btn--secondary" id="finish-scenarios-btn">К списку сценариев</button>
+                        <button class="btn btn--primary" id="finish-restart-btn"><i class="fas fa-redo-alt"></i> Пройти заново</button>
+                        <button class="btn btn--secondary" id="finish-scenarios-btn"><i class="fas fa-th-large"></i> К списку сценариев</button>
                     </div>
                 </div>
             </section>
@@ -117,6 +135,7 @@
     <script src="js/progress.js"></script>
     <script src="js/brief.js"></script>
     <script src="js/interactive-lesson1.js"></script>
+    <script src="js/client-journey.js"></script>
     <script src="js/drawer.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/map.js"></script>
