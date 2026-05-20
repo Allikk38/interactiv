@@ -1,3 +1,5 @@
+// ===== СКВОЗНОЙ СЦЕНАРИЙ: ПУТЬ КЛИЕНТА С МИНИ-ЗАДАНИЯМИ =====
+
 const ClientJourney = {
     currentStage: 0,
     stages: [],
@@ -5,34 +7,25 @@ const ClientJourney = {
     journeyData: null
 };
 
-// Глобальная функция для запуска сценария
 window.runClientJourneyStep = function(step) {
-    // Получаем данные сценария из AppState.currentScenario.clientJourney
     const journeyData = AppState.currentScenario.clientJourney;
     if (!journeyData || !journeyData.stages) {
         console.error('Нет данных для сценария клиентского пути');
-        // Если данных нет — пропускаем шаг
         AppState.currentStepIndex++;
         if (typeof runStep === 'function') runStep();
         return;
     }
     
-    // Инициализируем состояние
     ClientJourney.currentStage = 0;
     ClientJourney.stages = journeyData.stages;
     ClientJourney.decisions = [];
     ClientJourney.journeyData = journeyData;
     
-    // Показываем экран
     showClientJourneyScreen();
-    
-    // Рендерим первый этап
     renderClientJourneyStage(0);
 };
 
-// Показать экран клиентского пути
 function showClientJourneyScreen() {
-    // Скрываем другие экраны
     const mapScreen = document.getElementById('map-screen');
     const quizScreen = document.getElementById('quiz-screen');
     const finishScreen = document.getElementById('finish-screen');
@@ -41,16 +34,9 @@ function showClientJourneyScreen() {
     if (mapScreen) mapScreen.classList.add('hidden');
     if (quizScreen) quizScreen.classList.add('hidden');
     if (finishScreen) finishScreen.classList.add('hidden');
-    
-    // Показываем экран клиентского пути
-    if (journeyScreen) {
-        journeyScreen.classList.remove('hidden');
-    } else {
-        console.warn('Экран client-journey-screen не найден');
-    }
+    if (journeyScreen) journeyScreen.classList.remove('hidden');
 }
 
-// Рендер текущего этапа
 function renderClientJourneyStage(stageIndex) {
     const stages = ClientJourney.stages;
     
@@ -63,17 +49,30 @@ function renderClientJourneyStage(stageIndex) {
     const currentStepNumber = AppState.currentStepIndex + 1;
     const totalSteps = AppState.currentScenario.steps.length;
     
-    // Обновляем заголовок на экране клиентского пути
     const stepTitle = document.getElementById('journey-step-title');
     const stepCounter = document.getElementById('journey-step-counter');
     if (stepTitle) stepTitle.textContent = stage.title;
     if (stepCounter) stepCounter.textContent = `Шаг ${currentStepNumber} из ${totalSteps} · Этап ${stageIndex + 1} из ${stages.length}`;
     
-    // Получаем контейнер
     const container = document.getElementById('journey-container');
     if (!container) return;
     
-    // Генерируем HTML для этапа
+    // В зависимости от типа задания рендерим разный интерфейс
+    if (stage.type === 'select-plans') {
+        renderSelectPlansStage(stage, container, stageIndex);
+    } else if (stage.type === 'notify-developer') {
+        renderNotifyDeveloperStage(stage, container, stageIndex);
+    } else if (stage.type === 'calculate-benefit') {
+        renderCalculateBenefitStage(stage, container, stageIndex);
+    } else if (stage.type === 'sort-steps') {
+        renderSortStepsStage(stage, container, stageIndex);
+    } else {
+        renderDialogueStage(stage, container, stageIndex);
+    }
+}
+
+// ===== ОБЫЧНЫЙ ДИАЛОГ (как было) =====
+function renderDialogueStage(stage, container, stageIndex) {
     let optionsHTML = '';
     if (stage.options) {
         stage.options.forEach((opt, idx) => {
@@ -88,103 +87,438 @@ function renderClientJourneyStage(stageIndex) {
     container.innerHTML = `
         <div class="journey-container-inner">
             <div class="journey-progress">
-                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / stages.length) * 100}%"></div>
+                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / ClientJourney.stages.length) * 100}%"></div>
             </div>
             <div class="journey-client">
-                <div class="journey-client__avatar">
-                    <i class="fas ${stage.clientIcon || 'fa-user-circle'}"></i>
-                </div>
+                <div class="journey-client__avatar"><i class="fas ${stage.clientIcon || 'fa-user-circle'}"></i></div>
                 <div class="journey-client__name">${escapeHtml(stage.clientName || 'Клиент')}</div>
                 <div class="journey-client__message">${escapeHtml(stage.clientMessage || '')}</div>
             </div>
             <div class="journey-agent">
-                <div class="journey-agent__label">
-                    <i class="fas fa-comment-dots"></i> Ваш ответ:
-                </div>
-                <div class="journey-agent__options">
-                    ${optionsHTML}
-                </div>
+                <div class="journey-agent__label"><i class="fas fa-comment-dots"></i> Ваш ответ:</div>
+                <div class="journey-agent__options">${optionsHTML}</div>
             </div>
-            <div class="journey-feedback" id="journey-feedback" style="display: none;"></div>
-            <button class="btn btn--primary" id="journey-next-btn" style="display: none;">Далее</button>
+            <div class="journey-feedback" style="display: none;"></div>
+            <button class="btn btn--primary journey-next-btn" style="display: none;">Далее</button>
         </div>
     `;
     
-    // Привязываем обработчики к опциям
+    attachDialogueHandlers(stage, stageIndex);
+}
+
+function attachDialogueHandlers(stage, stageIndex) {
     document.querySelectorAll('.journey-option').forEach(opt => {
-        opt.addEventListener('click', () => handleJourneyChoice(opt, stage));
+        opt.addEventListener('click', () => {
+            if (opt.classList.contains('journey-option--selected')) return;
+            
+            const optIndex = parseInt(opt.dataset.optIndex);
+            const selectedOption = stage.options[optIndex];
+            const isCorrect = selectedOption.correct || false;
+            
+            document.querySelectorAll('.journey-option').forEach(o => {
+                o.style.pointerEvents = 'none';
+            });
+            opt.classList.add('journey-option--selected');
+            if (isCorrect) opt.classList.add('journey-option--correct');
+            else opt.classList.add('journey-option--wrong');
+            
+            const feedbackDiv = document.querySelector('.journey-feedback');
+            if (feedbackDiv) {
+                feedbackDiv.style.display = 'flex';
+                feedbackDiv.innerHTML = `
+                    <div class="journey-feedback__icon"><i class="fas ${isCorrect ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i></div>
+                    <div class="journey-feedback__text"><strong>${isCorrect ? 'Верно' : 'Можно лучше:'}</strong><br>${escapeHtml(selectedOption.feedback)}</div>
+                `;
+                feedbackDiv.classList.add(isCorrect ? 'journey-feedback--correct' : 'journey-feedback--wrong');
+            }
+            
+            ClientJourney.decisions.push({
+                stage: ClientJourney.currentStage,
+                stageTitle: stage.title,
+                choice: selectedOption.text,
+                isCorrect: isCorrect
+            });
+            
+            const nextBtn = document.querySelector('.journey-next-btn');
+            if (nextBtn) {
+                nextBtn.style.display = 'block';
+                const nextStage = selectedOption.nextStage !== undefined ? parseInt(selectedOption.nextStage) : ClientJourney.currentStage + 1;
+                nextBtn.onclick = () => {
+                    ClientJourney.currentStage = nextStage;
+                    renderClientJourneyStage(nextStage);
+                };
+            }
+        });
     });
 }
 
-// Обработка выбора агента
-function handleJourneyChoice(element, stage) {
-    // Блокируем повторные клики
-    if (element.classList.contains('journey-option--selected')) return;
-    
-    const optIndex = parseInt(element.dataset.optIndex);
-    const selectedOption = stage.options[optIndex];
-    const isCorrect = selectedOption.correct || false;
-    
-    // Отмечаем выбранный вариант
-    document.querySelectorAll('.journey-option').forEach(opt => {
-        opt.style.pointerEvents = 'none';
-    });
-    element.classList.add('journey-option--selected');
-    if (isCorrect) {
-        element.classList.add('journey-option--correct');
-    } else {
-        element.classList.add('journey-option--wrong');
+// ===== ЗАДАНИЕ 1: ВЫБОР ПЛАНИРОВОК =====
+async function renderSelectPlansStage(stage, container, stageIndex) {
+    // Загружаем планировки
+    let plans = [];
+    try {
+        const response = await fetch('data/floorplans.json');
+        plans = await response.json();
+    } catch(e) {
+        console.error('Ошибка загрузки планировок', e);
     }
     
-    // Показываем обратную связь
-    const feedbackDiv = document.getElementById('journey-feedback');
-    
-    if (feedbackDiv) {
-        feedbackDiv.style.display = 'flex';
-        feedbackDiv.innerHTML = `
-            <div class="journey-feedback__icon">
-                <i class="fas ${isCorrect ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
-            </div>
-            <div class="journey-feedback__text">
-                <strong>${isCorrect ? 'Верно' : 'Можно лучше:'}</strong><br>
-                ${escapeHtml(selectedOption.feedback || (isCorrect ? stage.correctFeedback : stage.wrongFeedback || 'Попробуйте другой вариант'))}
+    let plansHTML = '';
+    plans.forEach(plan => {
+        plansHTML += `
+            <div class="plan-card" data-plan-id="${plan.id}" data-price="${plan.price}" data-rooms="${plan.rooms}">
+                <div class="plan-card__image">
+                    ${plan.image ? `<img src="${plan.image}" alt="${plan.name}">` : '<div class="plan-card__placeholder"><i class="fas fa-building"></i></div>'}
+                </div>
+                <div class="plan-card__info">
+                    <h4>${escapeHtml(plan.name)}</h4>
+                    <p>${plan.rooms} комната · ${plan.area} м²</p>
+                    <p class="plan-card__price">${(plan.price / 1000000).toFixed(1)} млн ₽</p>
+                    <p class="plan-card__complex">${escapeHtml(plan.complex)}</p>
+                </div>
+                <div class="plan-card__select">
+                    <i class="far fa-square"></i>
+                </div>
             </div>
         `;
-        feedbackDiv.classList.add(isCorrect ? 'journey-feedback--correct' : 'journey-feedback--wrong');
-    }
-    
-    // Сохраняем решение
-    ClientJourney.decisions.push({
-        stage: ClientJourney.currentStage,
-        stageTitle: stage.title,
-        choice: selectedOption.text,
-        isCorrect: isCorrect
     });
     
-    // Показываем кнопку "Далее"
-    const nextBtn = document.getElementById('journey-next-btn');
-    if (nextBtn) {
+    container.innerHTML = `
+        <div class="journey-container-inner">
+            <div class="journey-progress">
+                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / ClientJourney.stages.length) * 100}%"></div>
+            </div>
+            <div class="journey-client">
+                <div class="journey-client__avatar"><i class="fas ${stage.clientIcon || 'fa-user-circle'}"></i></div>
+                <div class="journey-client__name">${escapeHtml(stage.clientName || 'Клиент')}</div>
+                <div class="journey-client__message">${escapeHtml(stage.clientMessage || '')}</div>
+            </div>
+            <div class="journey-task">
+                <div class="journey-task__title">${stage.taskTitle || 'Выберите подходящие планировки'}</div>
+                <div class="journey-task__desc">${stage.taskDescription || ''}</div>
+                <div class="plans-grid" id="plans-grid">${plansHTML}</div>
+                <button class="btn btn--primary check-plans-btn">Проверить</button>
+            </div>
+            <div class="journey-feedback" style="display: none;"></div>
+            <button class="btn btn--primary journey-next-btn" style="display: none;">Далее</button>
+        </div>
+    `;
+    
+    // Обработка выбора планировок
+    let selectedPlans = [];
+    document.querySelectorAll('.plan-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const icon = card.querySelector('.plan-card__select i');
+            if (card.classList.contains('selected')) {
+                card.classList.remove('selected');
+                icon.className = 'far fa-square';
+                selectedPlans = selectedPlans.filter(id => id !== parseInt(card.dataset.planId));
+            } else {
+                card.classList.add('selected');
+                icon.className = 'fas fa-check-square';
+                selectedPlans.push(parseInt(card.dataset.planId));
+            }
+        });
+    });
+    
+    document.querySelector('.check-plans-btn').addEventListener('click', () => {
+        const correctIds = stage.correctPlanIds || [1, 2];
+        const isCorrect = correctIds.length === selectedPlans.length && correctIds.every(id => selectedPlans.includes(id));
+        
+        document.querySelectorAll('.plan-card').forEach(card => {
+            card.style.pointerEvents = 'none';
+        });
+        
+        const feedbackDiv = document.querySelector('.journey-feedback');
+        feedbackDiv.style.display = 'flex';
+        if (isCorrect) {
+            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-check-circle"></i></div><div class="journey-feedback__text"><strong>Верно!</strong><br>${stage.correctFeedback || 'Вы выбрали подходящие под бюджет планировки.'}</div>`;
+            feedbackDiv.classList.add('journey-feedback--correct');
+        } else {
+            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-exclamation-triangle"></i></div><div class="journey-feedback__text"><strong>Неверно</strong><br>${stage.wrongFeedback || 'Учтите бюджет клиента и его пожелания.'}</div>`;
+            feedbackDiv.classList.add('journey-feedback--wrong');
+        }
+        
+        ClientJourney.decisions.push({
+            stage: ClientJourney.currentStage,
+            stageTitle: stage.title,
+            choice: selectedPlans,
+            isCorrect: isCorrect
+        });
+        
+        const nextBtn = document.querySelector('.journey-next-btn');
         nextBtn.style.display = 'block';
-        
-        // Определяем следующий этап (если есть ветвление)
-        const nextStage = selectedOption.nextStage !== undefined 
-            ? parseInt(selectedOption.nextStage) 
-            : ClientJourney.currentStage + 1;
-        
         nextBtn.onclick = () => {
-            ClientJourney.currentStage = nextStage;
-            renderClientJourneyStage(nextStage);
+            ClientJourney.currentStage = stageIndex + 1;
+            renderClientJourneyStage(stageIndex + 1);
         };
-    }
+    });
 }
 
-// Завершение сценария
+// ===== ЗАДАНИЕ 2: УВЕДОМЛЕНИЕ ЗАСТРОЙЩИКА =====
+function renderNotifyDeveloperStage(stage, container, stageIndex) {
+    let optionsHTML = '';
+    stage.options.forEach((opt, idx) => {
+        optionsHTML += `
+            <div class="journey-option notify-option" data-opt-index="${idx}" data-correct="${opt.correct}">
+                <div class="journey-option__text">${escapeHtml(opt.text)}</div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = `
+        <div class="journey-container-inner">
+            <div class="journey-progress">
+                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / ClientJourney.stages.length) * 100}%"></div>
+            </div>
+            <div class="journey-task">
+                <div class="journey-task__title">${stage.taskTitle || 'Уведомление застройщика'}</div>
+                <div class="journey-task__desc">${stage.taskDescription || ''}</div>
+                <div class="journey-agent__options">${optionsHTML}</div>
+            </div>
+            <div class="journey-feedback" style="display: none;"></div>
+            <button class="btn btn--primary journey-next-btn" style="display: none;">Далее</button>
+        </div>
+    `;
+    
+    document.querySelectorAll('.notify-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            if (opt.classList.contains('journey-option--selected')) return;
+            
+            const isCorrect = opt.dataset.correct === 'true';
+            
+            document.querySelectorAll('.notify-option').forEach(o => {
+                o.style.pointerEvents = 'none';
+            });
+            opt.classList.add('journey-option--selected');
+            if (isCorrect) opt.classList.add('journey-option--correct');
+            else opt.classList.add('journey-option--wrong');
+            
+            const feedbackDiv = document.querySelector('.journey-feedback');
+            feedbackDiv.style.display = 'flex';
+            if (isCorrect) {
+                feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-check-circle"></i></div><div class="journey-feedback__text"><strong>Верно!</strong><br>${stage.correctFeedback || 'Клиент закреплён за вами.'}</div>`;
+                feedbackDiv.classList.add('journey-feedback--correct');
+            } else {
+                feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-exclamation-triangle"></i></div><div class="journey-feedback__text"><strong>Неверно</strong><br>${stage.wrongFeedback || 'Нужно зафиксировать клиента в отделе продаж.'}</div>`;
+                feedbackDiv.classList.add('journey-feedback--wrong');
+            }
+            
+            ClientJourney.decisions.push({
+                stage: ClientJourney.currentStage,
+                stageTitle: stage.title,
+                choice: opt.querySelector('.journey-option__text').textContent,
+                isCorrect: isCorrect
+            });
+            
+            const nextBtn = document.querySelector('.journey-next-btn');
+            nextBtn.style.display = 'block';
+            nextBtn.onclick = () => {
+                ClientJourney.currentStage = stageIndex + 1;
+                renderClientJourneyStage(stageIndex + 1);
+            };
+        });
+    });
+}
+
+// ===== ЗАДАНИЕ 3: РАСЧЁТ ВЫГОДЫ =====
+function renderCalculateBenefitStage(stage, container, stageIndex) {
+    container.innerHTML = `
+        <div class="journey-container-inner">
+            <div class="journey-progress">
+                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / ClientJourney.stages.length) * 100}%"></div>
+            </div>
+            <div class="journey-client">
+                <div class="journey-client__avatar"><i class="fas ${stage.clientIcon || 'fa-user-circle'}"></i></div>
+                <div class="journey-client__name">${escapeHtml(stage.clientName || 'Клиент')}</div>
+                <div class="journey-client__message">${escapeHtml(stage.clientMessage || '')}</div>
+            </div>
+            <div class="journey-task">
+                <div class="journey-task__title">${stage.taskTitle || 'Рассчитайте выгоду'}</div>
+                <div class="journey-task__desc">${stage.taskDescription || ''}</div>
+                <div class="benefit-calculator">
+                    <div class="benefit-field">
+                        <label>Ежемесячный платёж по новостройке (6%):</label>
+                        <input type="number" id="new-payment" placeholder="введите сумму в ₽">
+                    </div>
+                    <div class="benefit-field">
+                        <label>Ежемесячный платёж по вторичке (9%):</label>
+                        <input type="number" id="old-payment" placeholder="введите сумму в ₽">
+                    </div>
+                    <div class="benefit-field">
+                        <label>Разница в месяц (экономия):</label>
+                        <input type="number" id="month-diff" placeholder="введите сумму в ₽">
+                    </div>
+                    <div class="benefit-field">
+                        <label>Экономия в год:</label>
+                        <input type="number" id="year-diff" placeholder="введите сумму в ₽">
+                    </div>
+                    <button class="btn btn--primary check-benefit-btn">Проверить</button>
+                </div>
+            </div>
+            <div class="journey-feedback" style="display: none;"></div>
+            <button class="btn btn--primary journey-next-btn" style="display: none;">Далее</button>
+        </div>
+    `;
+    
+    document.querySelector('.check-benefit-btn').addEventListener('click', () => {
+        const newPayment = parseFloat(document.getElementById('new-payment').value);
+        const oldPayment = parseFloat(document.getElementById('old-payment').value);
+        const monthDiff = parseFloat(document.getElementById('month-diff').value);
+        const yearDiff = parseFloat(document.getElementById('year-diff').value);
+        
+        const correctNew = 42986;  // 6% от 6 млн на 20 лет
+        const correctOld = 53989;   // 9% от 6 млн на 20 лет
+        const correctMonthDiff = 11003;
+        const correctYearDiff = 132036;
+        
+        const tolerance = 500;
+        const isNewOk = Math.abs(newPayment - correctNew) <= tolerance;
+        const isOldOk = Math.abs(oldPayment - correctOld) <= tolerance;
+        const isMonthOk = Math.abs(monthDiff - correctMonthDiff) <= tolerance;
+        const isYearOk = Math.abs(yearDiff - correctYearDiff) <= tolerance;
+        const isCorrect = isNewOk && isOldOk && isMonthOk && isYearOk;
+        
+        const feedbackDiv = document.querySelector('.journey-feedback');
+        feedbackDiv.style.display = 'flex';
+        
+        if (isCorrect) {
+            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-check-circle"></i></div><div class="journey-feedback__text"><strong>Верно!</strong><br>Экономия 11 003 ₽ в месяц и 132 036 ₽ в год. Клиент увидит выгоду!</div>`;
+            feedbackDiv.classList.add('journey-feedback--correct');
+        } else {
+            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-exclamation-triangle"></i></div><div class="journey-feedback__text"><strong>Неверно</strong><br>Правильные цифры: платеж по новостройке ≈ 43 000 ₽, по вторичке ≈ 54 000 ₽, экономия ≈ 11 000 ₽ в месяц.</div>`;
+            feedbackDiv.classList.add('journey-feedback--wrong');
+        }
+        
+        ClientJourney.decisions.push({
+            stage: ClientJourney.currentStage,
+            stageTitle: stage.title,
+            choice: { newPayment, oldPayment, monthDiff, yearDiff },
+            isCorrect: isCorrect
+        });
+        
+        const nextBtn = document.querySelector('.journey-next-btn');
+        nextBtn.style.display = 'block';
+        nextBtn.onclick = () => {
+            ClientJourney.currentStage = stageIndex + 1;
+            renderClientJourneyStage(stageIndex + 1);
+        };
+    });
+}
+
+// ===== ЗАДАНИЕ 4: СОРТИРОВКА ШАГОВ =====
+function renderSortStepsStage(stage, container, stageIndex) {
+    const steps = [...stage.stepsToSort];
+    const shuffled = [...steps].sort(() => Math.random() - 0.5);
+    
+    let stepsHTML = '';
+    shuffled.forEach((step, idx) => {
+        stepsHTML += `
+            <div class="sort-step" data-step-id="${step.id}" data-order="${step.order}" draggable="true">
+                <span class="sort-step__handle"><i class="fas fa-grip-vertical"></i></span>
+                <span class="sort-step__text">${escapeHtml(step.text)}</span>
+                <span class="sort-step__num"></span>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = `
+        <div class="journey-container-inner">
+            <div class="journey-progress">
+                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / ClientJourney.stages.length) * 100}%"></div>
+            </div>
+            <div class="journey-task">
+                <div class="journey-task__title">${stage.taskTitle || 'Расставьте шаги в правильном порядке'}</div>
+                <div class="journey-task__desc">${stage.taskDescription || ''}</div>
+                <div class="sort-steps-container" id="sort-steps-container">${stepsHTML}</div>
+                <button class="btn btn--primary check-sort-btn">Проверить</button>
+            </div>
+            <div class="journey-feedback" style="display: none;"></div>
+            <button class="btn btn--primary journey-next-btn" style="display: none;">Далее</button>
+        </div>
+    `;
+    
+    // Drag-and-drop логика
+    const containerSort = document.getElementById('sort-steps-container');
+    let draggedItem = null;
+    
+    document.querySelectorAll('.sort-step').forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            draggedItem = item;
+            item.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+            draggedItem = null;
+        });
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+        item.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (draggedItem && draggedItem !== item) {
+                const items = [...containerSort.querySelectorAll('.sort-step')];
+                const fromIndex = items.indexOf(draggedItem);
+                const toIndex = items.indexOf(item);
+                if (fromIndex < toIndex) {
+                    containerSort.insertBefore(draggedItem, item.nextSibling);
+                } else {
+                    containerSort.insertBefore(draggedItem, item);
+                }
+            }
+        });
+    });
+    
+    document.querySelector('.check-sort-btn').addEventListener('click', () => {
+        let correct = 0;
+        const total = steps.length;
+        
+        document.querySelectorAll('.sort-step').forEach((item, index) => {
+            const expectedOrder = parseInt(item.dataset.order);
+            const numSpan = item.querySelector('.sort-step__num');
+            numSpan.textContent = index + 1;
+            if (expectedOrder === index + 1) {
+                item.classList.add('sort-step--correct');
+                correct++;
+            } else {
+                item.classList.add('sort-step--wrong');
+            }
+            item.setAttribute('draggable', 'false');
+        });
+        
+        const isCorrect = correct === total;
+        const feedbackDiv = document.querySelector('.journey-feedback');
+        feedbackDiv.style.display = 'flex';
+        
+        if (isCorrect) {
+            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-check-circle"></i></div><div class="journey-feedback__text"><strong>Верно!</strong><br>${stage.correctFeedback || 'Порядок действий соблюдён.'}</div>`;
+            feedbackDiv.classList.add('journey-feedback--correct');
+        } else {
+            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-exclamation-triangle"></i></div><div class="journey-feedback__text"><strong>Неверно</strong><br>${stage.wrongFeedback || 'Правильный порядок: бронирование → эскроу → ДДУ → регистрация → выписка'}</div>`;
+            feedbackDiv.classList.add('journey-feedback--wrong');
+        }
+        
+        ClientJourney.decisions.push({
+            stage: ClientJourney.currentStage,
+            stageTitle: stage.title,
+            isCorrect: isCorrect
+        });
+        
+        const nextBtn = document.querySelector('.journey-next-btn');
+        nextBtn.style.display = 'block';
+        nextBtn.onclick = () => {
+            ClientJourney.currentStage = stageIndex + 1;
+            renderClientJourneyStage(stageIndex + 1);
+        };
+    });
+}
+
 function finishClientJourney() {
-    // Подсчитываем статистику
     const total = ClientJourney.decisions.length;
     const correct = ClientJourney.decisions.filter(d => d.isCorrect).length;
     
-    // Сохраняем статистику
     if (AppState && AppState.stepStats) {
         AppState.stepStats.push({
             step: AppState.currentStepIndex + 1,
@@ -196,12 +530,8 @@ function finishClientJourney() {
         });
     }
     
-    const toast = document.getElementById('toast');
-    if (toast) {
-        showToast('📋', `Сценарий завершён. Правильных ответов: ${correct}/${total}`, correct === total ? 'success' : 'warning');
-    }
+    showToast('📋', `Сценарий завершён. Правильных ответов: ${correct}/${total}`, correct === total ? 'success' : 'warning');
     
-    // Переходим к следующему шагу
     setTimeout(() => {
         if (typeof AppState !== 'undefined' && AppState) {
             AppState.currentStepIndex++;
@@ -210,7 +540,6 @@ function finishClientJourney() {
     }, 2500);
 }
 
-// Вспомогательная функция escapeHtml
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>]/g, function(m) {
@@ -221,7 +550,7 @@ function escapeHtml(str) {
     });
 }
 
-// Добавление стилей для клиентского пути (если ещё нет)
+// Стили для новых элементов
 function ensureJourneyStyles() {
     if (document.getElementById('journey-styles')) return;
     
@@ -229,7 +558,7 @@ function ensureJourneyStyles() {
     style.id = 'journey-styles';
     style.textContent = `
         .journey-container-inner {
-            max-width: 700px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 24px;
         }
@@ -266,16 +595,22 @@ function ensureJourneyStyles() {
             line-height: 1.5;
             color: var(--color-text);
         }
-        .journey-agent {
+        .journey-task {
             background-color: var(--color-surface);
             border-radius: var(--radius);
             padding: 20px;
             box-shadow: 0 2px 8px var(--color-shadow);
         }
-        .journey-agent__label {
-            font-weight: 600;
-            margin-bottom: 16px;
+        .journey-task__title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
             color: var(--color-primary);
+        }
+        .journey-task__desc {
+            font-size: 0.9rem;
+            color: var(--color-text-light);
+            margin-bottom: 20px;
         }
         .journey-agent__options {
             display: flex;
@@ -310,7 +645,7 @@ function ensureJourneyStyles() {
             margin-top: 20px;
             padding: 16px 20px;
             border-radius: var(--radius-sm);
-            display: flex;
+            display: none;
             gap: 12px;
             align-items: flex-start;
         }
@@ -335,23 +670,160 @@ function ensureJourneyStyles() {
             flex: 1;
             line-height: 1.5;
         }
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .plan-card {
+            display: flex;
+            gap: 12px;
+            background-color: var(--color-bg);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius);
+            padding: 12px;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .plan-card:hover {
+            border-color: var(--color-primary);
+            transform: translateY(-2px);
+        }
+        .plan-card.selected {
+            border-color: var(--color-success);
+            background-color: #eafaf1;
+        }
+        .plan-card__image {
+            width: 80px;
+            height: 80px;
+            background-color: var(--color-border);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .plan-card__placeholder {
+            font-size: 2rem;
+            color: var(--color-text-light);
+        }
+        .plan-card__info {
+            flex: 1;
+        }
+        .plan-card__info h4 {
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        .plan-card__info p {
+            font-size: 0.8rem;
+            color: var(--color-text-light);
+            margin-bottom: 2px;
+        }
+        .plan-card__price {
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+        .plan-card__select {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            color: var(--color-primary);
+        }
+        .benefit-calculator {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .benefit-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .benefit-field label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .benefit-field input {
+            padding: 10px 12px;
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+        }
+        .sort-steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .sort-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background-color: var(--color-bg);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            cursor: grab;
+            transition: all var(--transition);
+        }
+        .sort-step:active {
+            cursor: grabbing;
+        }
+        .sort-step.dragging {
+            opacity: 0.4;
+        }
+        .sort-step__handle {
+            color: var(--color-text-light);
+            font-size: 1.2rem;
+            cursor: grab;
+        }
+        .sort-step__text {
+            flex: 1;
+            font-size: 0.95rem;
+        }
+        .sort-step__num {
+            width: 28px;
+            height: 28px;
+            background-color: var(--color-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        .sort-step--correct {
+            border-color: var(--color-success);
+            background-color: #eafaf1;
+        }
+        .sort-step--correct .sort-step__num {
+            background-color: var(--color-success);
+            color: white;
+        }
+        .sort-step--wrong {
+            border-color: var(--color-danger);
+            background-color: #fdedec;
+        }
+        .sort-step--wrong .sort-step__num {
+            background-color: var(--color-danger);
+            color: white;
+        }
         @media (max-width: 600px) {
             .journey-container-inner {
                 padding: 16px;
             }
-            .journey-client__message {
-                font-size: 0.9rem;
+            .plans-grid {
+                grid-template-columns: 1fr;
             }
-            .journey-option {
-                padding: 12px 14px;
-                font-size: 0.9rem;
+            .sort-step__text {
+                font-size: 0.85rem;
             }
         }
     `;
     document.head.appendChild(style);
 }
 
-// Вызываем добавление стилей при загрузке
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', ensureJourneyStyles);
 } else {
