@@ -86,35 +86,21 @@ function renderMarkers() {
         const jk = AppState.allJks.find(j => j.id === id);
         if (!jk) return;
 
-        // Адаптивный размер иконки для мобильных
-        const iconSize = window.innerWidth <= 768 ? [32, 42] : [28, 38];
-        const iconOffset = window.innerWidth <= 768 ? [-16, -42] : [-14, -38];
-        
+        // ПОСЛЕ УСТАНОВКИ — показываем метку с НАЗВАНИЕМ ЖК
         const marker = new ymaps.Placemark([data.lat, data.lng], {
             hintContent: jk.name,
-            balloonContent: `<b>${jk.name}</b><br>${jk.developer}<br><br><button onclick="window.zoomToMarker(${jk.lat}, ${jk.lng})" style="padding: 8px 16px; background: #2e86de; color: white; border: none; border-radius: 8px; cursor: pointer;">📍 Показать на карте</button>`
+            balloonContent: `<b>${jk.name}</b><br>${jk.developer}`,
+            // Добавляем название прямо на карту через иконку с текстом
         }, {
-            preset: 'islands#greenDotIcon',
+            // Используем метку с иконкой и текстом
+            preset: 'islands#greenStretchyIcon',
+            iconContent: jk.name.substring(0, 20), // Название ЖК на метке
             iconColor: '#27ae60',
-            iconImageSize: iconSize,
-            iconImageOffset: iconOffset,
-            balloonLayout: 'default#imageWithContent',
-            balloonPanelMaxMapArea: 0,
-            draggable: false,
-            hideIconOnBalloonOpen: false
+            draggable: false
         });
 
         AppState.map.geoObjects.add(marker);
         AppState.currentMarkers.push(marker);
-        
-        // Добавляем обработчик для открытия балуна
-        marker.events.add('click', () => {
-            if (window.innerWidth <= 768) {
-                setTimeout(() => {
-                    marker.balloon.open();
-                }, 100);
-            }
-        });
     });
 }
 
@@ -305,32 +291,6 @@ function selectJk(id) {
     }
     AppState.selectedJkId = id;
     renderJkList(AppState.currentStepJks);
-    
-    // Подсветка на карте выбранного ЖК
-    if (AppState.map) {
-        const jk = AppState.allJks.find(j => j.id === id);
-        if (jk) {
-            // Убираем предыдущую подсветку
-            if (AppState.highlightMarker) {
-                AppState.map.geoObjects.remove(AppState.highlightMarker);
-            }
-            // Создаём подсветку
-            AppState.highlightMarker = new ymaps.Placemark([jk.lat, jk.lng], {
-                hintContent: `📍 Выбран: ${jk.name}`
-            }, {
-                preset: 'islands#blueIcon',
-                iconColor: '#2e86de'
-            });
-            AppState.map.geoObjects.add(AppState.highlightMarker);
-            
-            // Центрируем карту на выбранном ЖК (только на мобильных)
-            if (window.innerWidth <= 768) {
-                AppState.map.setCenter([jk.lat, jk.lng], 14, {
-                    duration: 300
-                });
-            }
-        }
-    }
     
     showToast('📍', `Выбран: ${jk.name}. Нажмите на карту, чтобы поставить метку`, 'success');
 }
