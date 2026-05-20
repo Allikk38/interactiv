@@ -1,8 +1,21 @@
 // ===== КАРТА: ОСНОВНЫЕ ФУНКЦИИ + ЛОГИКА ШАГОВ =====
 
+let ymapsReady = false;
+let ymapsQueue = [];
+
+function onYmapsReady(callback) {
+    if (ymapsReady && typeof ymaps !== 'undefined' && ymaps.Map) {
+        callback();
+    } else {
+        ymapsQueue.push(callback);
+    }
+}
+
 // ----- БАЗОВЫЕ ФУНКЦИИ КАРТЫ -----
 function initMap() {
     const mapContainer = document.getElementById('map');
+    if (!mapContainer) return;
+    
     mapContainer.innerHTML = '';
 
     AppState.map = new ymaps.Map('map', {
@@ -116,17 +129,41 @@ function runMapStep(step) {
     
     AppState.currentStepJks = filteredJks;
     
-    const waitForYmaps = () => {
-        if (typeof ymaps !== 'undefined' && ymaps.Map) {
-            initMap();
-            renderJkList(filteredJks);
-            renderMarkers();
-            updateMapProgress();
-        } else {
-            setTimeout(waitForYmaps, 100);
-        }
+    // Функция инициализации после загрузки API
+    const startMap = () => {
+        initMap();
+        renderJkList(filteredJks);
+        renderMarkers();
+        updateMapProgress();
     };
-    waitForYmaps();
+    
+    // Проверяем готовность Яндекс.Карт
+    if (typeof ymaps !== 'undefined' && ymaps.Map) {
+        if (ymaps.ready) {
+            ymaps.ready(startMap);
+        } else {
+            startMap();
+        }
+    } else {
+        // Ждём загрузку API один раз
+        const checkInterval = setInterval(() => {
+            if (typeof ymaps !== 'undefined' && ymaps.Map) {
+                clearInterval(checkInterval);
+                if (ymaps.ready) {
+                    ymaps.ready(startMap);
+                } else {
+                    startMap();
+                }
+            }
+        }, 200);
+        
+        // Таймаут через 10 секунд
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            console.error('Яндекс.Карты не загрузились');
+            showToast('❌', 'Ошибка загрузки карты. Обновите страницу.', 'error');
+        }, 10000);
+    }
 }
 
 function renderJkList(filteredJks) {
@@ -234,13 +271,20 @@ function onMapClick(e) {
 function checkMapStepComplete() {
     const filteredJks = AppState.currentStepJks;
     if (AppState.placedJks.size === filteredJks.length && filteredJks.length > 0) {
-        AppState.stepStats.push({
-            step: AppState.currentStepIndex + 1,
-            type: 'map',
-            title: AppState.currentScenario.steps[AppState.currentStepIndex].title,
-            placed: AppState.placedJks.size,
-            total: filteredJks.length,
-        });
+        // Убираем дублирование статистики
+        const alreadySaved = AppState.stepStats.some(s => 
+            s.step === AppState.currentStepIndex + 1 && s.type === 'map'
+        );
+        
+        if (!alreadySaved) {
+            AppState.stepStats.push({
+                step: AppState.currentStepIndex + 1,
+                type: 'map',
+                title: AppState.currentScenario.steps[AppState.currentStepIndex].title,
+                placed: AppState.placedJks.size,
+                total: filteredJks.length,
+            });
+        }
         
         showToast('🎉', 'Все ЖК расставлены! Нажмите "Продолжить".', 'success');
     }
