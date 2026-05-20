@@ -59,7 +59,7 @@ function startScenario(scenario) {
     AppState.scenarioStartTime = Date.now();
 
     document.getElementById('scenario-screen').classList.add('hidden');
-    document.getElementById('header-info').textContent = `${scenario.icon || '📋'} ${scenario.name}`;
+    document.getElementById('header-info').textContent = `${scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : ''} ${scenario.name}`;
 
     ProgressBar.init();
     ProgressBar.update(0, scenario.steps.length - 1, scenario.steps);
@@ -77,6 +77,7 @@ function runStep() {
 
     document.getElementById('map-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.add('hidden');
+    document.getElementById('client-journey-screen').classList.add('hidden');
     document.getElementById('finish-screen').classList.add('hidden');
 
     if (step.type !== 'finish') {
@@ -98,6 +99,7 @@ function runStep() {
         case 'funnel': runFunnelStep(step); break;
         case 'ai-tools': runAiToolsStep(step); break;
         case 'analytics': runAnalyticsStep(step); break;
+        case 'client-journey': runClientJourneyStep(step); break;
         case 'finish': showFinish(); break;
         default: AppState.currentStepIndex++; runStep();
     }
@@ -106,6 +108,7 @@ function runStep() {
 function showFinish() {
     document.getElementById('map-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.add('hidden');
+    document.getElementById('client-journey-screen').classList.add('hidden');
     document.getElementById('finish-screen').classList.remove('hidden');
     document.getElementById('header-info').textContent = AppState.currentScenario?.name || '';
     ProgressBar.hide();
@@ -145,7 +148,7 @@ function showFinish() {
     }
 
     if (isPerfect && totalItems > 5) {
-        const perfectBadge = '🎯 Идеальное прохождение';
+        const perfectBadge = 'Идеальное прохождение';
         const isNewPerfect = Badges.award(perfectBadge);
         if (isNewPerfect) {
             setTimeout(() => Badges.showBadgeToast(perfectBadge), 2000);
@@ -153,7 +156,16 @@ function showFinish() {
     }
 }
 
-// ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
+// Обработчики для кнопки возврата на клиентском пути
+document.getElementById('journey-back-btn')?.addEventListener('click', () => {
+    AppState.currentScenario = null;
+    document.getElementById('client-journey-screen').classList.add('hidden');
+    document.getElementById('scenario-screen').classList.remove('hidden');
+    document.getElementById('header-info').textContent = '';
+    ProgressBar.hide();
+});
+
+// Остальные обработчики
 document.getElementById('back-to-scenarios-btn').addEventListener('click', () => {
     AppState.currentScenario = null;
     document.getElementById('map-screen').classList.add('hidden');
@@ -207,12 +219,10 @@ function setupPWAUpdates() {
   
   let refreshing = false;
   
-  // Обнаружение обновлений Service Worker
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (refreshing) return;
     refreshing = true;
     
-    // Показываем уведомление о обновлении
     showToast('🔄', 'Доступна новая версия! Обновляем...', 'success');
     
     setTimeout(() => {
@@ -220,7 +230,6 @@ function setupPWAUpdates() {
     }, 1500);
   });
   
-  // Проверка обновлений при возвращении на страницу
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage('checkUpdate');
@@ -228,7 +237,6 @@ function setupPWAUpdates() {
   });
 }
 
-// Проверка поддержки PWA и установки на домашний экран
 function setupPWAInstall() {
   let deferredPrompt;
   
@@ -236,7 +244,6 @@ function setupPWAInstall() {
     e.preventDefault();
     deferredPrompt = e;
     
-    // Показываем кнопку установки через 10 секунд
     setTimeout(() => {
       if (deferredPrompt && !localStorage.getItem('pwa-install-dismissed')) {
         showInstallButton(deferredPrompt);
@@ -244,7 +251,6 @@ function setupPWAInstall() {
     }, 10000);
   });
   
-  // Обработка завершения установки
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
     localStorage.setItem('pwa-installed', 'true');
@@ -253,12 +259,11 @@ function setupPWAInstall() {
 }
 
 function showInstallButton(promptEvent) {
-  // Проверяем, не установлено ли уже приложение
   if (window.matchMedia('(display-mode: standalone)').matches) return;
   if (localStorage.getItem('pwa-installed')) return;
   
   const btn = document.createElement('button');
-  btn.textContent = '📱 Установить приложение';
+  btn.innerHTML = '<i class="fas fa-download"></i> Установить приложение';
   btn.className = 'btn btn--primary';
   btn.style.position = 'fixed';
   btn.style.bottom = '80px';
@@ -276,20 +281,18 @@ function showInstallButton(promptEvent) {
     promptEvent.prompt();
     const { outcome } = await promptEvent.userChoice;
     if (outcome === 'accepted') {
-      showToast('🎉', 'Спасибо за установку!', 'success');
+      showToast('✅', 'Спасибо за установку!', 'success');
     }
     promptEvent = null;
   });
   
   document.body.appendChild(btn);
   
-  // Автоматическое скрытие через 15 секунд
   setTimeout(() => {
     if (document.body.contains(btn)) btn.remove();
   }, 15000);
 }
 
-// Добавляем стиль для анимации
 const pulseStyle = document.createElement('style');
 pulseStyle.textContent = `
   @keyframes pulse {
@@ -299,12 +302,10 @@ pulseStyle.textContent = `
 `;
 document.head.appendChild(pulseStyle);
 
-// Инициализация PWA
 if ('serviceWorker' in navigator) {
   setupPWAUpdates();
   setupPWAInstall();
   
-  // Регистрация с отслеживанием обновлений
   let swRegistration;
   
   window.addEventListener('load', () => {
@@ -313,12 +314,10 @@ if ('serviceWorker' in navigator) {
         swRegistration = registration;
         console.log('Service Worker зарегистрирован:', registration.scope);
         
-        // Периодическая проверка обновлений (каждый час)
         setInterval(() => {
           registration.update();
         }, 60 * 60 * 1000);
         
-        // Проверка при возвращении на страницу
         document.addEventListener('visibilitychange', () => {
           if (!document.hidden) {
             registration.update();
@@ -331,5 +330,4 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ===== СТАРТ =====
 document.addEventListener('DOMContentLoaded', loadData);
