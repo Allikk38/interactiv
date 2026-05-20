@@ -59,7 +59,7 @@ function startScenario(scenario) {
     AppState.scenarioStartTime = Date.now();
 
     document.getElementById('scenario-screen').classList.add('hidden');
-    document.getElementById('header-info').textContent = `${scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : ''} ${scenario.name}`;
+    document.getElementById('header-info').innerHTML = `${scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : ''} ${scenario.name}`;
 
     ProgressBar.init();
     ProgressBar.update(0, scenario.steps.length - 1, scenario.steps);
@@ -110,7 +110,7 @@ function showFinish() {
     document.getElementById('quiz-screen').classList.add('hidden');
     document.getElementById('client-journey-screen').classList.add('hidden');
     document.getElementById('finish-screen').classList.remove('hidden');
-    document.getElementById('header-info').textContent = AppState.currentScenario?.name || '';
+    document.getElementById('header-info').innerHTML = AppState.currentScenario?.name || '';
     ProgressBar.hide();
 
     const totalCorrect = AppState.stepStats.reduce((sum, s) => {
@@ -161,7 +161,7 @@ document.getElementById('journey-back-btn')?.addEventListener('click', () => {
     AppState.currentScenario = null;
     document.getElementById('client-journey-screen').classList.add('hidden');
     document.getElementById('scenario-screen').classList.remove('hidden');
-    document.getElementById('header-info').textContent = '';
+    document.getElementById('header-info').innerHTML = '';
     ProgressBar.hide();
 });
 
@@ -170,7 +170,7 @@ document.getElementById('back-to-scenarios-btn').addEventListener('click', () =>
     AppState.currentScenario = null;
     document.getElementById('map-screen').classList.add('hidden');
     document.getElementById('scenario-screen').classList.remove('hidden');
-    document.getElementById('header-info').textContent = '';
+    document.getElementById('header-info').innerHTML = '';
     ProgressBar.hide();
 });
 
@@ -178,7 +178,7 @@ document.getElementById('quiz-back-btn').addEventListener('click', () => {
     AppState.currentScenario = null;
     document.getElementById('quiz-screen').classList.add('hidden');
     document.getElementById('scenario-screen').classList.remove('hidden');
-    document.getElementById('header-info').textContent = '';
+    document.getElementById('header-info').innerHTML = '';
     ProgressBar.hide();
 });
 
@@ -196,7 +196,7 @@ document.getElementById('finish-scenarios-btn').addEventListener('click', () => 
     AppState.currentScenario = null;
     document.getElementById('finish-screen').classList.add('hidden');
     document.getElementById('scenario-screen').classList.remove('hidden');
-    document.getElementById('header-info').textContent = '';
+    document.getElementById('header-info').innerHTML = '';
 });
 
 const hintBtn = document.getElementById('hint-btn');
