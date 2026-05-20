@@ -344,6 +344,38 @@ function renderCarousel(jks) {
     updateCarouselCounter();
 }
 
+function updateDesktopDrawerList(jks) {
+    const drawerList = document.getElementById('jk-drawer-list');
+    if (!drawerList) return;
+    
+    drawerList.innerHTML = '';
+    
+    jks.forEach(jk => {
+        const isPlaced = AppState.placedJks.has(jk.id);
+        const li = document.createElement('li');
+        li.className = `jk-list__item${isPlaced ? ' jk-list__item--placed' : ''}${AppState.selectedJkId === jk.id ? ' jk-list__item--selected' : ''}`;
+        li.dataset.id = jk.id;
+        li.innerHTML = `
+            <div class="jk-list__name">${escapeHtml(jk.name)}</div>
+            <div class="jk-list__developer">${escapeHtml(jk.developer)}</div>
+            ${jk.hint && jk.hint.trim() && !isPlaced ? `<div class="jk-list__hint">💡 ${escapeHtml(jk.hint.substring(0, 40))}</div>` : ''}
+            ${isPlaced ? '<div style="font-size:0.7rem; color:var(--color-success); margin-top:4px;">✓ Расставлен</div>' : ''}
+        `;
+        
+        if (!isPlaced) {
+            li.addEventListener('click', () => {
+                selectJk(jk.id);
+                document.querySelectorAll('.jk-list__item').forEach(item => {
+                    item.classList.remove('jk-list__item--selected');
+                });
+                li.classList.add('jk-list__item--selected');
+            });
+        }
+        
+        drawerList.appendChild(li);
+    });
+}
+
 function initCarouselScroll() {
     const slides = document.getElementById('carousel-slides');
     const prevBtn = document.getElementById('carousel-prev');
