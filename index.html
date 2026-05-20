@@ -44,7 +44,7 @@
                 <div class="scenarios-grid" id="scenarios-grid"></div>
             </section>
 
-                        <!-- Экран карты -->
+            <!-- Экран карты -->
             <section class="screen hidden" id="map-screen">
                 <div class="step-header">
                     <button class="btn btn--small btn--secondary" id="back-to-scenarios-btn"><i class="fas fa-arrow-left"></i> К сценариям</button>
@@ -53,6 +53,27 @@
                 </div>
                 
                 <div class="main main--map">
+                    <!-- Левая панель со списком ЖК (для ПК) -->
+                    <div class="jk-drawer" id="jk-drawer">
+                        <div class="jk-drawer__header">
+                            <h3 class="jk-drawer__title"><i class="fas fa-list"></i> Жилые комплексы</h3>
+                            <button class="jk-drawer__close" id="drawer-close-btn"><i class="fas fa-times"></i></button>
+                        </div>
+                        <ul class="jk-drawer__list" id="jk-drawer-list"></ul>
+                        <div class="jk-drawer__actions">
+                            <button class="btn btn--secondary btn--small" id="hint-btn"><i class="fas fa-lightbulb"></i> Подсказка</button>
+                            <button class="btn btn--danger btn--small" id="reset-step-btn"><i class="fas fa-undo-alt"></i> Сбросить шаг</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Оверлей для мобильной панели -->
+                    <div class="drawer-overlay" id="drawer-overlay"></div>
+                    
+                    <!-- Плавающая кнопка для открытия списка на мобильных -->
+                    <button class="floating-list-btn" id="floating-list-btn">
+                        <i class="fas fa-building"></i>
+                    </button>
+                    
                     <section class="map-section">
                         <div class="map-container" id="map"></div>
                         <div class="map-progress" id="map-progress" style="display: none;">
@@ -60,7 +81,7 @@
                             из <span id="map-progress-total">0</span>
                             <div class="map-progress__fill"></div>
                         </div>
-                        <p class="map-hint"><i class="fas fa-map-marker-alt"></i> Нажмите на карточку ЖК, затем на карту, чтобы поставить метку</p>
+                        <p class="map-hint"><i class="fas fa-map-marker-alt"></i> Нажмите на ЖК в списке, затем на карту, чтобы поставить метку</p>
                     </section>
                 </div>
             </section>
