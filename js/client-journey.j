@@ -1,0 +1,330 @@
+// ===== СКВОЗНОЙ СЦЕНАРИЙ: ПУТЬ КЛИЕНТА ОТ ЗВОНКА ДО СДЕЛКИ =====
+
+// Состояние текущего сценария клиентского пути
+const ClientJourney = {
+    currentStage: 0,
+    stages: [],
+    decisions: [],
+    journeyData: null
+};
+
+// Главная функция запуска сценария
+function runClientJourneyStep(step) {
+    // Получаем данные сценария из AppState.currentScenario.clientJourney
+    const journeyData = AppState.currentScenario.clientJourney;
+    if (!journeyData || !journeyData.stages) {
+        console.error('Нет данных для сценария клиентского пути');
+        // Если данных нет — пропускаем шаг
+        AppState.currentStepIndex++;
+        runStep();
+        return;
+    }
+    
+    // Инициализируем состояние
+    ClientJourney.currentStage = 0;
+    ClientJourney.stages = journeyData.stages;
+    ClientJourney.decisions = [];
+    ClientJourney.journeyData = journeyData;
+    
+    // Показываем экран
+    showClientJourneyScreen();
+    
+    // Рендерим первый этап
+    renderClientJourneyStage(0);
+}
+
+// Показать экран клиентского пути
+function showClientJourneyScreen() {
+    // Скрываем другие экраны
+    document.getElementById('map-screen')?.classList.add('hidden');
+    document.getElementById('quiz-screen')?.classList.add('hidden');
+    document.getElementById('finish-screen')?.classList.add('hidden');
+    
+    // Показываем экран клиентского пути (создадим позже в index.html)
+    const journeyScreen = document.getElementById('client-journey-screen');
+    if (journeyScreen) {
+        journeyScreen.classList.remove('hidden');
+    } else {
+        // Временно: если экрана нет, показываем через quiz-screen
+        console.warn('Экран client-journey-screen не найден, использую quiz-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        quizScreen.classList.remove('hidden');
+        document.getElementById('quiz-step-title').textContent = 'Путь клиента';
+        document.getElementById('quiz-step-counter').textContent = `Этап 1 из ?`;
+    }
+}
+
+// Рендер текущего этапа
+function renderClientJourneyStage(stageIndex) {
+    const stages = ClientJourney.stages;
+    
+    if (stageIndex >= stages.length) {
+        finishClientJourney();
+        return;
+    }
+    
+    const stage = stages[stageIndex];
+    const currentStepNumber = AppState.currentStepIndex + 1;
+    const totalSteps = AppState.currentScenario.steps.length;
+    
+    // Обновляем заголовок и счётчик (если используется quiz-screen)
+    const stepTitle = document.getElementById('quiz-step-title');
+    const stepCounter = document.getElementById('quiz-step-counter');
+    if (stepTitle) stepTitle.textContent = stage.title;
+    if (stepCounter) stepCounter.textContent = `Шаг ${currentStepNumber} из ${totalSteps} · Этап ${stageIndex + 1} из ${stages.length}`;
+    
+    // Получаем контейнер
+    const container = document.getElementById('quiz-container');
+    if (!container) return;
+    
+    // Генерируем HTML для этапа
+    let optionsHTML = '';
+    if (stage.options) {
+        stage.options.forEach((opt, idx) => {
+            optionsHTML += `
+                <div class="journey-option" data-opt-index="${idx}" data-next-stage="${opt.nextStage || stageIndex + 1}">
+                    <div class="journey-option__text">${opt.text}</div>
+                    <div class="journey-option__feedback hidden"></div>
+                </div>
+            `;
+        });
+    }
+    
+    container.innerHTML = `
+        <div class="journey-container">
+            <div class="journey-progress">
+                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / stages.length) * 100}%"></div>
+            </div>
+            <div class="journey-client">
+                <div class="journey-client__avatar">
+                    <i class="fas ${stage.clientIcon || 'fa-user-circle'}"></i>
+                </div>
+                <div class="journey-client__name">${stage.clientName || 'Клиент'}</div>
+                <div class="journey-client__message">${stage.clientMessage || ''}</div>
+            </div>
+            <div class="journey-agent">
+                <div class="journey-agent__label">
+                    <i class="fas fa-comment-dots"></i> Ваш ответ:
+                </div>
+                <div class="journey-agent__options">
+                    ${optionsHTML}
+                </div>
+            </div>
+            <div class="journey-feedback" id="journey-feedback" style="display: none;"></div>
+            <button class="btn btn--primary" id="journey-next-btn" style="display: none;">Далее →</button>
+        </div>
+    `;
+    
+    // Добавляем стили (если ещё нет)
+    ensureJourneyStyles();
+    
+    // Привязываем обработчики к опциям
+    document.querySelectorAll('.journey-option').forEach(opt => {
+        opt.addEventListener('click', () => handleJourneyChoice(opt, stage));
+    });
+}
+
+// Обработка выбора агента
+function handleJourneyChoice(element, stage) {
+    // Блокируем повторные клики
+    if (element.classList.contains('journey-option--selected')) return;
+    
+    const optIndex = parseInt(element.dataset.optIndex);
+    const selectedOption = stage.options[optIndex];
+    const isCorrect = selectedOption.correct;
+    
+    // Отмечаем выбранный вариант
+    document.querySelectorAll('.journey-option').forEach(opt => {
+        opt.style.pointerEvents = 'none';
+    });
+    element.classList.add('journey-option--selected');
+    
+    // Показываем обратную связь
+    const feedbackDiv = document.getElementById('journey-feedback');
+    const feedbackText = element.querySelector('.journey-option__feedback');
+    
+    if (feedbackDiv) {
+        feedbackDiv.style.display = 'block';
+        feedbackDiv.innerHTML = `
+            <div class="journey-feedback__icon">
+                <i class="fas ${isCorrect ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
+                </div>
+            <div class="journey-feedback__text">
+                <strong>${isCorrect ? 'Верно!' : 'Можно лучше:'}</strong><br>
+                ${selectedOption.feedback || (isCorrect ? stage.correctFeedback : stage.wrongFeedback || 'Попробуйте другой вариант')}
+            </div>
+        `;
+        feedbackDiv.classList.add(isCorrect ? 'journey-feedback--correct' : 'journey-feedback--wrong');
+    }
+    
+    // Сохраняем решение
+    ClientJourney.decisions.push({
+        stage: ClientJourney.currentStage,
+        stageTitle: stage.title,
+        choice: selectedOption.text,
+        isCorrect: isCorrect
+    });
+    
+    // Показываем кнопку "Далее"
+    const nextBtn = document.getElementById('journey-next-btn');
+    if (nextBtn) {
+        nextBtn.style.display = 'block';
+        
+        // Определяем следующий этап (если есть ветвление)
+        const nextStage = selectedOption.nextStage !== undefined 
+            ? parseInt(selectedOption.nextStage) 
+            : ClientJourney.currentStage + 1;
+        
+        nextBtn.onclick = () => {
+            ClientJourney.currentStage = nextStage;
+            renderClientJourneyStage(nextStage);
+        };
+    }
+}
+
+// Завершение сценария
+function finishClientJourney() {
+    // Подсчитываем статистику
+    const total = ClientJourney.decisions.length;
+    const correct = ClientJourney.decisions.filter(d => d.isCorrect).length;
+    
+    // Сохраняем статистику
+    AppState.stepStats.push({
+        step: AppState.currentStepIndex + 1,
+        type: 'client-journey',
+        title: AppState.currentScenario.steps[AppState.currentStepIndex].title,
+        correct: correct,
+        total: total,
+        decisions: ClientJourney.decisions
+    });
+    
+    showToast('🎉', `Сценарий завершён! Правильных ответов: ${correct}/${total}`, correct === total ? 'success' : 'warning');
+    
+    // Переходим к следующему шагу
+    setTimeout(() => {
+        AppState.currentStepIndex++;
+        runStep();
+    }, 2500);
+}
+
+// Добавление стилей для клиентского пути (если ещё нет)
+function ensureJourneyStyles() {
+    if (document.getElementById('journey-styles')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'journey-styles';
+    style.textContent = `
+        .journey-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .journey-progress {
+            background-color: var(--color-border);
+            border-radius: 10px;
+            height: 8px;
+            margin-bottom: 32px;
+            overflow: hidden;
+        }
+        .journey-progress__bar {
+            background: linear-gradient(90deg, var(--color-primary), var(--color-success));
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .journey-client {
+            background-color: var(--color-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .journey-client__avatar {
+            font-size: 3rem;
+            margin-bottom: 8px;
+            color: var(--color-primary);
+        }
+        .journey-client__name {
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .journey-client__message {
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--color-text);
+        }
+        .journey-agent {
+            background-color: var(--color-surface);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 2px 8px var(--color-shadow);
+        }
+        .journey-agent__label {
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--color-primary);
+        }
+        .journey-agent__options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .journey-option {
+            background-color: var(--color-bg);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            padding: 14px 18px;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .journey-option:hover {
+            border-color: var(--color-primary);
+            background-color: #eaf2fd;
+        }
+        .journey-option--selected {
+            border-color: var(--color-success);
+            background-color: #eafaf1;
+        }
+        .journey-feedback {
+            margin-top: 20px;
+            padding: 16px 20px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .journey-feedback--correct {
+            background-color: #eafaf1;
+            border-left: 4px solid var(--color-success);
+        }
+        .journey-feedback--wrong {
+            background-color: #fef9e7;
+            border-left: 4px solid var(--color-warning);
+        }
+        .journey-feedback__icon {
+            font-size: 1.3rem;
+        }
+        .journey-feedback--correct .journey-feedback__icon {
+            color: var(--color-success);
+        }
+        .journey-feedback--wrong .journey-feedback__icon {
+            color: var(--color-warning);
+        }
+        .journey-feedback__text {
+            flex: 1;
+            line-height: 1.5;
+        }
+        @media (max-width: 600px) {
+            .journey-container {
+                padding: 16px;
+            }
+            .journey-client__message {
+                font-size: 0.9rem;
+            }
+            .journey-option {
+                padding: 12px 14px;
+                font-size: 0.9rem;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
