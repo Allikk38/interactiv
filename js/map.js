@@ -1,4 +1,4 @@
-// ===== КАРТА: ОСНОВНЫЕ ФУНКЦИИ + ЛОГИКА ШАГОВ (МОБИЛЬНАЯ ВЕРСИЯ) =====
+// ===== КАРТА: ОСНОВНЫЕ ФУНКЦИИ + КАРУСЕЛЬ =====
 
 let ymapsReady = false;
 let ymapsQueue = [];
@@ -19,7 +19,6 @@ function initMap() {
         return;
     }
     
-    // Проверяем, не инициализирована ли уже карта
     if (AppState.map && AppState.map.destroy) {
         try {
             AppState.map.destroy();
@@ -27,7 +26,6 @@ function initMap() {
         AppState.map = null;
     }
     
-    // Очищаем контейнер
     mapContainer.innerHTML = '';
     
     try {
@@ -41,7 +39,6 @@ function initMap() {
             suppressObsoleteBrowserNotifier: true
         });
 
-        // Настройка контролов для мобильных
         if (window.innerWidth <= 768) {
             const zoomControl = AppState.map.controls.get('zoomControl');
             if (zoomControl) {
@@ -58,12 +55,10 @@ function initMap() {
             'ruler'
         ]);
         
-        // Включаем мультитач для мобильных
         AppState.map.behaviors.enable(['drag', 'scrollZoom', 'multiTouch']);
 
         AppState.map.events.add('click', onMapClick);
         
-        // Принудительно обновляем размер карты
         setTimeout(() => {
             if (AppState.map && AppState.map.container) {
                 AppState.map.container.fitToViewport();
@@ -86,7 +81,6 @@ function renderMarkers() {
         const jk = AppState.allJks.find(j => j.id === id);
         if (!jk) return;
 
-        // Создаём кастомную HTML-метку с красивым дизайном
         const marker = new ymaps.Placemark([data.lat, data.lng], {
             hintContent: jk.name,
             balloonContent: `<b>${escapeHtml(jk.name)}</b><br>${escapeHtml(jk.developer)}<br><br><button onclick="window.zoomToMarker(${jk.lat}, ${jk.lng})" style="padding: 8px 16px; background: #2e86de; color: white; border: none; border-radius: 8px; cursor: pointer;">📍 Показать на карте</button>`
@@ -106,7 +100,6 @@ function renderMarkers() {
                     white-space: nowrap;
                     box-shadow: 0 4px 12px rgba(0,0,0,0.25);
                     border: 1px solid rgba(255,255,255,0.2);
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     backdrop-filter: blur(2px);
                     display: flex;
                     align-items: center;
@@ -125,7 +118,6 @@ function renderMarkers() {
     });
 }
 
-// Глобальная функция для зума к маркеру
 window.zoomToMarker = function(lat, lng) {
     if (AppState.map) {
         AppState.map.setCenter([lat, lng], 17, {
@@ -169,7 +161,9 @@ function sendToGoogle(jkName, isCorrect, distance) {
     }).catch(err => console.error('Ошибка отправки:', err));
 }
 
-// ----- ЛОГИКА ШАГОВ КАРТЫ -----
+// ----- ЛОГИКА ШАГОВ КАРТЫ С КАРУСЕЛЬЮ -----
+let carouselScrollInterval = null;
+
 function runMapStep(step) {
     const mapScreen = document.getElementById('map-screen');
     const mapStepTitle = document.getElementById('map-step-title');
@@ -198,13 +192,10 @@ function runMapStep(step) {
     
     AppState.selectedJkId = null;
     AppState.placedJks.clear();
-    
-    // На мобильных устройствах закрываем панель при старте шага
-    if (window.innerWidth <= 768 && typeof Drawer !== 'undefined' && Drawer.isOpen) {
-        Drawer.close();
-    }
-    
     AppState.currentStepJks = filteredJks;
+    
+    // Создаём карусель
+    renderCarousel(filteredJks);
     
     // Показываем индикатор загрузки
     const mapContainer = document.getElementById('map');
@@ -212,15 +203,12 @@ function runMapStep(step) {
         mapContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; background: #f5f6fa;"><div style="text-align: center;"><div style="width: 40px; height: 40px; border: 4px solid #dfe6e9; border-top-color: #2e86de; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div><p style="color: #636e72;">Загрузка карты...</p></div></div>';
     }
     
-    // Функция инициализации после загрузки API
     const startMap = () => {
         initMap();
-        renderJkList(filteredJks);
         renderMarkers();
         updateMapProgress();
     };
     
-    // Проверяем готовность Яндекс.Карт с таймаутом
     let checkInterval;
     let timeoutId;
     
@@ -260,39 +248,151 @@ function runMapStep(step) {
     }
 }
 
-function renderJkList(filteredJks) {
-    const jkListEl = document.getElementById('jk-list');
-    if (!jkListEl) return;
+function renderCarousel(jks) {
+    const existingCarousel = document.querySelector('.jk-carousel');
+    if (existingCarousel) existingCarousel.remove();
     
-    jkListEl.innerHTML = '';
+    if (!jks.length) return;
     
-    filteredJks.forEach(jk => {
+    const carouselHTML = `
+        <div class="jk-carousel">
+            <div class="jk-carousel__header">
+                <span class="jk-carousel__title"><i class="fas fa-building"></i> Жилые комплексы</span>
+                <span class="jk-carousel__counter" id="carousel-counter">${AppState.placedJks.size} / ${jks.length} расставлено</span>
+            </div>
+            <div class="jk-carousel__wrapper">
+                <button class="jk-carousel__btn" id="carousel-prev" disabled><i class="fas fa-chevron-left"></i></button>
+                <div class="jk-carousel__slides" id="carousel-slides">
+                    <div class="jk-carousel__track" id="carousel-track"></div>
+                </div>
+                <button class="jk-carousel__btn" id="carousel-next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    `;
+    
+    // Вставляем после прогресс-бара или в начало map-screen
+    const mapScreen = document.getElementById('map-screen');
+    const progressContainer = document.querySelector('.map-progress')?.parentElement;
+    
+    if (progressContainer && progressContainer.parentElement) {
+        progressContainer.parentElement.insertAdjacentHTML('afterbegin', carouselHTML);
+    } else {
+        mapScreen.insertAdjacentHTML('afterbegin', carouselHTML);
+    }
+    
+    const track = document.getElementById('carousel-track');
+    jks.forEach(jk => {
         const isPlaced = AppState.placedJks.has(jk.id);
-        const li = document.createElement('li');
-        li.className = 'jk-list__item';
-        if (AppState.selectedJkId === jk.id) li.classList.add('jk-list__item--selected');
-        if (isPlaced) li.classList.add('jk-list__item--placed');
-        li.innerHTML = `
-            <div class="jk-list__name">${escapeHtml(jk.name)}</div>
-            <div class="jk-list__developer">${escapeHtml(jk.developer)}</div>
-            <div class="jk-list__hint" style="font-size: 0.7rem; color: #636e72; margin-top: 4px; ${isPlaced ? 'display: none;' : ''}">${jk.hint && jk.hint.trim() ? '💡 ' + escapeHtml(jk.hint.substring(0, 50)) : ''}</div>
+        const card = document.createElement('div');
+        card.className = `jk-card${AppState.selectedJkId === jk.id ? ' jk-card--selected' : ''}${isPlaced ? ' jk-card--placed' : ''}`;
+        card.dataset.id = jk.id;
+        card.innerHTML = `
+            <div class="jk-card__name">${escapeHtml(jk.name)}</div>
+            <div class="jk-card__developer">${escapeHtml(jk.developer)}</div>
+            ${jk.hint && jk.hint.trim() && !isPlaced ? `<div class="jk-card__hint">💡 ${escapeHtml(jk.hint.substring(0, 40))}</div>` : ''}
+            ${isPlaced ? '<div class="jk-card__status">✓ Расставлен</div>' : ''}
         `;
+        
         if (!isPlaced) {
-            li.addEventListener('click', (e) => {
+            card.addEventListener('click', (e) => {
                 e.stopPropagation();
                 selectJk(jk.id);
-                // На мобильных закрываем панель после выбора
-                if (window.innerWidth <= 768 && typeof Drawer !== 'undefined' && Drawer.isOpen) {
-                    setTimeout(() => Drawer.close(), 200);
-                }
             });
         }
-        jkListEl.appendChild(li);
+        
+        track.appendChild(card);
     });
     
-    const hintBtn = document.getElementById('hint-btn');
-    if (hintBtn) hintBtn.disabled = AppState.selectedJkId === null;
-    updateMapProgress();
+    // Инициализация скролла карусели
+    initCarouselScroll();
+    updateCarouselCounter();
+}
+
+function initCarouselScroll() {
+    const slides = document.getElementById('carousel-slides');
+    const prevBtn = document.getElementById('carousel-prev');
+    const nextBtn = document.getElementById('carousel-next');
+    
+    if (!slides) return;
+    
+    const updateButtons = () => {
+        if (!slides) return;
+        const scrollLeft = slides.scrollLeft;
+        const maxScroll = slides.scrollWidth - slides.clientWidth;
+        if (prevBtn) prevBtn.disabled = scrollLeft <= 5;
+        if (nextBtn) nextBtn.disabled = maxScroll <= 5 || scrollLeft >= maxScroll - 5;
+    };
+    
+    const scroll = (direction) => {
+        const scrollAmount = slides.clientWidth * 0.8;
+        if (direction === 'left') {
+            slides.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        } else {
+            slides.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+        setTimeout(updateButtons, 300);
+    };
+    
+    if (prevBtn) prevBtn.addEventListener('click', () => scroll('left'));
+    if (nextBtn) nextBtn.addEventListener('click', () => scroll('right'));
+    
+    slides.addEventListener('scroll', updateButtons);
+    slides.addEventListener('touchstart', () => {
+        if (carouselScrollInterval) clearTimeout(carouselScrollInterval);
+        carouselScrollInterval = setTimeout(updateButtons, 100);
+    });
+    
+    setTimeout(updateButtons, 100);
+    window.addEventListener('resize', updateButtons);
+}
+
+function updateCarouselCounter() {
+    const counter = document.getElementById('carousel-counter');
+    const total = AppState.currentStepJks ? AppState.currentStepJks.length : 0;
+    const placed = AppState.placedJks.size;
+    if (counter) {
+        counter.textContent = `${placed} / ${total} расставлено`;
+    }
+}
+
+function updateSelectedCard() {
+    document.querySelectorAll('.jk-card').forEach(card => {
+        card.classList.remove('jk-card--selected');
+        if (card.dataset.id == AppState.selectedJkId) {
+            card.classList.add('jk-card--selected');
+        }
+    });
+}
+
+function selectJk(id) {
+    if (AppState.placedJks.has(id)) {
+        showToast('⚠️', 'Этот ЖК уже расставлен', 'error');
+        return;
+    }
+    AppState.selectedJkId = id;
+    updateSelectedCard();
+    
+    const jk = AppState.allJks.find(j => j.id === id);
+    if (jk) {
+        showToast('📍', `Выбран: ${jk.name}. Нажмите на карту, чтобы поставить метку`, 'success');
+        
+        // Подсветка примерного места на карте
+        if (AppState.map) {
+            if (AppState.highlightMarker) {
+                AppState.map.geoObjects.remove(AppState.highlightMarker);
+            }
+            AppState.highlightMarker = new ymaps.Placemark([jk.lat, jk.lng], {
+                hintContent: `Примерное расположение ${jk.name}`
+            }, {
+                preset: 'islands#blueCircleDotIcon',
+                iconColor: '#2e86de'
+            });
+            AppState.map.geoObjects.add(AppState.highlightMarker);
+            
+            // Плавно перемещаем карту к примерному месту
+            AppState.map.setCenter([jk.lat, jk.lng], 14, { duration: 500 });
+        }
+    }
 }
 
 function escapeHtml(str) {
@@ -305,36 +405,24 @@ function escapeHtml(str) {
     });
 }
 
-function selectJk(id) {
-    if (AppState.placedJks.has(id)) {
-        showToast('⚠️', 'Этот ЖК уже расставлен', 'error');
-        return;
-    }
-    AppState.selectedJkId = id;
-    renderJkList(AppState.currentStepJks);
-    
-    // Показываем тост с выбором
-    const jk = AppState.allJks.find(j => j.id === id);
-    if (jk) {
-        showToast('📍', `Выбран: ${jk.name}. Нажмите на карту, чтобы поставить метку`, 'success');
-    }
-}
-
 function updateMapProgress() {
-    if (!AppState.mapProgressCount || !AppState.mapProgressTotal) return;
-    
     const total = AppState.currentStepJks ? AppState.currentStepJks.length : 0;
     const placed = AppState.placedJks.size;
     
-    AppState.mapProgressCount.textContent = placed;
-    AppState.mapProgressTotal.textContent = total;
+    if (AppState.mapProgressCount) {
+        AppState.mapProgressCount.textContent = placed;
+    }
+    if (AppState.mapProgressTotal) {
+        AppState.mapProgressTotal.textContent = total;
+    }
     
-    // Анимация прогресса
     const progressPercent = total > 0 ? (placed / total) * 100 : 0;
     const progressFill = document.querySelector('#map-progress .map-progress__fill');
     if (progressFill) {
         progressFill.style.width = `${progressPercent}%`;
     }
+    
+    updateCarouselCounter();
     
     if (placed === total && total > 0) {
         showContinueButton();
@@ -343,7 +431,7 @@ function updateMapProgress() {
 
 function onMapClick(e) {
     if (AppState.selectedJkId === null) {
-        showToast('👆', 'Сначала выберите ЖК из списка', 'error');
+        showToast('👆', 'Сначала выберите ЖК из карусели (нажмите на карточку)', 'error');
         return;
     }
     
@@ -361,22 +449,22 @@ function onMapClick(e) {
         AppState.placedJks.set(jk.id, { lat, lng, correct: true });
         showToast('✅', `Правильно! ${jk.name} на месте.`, 'success');
         
-        // Убираем подсветку
         if (AppState.highlightMarker) {
             AppState.map.geoObjects.remove(AppState.highlightMarker);
             AppState.highlightMarker = null;
         }
         
         AppState.selectedJkId = null;
+        updateSelectedCard();
         sendToGoogle(jk.name, true, distance);
         updateMapProgress();
+        renderMarkers();
+        renderCarousel(AppState.currentStepJks);
         
-        // Вибрация на мобильных (если поддерживается)
         if (window.navigator && window.navigator.vibrate) {
             window.navigator.vibrate(100);
         }
     } else {
-        // Показываем временный маркер ошибки
         const wrongMarker = new ymaps.Placemark([lat, lng], {
             hintContent: `${jk.name} (неверно)`
         }, {
@@ -385,24 +473,15 @@ function onMapClick(e) {
         });
         AppState.map.geoObjects.add(wrongMarker);
         
-        const hintText = jk.hint && jk.hint.trim() ? jk.hint : 'Попробуйте ещё раз! Подсказка в списке ЖК';
+        const hintText = jk.hint && jk.hint.trim() ? jk.hint : 'Попробуйте ещё раз! Посмотрите подсказку на карточке ЖК';
         showToast('❌', `Неправильно. ${hintText}`, 'error');
         
         setTimeout(() => AppState.map.geoObjects.remove(wrongMarker), 3000);
         sendToGoogle(jk.name, false, distance);
         
-        // Вибрация при ошибке
         if (window.navigator && window.navigator.vibrate) {
             window.navigator.vibrate([100, 50, 100]);
         }
-    }
-    
-    renderJkList(AppState.currentStepJks);
-    renderMarkers();
-    
-    // На мобильных закрываем панель после расстановки
-    if (window.innerWidth <= 768 && typeof Drawer !== 'undefined' && Drawer.isOpen) {
-        setTimeout(() => Drawer.close(), 300);
     }
     
     checkMapStepComplete();
@@ -411,7 +490,6 @@ function onMapClick(e) {
 function checkMapStepComplete() {
     const filteredJks = AppState.currentStepJks;
     if (AppState.placedJks.size === filteredJks.length && filteredJks.length > 0) {
-        // Проверяем, не сохранена ли уже статистика для этого шага
         const alreadySaved = AppState.stepStats.some(s => 
             s.step === AppState.currentStepIndex + 1 && s.type === 'map'
         );
@@ -435,7 +513,6 @@ function resetMapStep() {
         AppState.placedJks.clear();
         AppState.selectedJkId = null;
         
-        // Убираем подсветку
         if (AppState.highlightMarker) {
             AppState.map.geoObjects.remove(AppState.highlightMarker);
             AppState.highlightMarker = null;
@@ -443,13 +520,12 @@ function resetMapStep() {
         
         if (AppState.map) {
             renderMarkers();
-            // Центрируем карту обратно
             AppState.map.setCenter(MAP_CENTER, MAP_ZOOM, { duration: 300 });
         }
-        renderJkList(AppState.currentStepJks);
+        
+        renderCarousel(AppState.currentStepJks);
         updateMapProgress();
         
-        // Удаляем кнопку продолжения, если есть
         const continueBtn = document.getElementById('step-continue-btn');
         if (continueBtn) continueBtn.remove();
         
@@ -457,7 +533,6 @@ function resetMapStep() {
     }
 }
 
-// Добавляем обработчик изменения ориентации экрана
 window.addEventListener('resize', () => {
     if (AppState.map) {
         setTimeout(() => {
@@ -465,3 +540,6 @@ window.addEventListener('resize', () => {
         }, 100);
     }
 });
+
+// Для совместимости с кнопками в HTML
+window.resetMapStep = resetMapStep;
