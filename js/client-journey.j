@@ -8,15 +8,15 @@ const ClientJourney = {
     journeyData: null
 };
 
-// Главная функция запуска сценария
-function runClientJourneyStep(step) {
+// Глобальная функция для запуска сценария
+window.runClientJourneyStep = function(step) {
     // Получаем данные сценария из AppState.currentScenario.clientJourney
     const journeyData = AppState.currentScenario.clientJourney;
     if (!journeyData || !journeyData.stages) {
         console.error('Нет данных для сценария клиентского пути');
         // Если данных нет — пропускаем шаг
         AppState.currentStepIndex++;
-        runStep();
+        if (typeof runStep === 'function') runStep();
         return;
     }
     
@@ -31,26 +31,25 @@ function runClientJourneyStep(step) {
     
     // Рендерим первый этап
     renderClientJourneyStage(0);
-}
+};
 
 // Показать экран клиентского пути
 function showClientJourneyScreen() {
     // Скрываем другие экраны
-    document.getElementById('map-screen')?.classList.add('hidden');
-    document.getElementById('quiz-screen')?.classList.add('hidden');
-    document.getElementById('finish-screen')?.classList.add('hidden');
-    
-    // Показываем экран клиентского пути (создадим позже в index.html)
+    const mapScreen = document.getElementById('map-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const finishScreen = document.getElementById('finish-screen');
     const journeyScreen = document.getElementById('client-journey-screen');
+    
+    if (mapScreen) mapScreen.classList.add('hidden');
+    if (quizScreen) quizScreen.classList.add('hidden');
+    if (finishScreen) finishScreen.classList.add('hidden');
+    
+    // Показываем экран клиентского пути
     if (journeyScreen) {
         journeyScreen.classList.remove('hidden');
     } else {
-        // Временно: если экрана нет, показываем через quiz-screen
-        console.warn('Экран client-journey-screen не найден, использую quiz-screen');
-        const quizScreen = document.getElementById('quiz-screen');
-        quizScreen.classList.remove('hidden');
-        document.getElementById('quiz-step-title').textContent = 'Путь клиента';
-        document.getElementById('quiz-step-counter').textContent = `Этап 1 из ?`;
+        console.warn('Экран client-journey-screen не найден');
     }
 }
 
@@ -67,14 +66,14 @@ function renderClientJourneyStage(stageIndex) {
     const currentStepNumber = AppState.currentStepIndex + 1;
     const totalSteps = AppState.currentScenario.steps.length;
     
-    // Обновляем заголовок и счётчик (если используется quiz-screen)
-    const stepTitle = document.getElementById('quiz-step-title');
-    const stepCounter = document.getElementById('quiz-step-counter');
+    // Обновляем заголовок на экране клиентского пути
+    const stepTitle = document.getElementById('journey-step-title');
+    const stepCounter = document.getElementById('journey-step-counter');
     if (stepTitle) stepTitle.textContent = stage.title;
     if (stepCounter) stepCounter.textContent = `Шаг ${currentStepNumber} из ${totalSteps} · Этап ${stageIndex + 1} из ${stages.length}`;
     
     // Получаем контейнер
-    const container = document.getElementById('quiz-container');
+    const container = document.getElementById('journey-container');
     if (!container) return;
     
     // Генерируем HTML для этапа
@@ -82,16 +81,15 @@ function renderClientJourneyStage(stageIndex) {
     if (stage.options) {
         stage.options.forEach((opt, idx) => {
             optionsHTML += `
-                <div class="journey-option" data-opt-index="${idx}" data-next-stage="${opt.nextStage || stageIndex + 1}">
-                    <div class="journey-option__text">${opt.text}</div>
-                    <div class="journey-option__feedback hidden"></div>
+                <div class="journey-option" data-opt-index="${idx}" data-next-stage="${opt.nextStage !== undefined ? opt.nextStage : stageIndex + 1}">
+                    <div class="journey-option__text">${escapeHtml(opt.text)}</div>
                 </div>
             `;
         });
     }
     
     container.innerHTML = `
-        <div class="journey-container">
+        <div class="journey-container-inner">
             <div class="journey-progress">
                 <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / stages.length) * 100}%"></div>
             </div>
@@ -99,8 +97,8 @@ function renderClientJourneyStage(stageIndex) {
                 <div class="journey-client__avatar">
                     <i class="fas ${stage.clientIcon || 'fa-user-circle'}"></i>
                 </div>
-                <div class="journey-client__name">${stage.clientName || 'Клиент'}</div>
-                <div class="journey-client__message">${stage.clientMessage || ''}</div>
+                <div class="journey-client__name">${escapeHtml(stage.clientName || 'Клиент')}</div>
+                <div class="journey-client__message">${escapeHtml(stage.clientMessage || '')}</div>
             </div>
             <div class="journey-agent">
                 <div class="journey-agent__label">
@@ -111,12 +109,9 @@ function renderClientJourneyStage(stageIndex) {
                 </div>
             </div>
             <div class="journey-feedback" id="journey-feedback" style="display: none;"></div>
-            <button class="btn btn--primary" id="journey-next-btn" style="display: none;">Далее →</button>
+            <button class="btn btn--primary" id="journey-next-btn" style="display: none;">Далее</button>
         </div>
     `;
-    
-    // Добавляем стили (если ещё нет)
-    ensureJourneyStyles();
     
     // Привязываем обработчики к опциям
     document.querySelectorAll('.journey-option').forEach(opt => {
@@ -131,27 +126,31 @@ function handleJourneyChoice(element, stage) {
     
     const optIndex = parseInt(element.dataset.optIndex);
     const selectedOption = stage.options[optIndex];
-    const isCorrect = selectedOption.correct;
+    const isCorrect = selectedOption.correct || false;
     
     // Отмечаем выбранный вариант
     document.querySelectorAll('.journey-option').forEach(opt => {
         opt.style.pointerEvents = 'none';
     });
     element.classList.add('journey-option--selected');
+    if (isCorrect) {
+        element.classList.add('journey-option--correct');
+    } else {
+        element.classList.add('journey-option--wrong');
+    }
     
     // Показываем обратную связь
     const feedbackDiv = document.getElementById('journey-feedback');
-    const feedbackText = element.querySelector('.journey-option__feedback');
     
     if (feedbackDiv) {
-        feedbackDiv.style.display = 'block';
+        feedbackDiv.style.display = 'flex';
         feedbackDiv.innerHTML = `
             <div class="journey-feedback__icon">
                 <i class="fas ${isCorrect ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
-                </div>
+            </div>
             <div class="journey-feedback__text">
-                <strong>${isCorrect ? 'Верно!' : 'Можно лучше:'}</strong><br>
-                ${selectedOption.feedback || (isCorrect ? stage.correctFeedback : stage.wrongFeedback || 'Попробуйте другой вариант')}
+                <strong>${isCorrect ? 'Верно' : 'Можно лучше:'}</strong><br>
+                ${escapeHtml(selectedOption.feedback || (isCorrect ? stage.correctFeedback : stage.wrongFeedback || 'Попробуйте другой вариант'))}
             </div>
         `;
         feedbackDiv.classList.add(isCorrect ? 'journey-feedback--correct' : 'journey-feedback--wrong');
@@ -189,22 +188,40 @@ function finishClientJourney() {
     const correct = ClientJourney.decisions.filter(d => d.isCorrect).length;
     
     // Сохраняем статистику
-    AppState.stepStats.push({
-        step: AppState.currentStepIndex + 1,
-        type: 'client-journey',
-        title: AppState.currentScenario.steps[AppState.currentStepIndex].title,
-        correct: correct,
-        total: total,
-        decisions: ClientJourney.decisions
-    });
+    if (AppState && AppState.stepStats) {
+        AppState.stepStats.push({
+            step: AppState.currentStepIndex + 1,
+            type: 'client-journey',
+            title: AppState.currentScenario.steps[AppState.currentStepIndex].title,
+            correct: correct,
+            total: total,
+            decisions: ClientJourney.decisions
+        });
+    }
     
-    showToast('🎉', `Сценарий завершён! Правильных ответов: ${correct}/${total}`, correct === total ? 'success' : 'warning');
+    const toast = document.getElementById('toast');
+    if (toast) {
+        showToast('📋', `Сценарий завершён. Правильных ответов: ${correct}/${total}`, correct === total ? 'success' : 'warning');
+    }
     
     // Переходим к следующему шагу
     setTimeout(() => {
-        AppState.currentStepIndex++;
-        runStep();
+        if (typeof AppState !== 'undefined' && AppState) {
+            AppState.currentStepIndex++;
+            if (typeof runStep === 'function') runStep();
+        }
     }, 2500);
+}
+
+// Вспомогательная функция escapeHtml
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
 }
 
 // Добавление стилей для клиентского пути (если ещё нет)
@@ -214,7 +231,7 @@ function ensureJourneyStyles() {
     const style = document.createElement('style');
     style.id = 'journey-styles';
     style.textContent = `
-        .journey-container {
+        .journey-container-inner {
             max-width: 700px;
             margin: 0 auto;
             padding: 24px;
@@ -284,6 +301,14 @@ function ensureJourneyStyles() {
             border-color: var(--color-success);
             background-color: #eafaf1;
         }
+        .journey-option--correct {
+            border-color: var(--color-success);
+            background-color: #eafaf1;
+        }
+        .journey-option--wrong {
+            border-color: var(--color-danger);
+            background-color: #fdedec;
+        }
         .journey-feedback {
             margin-top: 20px;
             padding: 16px 20px;
@@ -314,7 +339,7 @@ function ensureJourneyStyles() {
             line-height: 1.5;
         }
         @media (max-width: 600px) {
-            .journey-container {
+            .journey-container-inner {
                 padding: 16px;
             }
             .journey-client__message {
@@ -327,4 +352,11 @@ function ensureJourneyStyles() {
         }
     `;
     document.head.appendChild(style);
+}
+
+// Вызываем добавление стилей при загрузке
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureJourneyStyles);
+} else {
+    ensureJourneyStyles();
 }
