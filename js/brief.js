@@ -1,18 +1,21 @@
 // ===== ШПАРГАЛКИ ПЕРЕД ШАГОМ =====
 function runBriefStep(step) {
-    const scenario = currentScenario;
+    const scenario = AppState.currentScenario;
     if (!scenario.briefs || !scenario.briefs[step.briefKey]) {
-        // Если шпаргалки нет — пропускаем
-        currentStepIndex++;
+        AppState.currentStepIndex++;
         runStep();
         return;
     }
 
     const brief = scenario.briefs[step.briefKey];
+    const quizScreen = document.getElementById('quiz-screen');
+    const quizStepTitle = document.getElementById('quiz-step-title');
+    const quizStepCounter = document.getElementById('quiz-step-counter');
+    const quizContainer = document.getElementById('quiz-container');
 
     quizScreen.classList.remove('hidden');
     quizStepTitle.textContent = brief.title;
-    quizStepCounter.textContent = `Шаг ${currentStepIndex + 1} из ${currentScenario.steps.length}`;
+    quizStepCounter.textContent = `Шаг ${AppState.currentStepIndex + 1} из ${AppState.currentScenario.steps.length}`;
 
     quizContainer.innerHTML = `
         <div class="brief-card">
@@ -25,7 +28,7 @@ function runBriefStep(step) {
     `;
 
     document.getElementById('brief-continue-btn').addEventListener('click', () => {
-        currentStepIndex++;
+        AppState.currentStepIndex++;
         runStep();
     });
 }
