@@ -1,40 +1,42 @@
-// ===== SERVICE WORKER ДЛЯ PWA (УЛУЧШЕННАЯ ВЕРСИЯ) =====
-const CACHE_NAME = 'realty-trainer-v2';
-const STATIC_CACHE = 'realty-static-v2';
-const DATA_CACHE = 'realty-data-v2';
+// ===== SERVICE WORKER ДЛЯ PWA (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
+const CACHE_NAME = 'realty-trainer-v3';
+const STATIC_CACHE = 'realty-static-v3';
+const DATA_CACHE = 'realty-data-v3';
 
 // Файлы для кеширования при установке
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/css/base.css',
-  '/css/map.css',
-  '/css/steps.css',
-  '/css/drawer.css',
-  '/js/config.js',
-  '/js/state.js',
-  '/js/dragdrop.js',
-  '/js/badges.js',
-  '/js/user.js',
-  '/js/progress.js',
-  '/js/brief.js',
-  '/js/interactive-lesson1.js',
-  '/js/drawer.js',
-  '/js/ui.js',
-  '/js/map.js',
-  '/js/quiz.js',
-  '/js/interactive.js',
-  '/js/app.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './css/base.css',
+  './css/map.css',
+  './css/steps.css',
+  './css/drawer.css',
+  './js/config.js',
+  './js/state.js',
+  './js/dragdrop.js',
+  './js/badges.js',
+  './js/user.js',
+  './js/progress.js',
+  './js/brief.js',
+  './js/interactive-lesson1.js',
+  './js/drawer.js',
+  './js/ui.js',
+  './js/map.js',
+  './js/quiz.js',
+  './js/interactive.js',
+  './js/client-journey.js',
+  './js/app.js',
+  './manifest.json'
 ];
 
 // JSON данные для кеширования
 const dataUrls = [
-  '/data/jks.json',
-  '/data/questions.json',
-  '/data/scenarios.json',
-  '/data/marketing-steps.json',
-  '/data/lesson-1.json'
+  './data/jks.json',
+  './data/questions.json',
+  './data/scenarios.json',
+  './data/marketing-steps.json',
+  './data/lesson-1.json',
+  './data/floorplans.json'
 ];
 
 // Установка Service Worker — кешируем статику
@@ -136,7 +138,6 @@ self.addEventListener('fetch', event => {
       url.hostname.includes('yandex')) {
     event.respondWith(
       fetch(event.request).catch(() => {
-        // Возвращаем ошибку, карта не работает офлайн
         return new Response(JSON.stringify({ error: 'no-internet' }), {
           status: 503,
           headers: { 'Content-Type': 'application/json' }
@@ -165,7 +166,7 @@ self.addEventListener('fetch', event => {
   // Статические файлы (CSS, JS, HTML) — стратегия: кеш, потом сеть
   if (event.request.url.includes('/css/') || 
       event.request.url.includes('/js/') ||
-      event.request.url === '/' ||
+      event.request.url === './' ||
       event.request.url.includes('/index.html')) {
     
     event.respondWith(
@@ -186,6 +187,20 @@ self.addEventListener('fetch', event => {
     return;
   }
   
+  // Обработка корневого запроса (/) — перенаправляем на index.html
+  if (event.request.url === self.location.origin + '/' || 
+      event.request.url === self.location.origin + '/?') {
+    event.respondWith(
+      caches.match('./index.html')
+        .then(response => response || caches.match('/index.html'))
+        .then(response => {
+          if (response) return response;
+          return fetch('./index.html');
+        })
+    );
+    return;
+  }
+  
   // Иконки и изображения
   if (event.request.url.includes('/icons/')) {
     event.respondWith(
@@ -200,7 +215,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .catch(() => {
-          return caches.match(event.request)
+          return caches.match('./index.html')
             .then(response => {
               if (response) return response;
               return new Response(OFFLINE_PAGE, {
