@@ -42,13 +42,13 @@
     font-weight: 600;
 }
 
-/* ===== АККОРДЕОН ДЛЯ ГРУПП СЦЕНАРИЕВ (ИСПРАВЛЕН) ===== */
+/* ===== АККОРДЕОН ДЛЯ ГРУПП СЦЕНАРИЕВ (ПОЛНОСТЬЮ ПЕРЕРАБОТАН) ===== */
 .scenario-group {
     margin-bottom: 24px;
     border-radius: var(--radius);
     background-color: var(--color-surface);
     box-shadow: 0 2px 8px var(--color-shadow);
-    overflow: hidden;
+    overflow: visible;
 }
 
 .scenario-group__header {
@@ -59,6 +59,7 @@
     background-color: var(--color-surface);
     cursor: pointer;
     transition: background-color var(--transition);
+    border-radius: var(--radius);
 }
 
 .scenario-group__header:hover {
@@ -102,7 +103,8 @@
 
 .scenario-group__content {
     display: none;
-    padding: 0 24px 24px 24px;
+    margin-top: 16px;
+    padding: 0;
 }
 
 .scenario-group--open .scenario-group__content {
