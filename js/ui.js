@@ -106,6 +106,7 @@ function renderScenarios() {
         if (groupName.includes('Картография')) groupIcon = 'fa-map';
         if (groupName.includes('Маркетинг')) groupIcon = 'fa-chart-line';
         if (groupName.includes('Урок')) groupIcon = 'fa-graduation-cap';
+        if (groupName.includes('Практика')) groupIcon = 'fa-handshake';
         
         groupHeader.innerHTML = `
             <div class="scenario-group__title">
@@ -116,7 +117,7 @@ function renderScenarios() {
             <i class="fas fa-chevron-down scenario-group__toggle"></i>
         `;
         
-        // Контент группы (карточки)
+        // Контент группы
         const groupContent = document.createElement('div');
         groupContent.className = 'scenario-group__content';
         
@@ -126,7 +127,7 @@ function renderScenarios() {
         scenarios.forEach(scenario => {
             const mapSteps = scenario.steps.filter(s => s.type === 'map').length;
             const quizSteps = scenario.steps.filter(s => s.type === 'quiz').length;
-            const interactiveSteps = scenario.steps.filter(s => !['map', 'quiz', 'finish', 'brief'].includes(s.type)).length;
+            const interactiveSteps = scenario.steps.filter(s => !['map', 'quiz', 'finish', 'brief', 'client-journey'].includes(s.type)).length;
 
             let stepsDesc = [];
             if (mapSteps > 0) stepsDesc.push(`${mapSteps} карт`);
@@ -134,8 +135,6 @@ function renderScenarios() {
             if (interactiveSteps > 0) stepsDesc.push(`${interactiveSteps} заданий`);
 
             const hasBadge = Badges.has(scenario.badge);
-            
-            // Используем иконку из сценария или стандартную
             const scenarioIcon = scenario.icon || 'fa-book-open';
 
             const card = document.createElement('div');
@@ -159,18 +158,13 @@ function renderScenarios() {
         groupContainer.appendChild(groupContent);
         scenariosGrid.appendChild(groupContainer);
         
-        // Обработчик клика по заголовку
+        // Обработчик клика
         groupHeader.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isOpen = groupContainer.classList.contains('scenario-group--open');
-            if (isOpen) {
-                groupContainer.classList.remove('scenario-group--open');
-            } else {
-                groupContainer.classList.add('scenario-group--open');
-            }
+            groupContainer.classList.toggle('scenario-group--open');
         });
         
-        // По умолчанию первая группа открыта, остальные закрыты
+        // По умолчанию первая группа открыта
         if (groupIndex === 0) {
             groupContainer.classList.add('scenario-group--open');
         }
