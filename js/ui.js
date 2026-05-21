@@ -110,7 +110,7 @@ function renderScenarios() {
         groupHeader.innerHTML = `
             <div class="scenario-group__title">
                 <i class="fas ${groupIcon} scenario-group__icon"></i>
-                <span>${groupName}</span>
+                <span>${escapeHtml(groupName)}</span>
                 <span class="scenario-group__count">${scenarios.length}</span>
             </div>
             <i class="fas fa-chevron-down scenario-group__toggle"></i>
@@ -119,6 +119,9 @@ function renderScenarios() {
         // Контент группы (карточки)
         const groupContent = document.createElement('div');
         groupContent.className = 'scenario-group__content';
+        
+        const cardsGrid = document.createElement('div');
+        cardsGrid.className = 'scenarios-grid';
         
         scenarios.forEach(scenario => {
             const mapSteps = scenario.steps.filter(s => s.type === 'map').length;
@@ -142,21 +145,23 @@ function renderScenarios() {
                     <i class="fas ${scenarioIcon}"></i>
                     ${hasBadge ? '<i class="fas fa-certificate scenario-card__badge"></i>' : ''}
                 </div>
-                <div class="scenario-card__name">${scenario.name}</div>
-                <div class="scenario-card__description">${scenario.description}</div>
+                <div class="scenario-card__name">${escapeHtml(scenario.name)}</div>
+                <div class="scenario-card__description">${escapeHtml(scenario.description)}</div>
                 <div class="scenario-card__steps">${stepsDesc.join(' · ') || scenario.steps.length + ' шагов'}</div>
             `;
             
             card.addEventListener('click', () => startScenario(scenario));
-            groupContent.appendChild(card);
+            cardsGrid.appendChild(card);
         });
         
+        groupContent.appendChild(cardsGrid);
         groupContainer.appendChild(groupHeader);
         groupContainer.appendChild(groupContent);
         scenariosGrid.appendChild(groupContainer);
         
-        // Анимация открытия/закрытия
-        groupHeader.addEventListener('click', () => {
+        // Обработчик клика по заголовку
+        groupHeader.addEventListener('click', (e) => {
+            e.stopPropagation();
             const isOpen = groupContainer.classList.contains('scenario-group--open');
             if (isOpen) {
                 groupContainer.classList.remove('scenario-group--open');
@@ -169,5 +174,15 @@ function renderScenarios() {
         if (groupIndex === 0) {
             groupContainer.classList.add('scenario-group--open');
         }
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
     });
 }
