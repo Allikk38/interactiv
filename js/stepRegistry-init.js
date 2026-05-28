@@ -4,7 +4,7 @@
 (function initStepRegistry() {
     // Убедимся, что StepRegistry существует
     if (typeof StepRegistry === 'undefined') {
-        console.error('StepRegistry не найден!');
+        logError('StepRegistry не найден!');
         return;
     }
     
@@ -66,5 +66,5 @@
     // Регистрируем finish как специальный тип (хотя он обрабатывается отдельно)
     // finish не требует обработчика, так как runStep сам его ловит
     
-    console.log(`StepRegistry: зарегистрировано ${StepRegistry.getRegisteredTypes().length} типов шагов:`, StepRegistry.getRegisteredTypes());
+    logInfo(`StepRegistry: зарегистрировано ${StepRegistry.getRegisteredTypes().length} типов шагов:`, StepRegistry.getRegisteredTypes());
 })();
