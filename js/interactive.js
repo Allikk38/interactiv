@@ -13,34 +13,12 @@ function runPlatformsStep(step) {
     const data = AppState.marketingData.platforms;
     const items = [...data.items].sort(() => Math.random() - 0.5);
 
-    let itemsHTML = items.map(item => `
-        <div class="platform-item drag-item" data-id="${item.id}" data-platform="${item.platform}" draggable="true" style="background-color:var(--color-surface); border:2px solid var(--color-border); border-radius:var(--radius-sm); padding:12px 18px; cursor:grab; margin:5px; display:inline-block;">
-            ${item.text}
-        </div>
-    `).join('');
+    let itemsHTML = '';
+    items.forEach(item => {
+        itemsHTML += renderPlatformItem(item);
+    });
 
-    quizContainer.innerHTML = `
-        <div class="interactive-step">
-            <p class="interactive-step__instruction">${data.instruction}</p>
-            <div class="platform-items" id="platform-items" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:28px; justify-content:center;">${itemsHTML}</div>
-            <div class="platform-zones" style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:28px;">
-                <div class="platform-zone" data-zone="instagram" style="background-color:var(--color-surface); border:2px dashed var(--color-border); border-radius:var(--radius); padding:16px; text-align:center;">
-                    <h3>📸 Instagram</h3>
-                    <div class="platform-zone__drop drag-zone" id="zone-instagram" data-zone="instagram" style="min-height:100px;"></div>
-                </div>
-                <div class="platform-zone" data-zone="telegram" style="background-color:var(--color-surface); border:2px dashed var(--color-border); border-radius:var(--radius); padding:16px; text-align:center;">
-                    <h3>📱 Telegram</h3>
-                    <div class="platform-zone__drop drag-zone" id="zone-telegram" data-zone="telegram" style="min-height:100px;"></div>
-                </div>
-                <div class="platform-zone" data-zone="both" style="background-color:var(--color-surface); border:2px dashed var(--color-border); border-radius:var(--radius); padding:16px; text-align:center;">
-                    <h3>🔄 Обе платформы</h3>
-                    <div class="platform-zone__drop drag-zone" id="zone-both" data-zone="both" style="min-height:100px;"></div>
-                </div>
-            </div>
-            <div class="quiz-hint hidden" id="interactive-hint" style="margin-top:18px; padding:14px 18px; background-color:#fef9e7; border-left:4px solid var(--color-warning); border-radius:0 var(--radius-sm) var(--radius-sm) 0;"></div>
-            <button class="btn btn--primary" id="interactive-check-btn" style="display:block; margin:0 auto; padding:10px 16px;">Проверить</button>
-        </div>
-    `;
+    quizContainer.innerHTML = renderPlatformsStep(data, itemsHTML);
 
     const checkBtn = document.getElementById('interactive-check-btn');
     let stepChecked = false;
@@ -120,28 +98,13 @@ function runRule3tStep(step) {
     const data = AppState.marketingData.rule3t;
     const selections = {};
 
-    let pairsHTML = data.pairs.map(p => {
-        const shuffledOptions = [...p.options].sort(() => Math.random() - 0.5);
-        return `
-            <div class="rule3t-row" style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
-                <div class="rule3t-letter" style="background-color:var(--color-primary); color:#fff; padding:14px 20px; border-radius:var(--radius-sm); font-weight:700; min-width:130px; text-align:center;">${p.label}</div>
-                <div class="rule3t-options" style="display:flex; gap:10px; flex:1;">
-                    ${shuffledOptions.map(opt => `
-                        <div class="rule3t-option" data-letter="${p.letter}" data-value="${opt}" style="background-color:var(--color-surface); border:2px solid var(--color-border); border-radius:var(--radius-sm); padding:12px 16px; cursor:pointer; font-size:0.85rem; transition:all var(--transition); flex:1; text-align:center;">${opt}</div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }).join('');
+    let pairsHTML = '';
+    data.pairs.forEach(pair => {
+        const shuffledOptions = [...pair.options].sort(() => Math.random() - 0.5);
+        pairsHTML += renderRule3tRow(pair, shuffledOptions);
+    });
 
-    quizContainer.innerHTML = `
-        <div class="interactive-step">
-            <p class="interactive-step__instruction">${data.instruction}</p>
-            <div class="rule3t-container">${pairsHTML}</div>
-            <div class="quiz-hint hidden" id="interactive-hint" style="margin-top:18px; padding:14px 18px; background-color:#fef9e7; border-left:4px solid var(--color-warning); border-radius:0 var(--radius-sm) var(--radius-sm) 0;"></div>
-            <button class="btn btn--primary" id="interactive-check-btn" disabled style="display:block; margin:0 auto; padding:10px 16px;">Проверить</button>
-        </div>
-    `;
+    quizContainer.innerHTML = renderRule3tStep(data, pairsHTML);
 
     const checkBtn = document.getElementById('interactive-check-btn');
     let stepChecked = false;
@@ -210,25 +173,12 @@ function runProfileStep(step) {
     const data = AppState.marketingData.profile;
     const selections = {};
 
-    let sectionsHTML = data.sections.map(section => `
-        <div class="profile-section" style="margin-bottom:24px;">
-            <h3 style="font-size:1rem; font-weight:700; margin-bottom:12px;">${section.name}</h3>
-            <div class="profile-options" style="display:flex; gap:10px;">
-                ${section.options.map(opt => `
-                    <div class="profile-option" data-section="${section.name}" data-id="${opt.id}" data-correct="${opt.correct}" style="background-color:var(--color-surface); border:2px solid var(--color-border); border-radius:var(--radius-sm); padding:14px 18px; cursor:pointer; font-size:0.9rem; transition:all var(--transition); flex:1; text-align:center;">${opt.text}</div>
-                `).join('')}
-            </div>
-        </div>
-    `).join('');
+    let sectionsHTML = '';
+    data.sections.forEach(section => {
+        sectionsHTML += renderProfileSection(section);
+    });
 
-    quizContainer.innerHTML = `
-        <div class="interactive-step">
-            <p class="interactive-step__instruction">${data.instruction}</p>
-            <div class="profile-container">${sectionsHTML}</div>
-            <div class="quiz-hint hidden" id="interactive-hint" style="margin-top:18px; padding:14px 18px; background-color:#fef9e7; border-left:4px solid var(--color-warning); border-radius:0 var(--radius-sm) var(--radius-sm) 0;"></div>
-            <button class="btn btn--primary" id="interactive-check-btn" disabled style="display:block; margin:0 auto; padding:10px 16px;">Проверить</button>
-        </div>
-    `;
+    quizContainer.innerHTML = renderProfileStep(data, sectionsHTML);
 
     const checkBtn = document.getElementById('interactive-check-btn');
     let stepChecked = false;
@@ -293,28 +243,20 @@ function runContentPlanStep(step) {
     quizStepCounter.textContent = `Шаг ${AppState.currentStepIndex + 1} из ${AppState.currentScenario.steps.length}`;
 
     const data = AppState.marketingData.contentPlan;
-    const allFormats = [...data.goodFormats, ...data.badFormats].sort(() => Math.random() - 0.5);
+    
+    // Создаём массив форматов с флагом isBad
+    const goodFormats = data.goodFormats.map(f => ({ ...f, isBad: false }));
+    const badFormats = data.badFormats.map(f => ({ ...f, isBad: true }));
+    const allFormats = [...goodFormats, ...badFormats].sort(() => Math.random() - 0.5);
 
-    let formatsHTML = allFormats.map(f => `
-        <div class="content-format-item drag-item" data-id="${f.id}" data-good="${!data.badFormats.includes(f)}" draggable="true" style="background-color:var(--color-surface); border:2px solid var(--color-border); border-radius:var(--radius-sm); padding:10px 16px; cursor:grab; font-size:0.85rem; transition:all var(--transition); display:inline-block; margin:5px;">${f.text}</div>
-    `).join('');
+    let formatsHTML = '';
+    allFormats.forEach(format => {
+        formatsHTML += renderContentFormatItem(format);
+    });
 
-    quizContainer.innerHTML = `
-        <div class="interactive-step">
-            <p class="interactive-step__instruction">${data.instruction}</p>
-            <div class="content-plan-formats" id="content-formats" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:28px; justify-content:center;">${formatsHTML}</div>
-            <div class="content-plan-days" id="content-days" style="display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin-bottom:28px;">
-                ${['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => `
-                    <div class="content-day" style="background-color:var(--color-surface); border:2px dashed var(--color-border); border-radius:var(--radius-sm); padding:12px 8px; text-align:center;">
-                        <span class="content-day__label" style="font-weight:700; font-size:0.85rem; display:block; margin-bottom:8px; color:var(--color-primary);">${day}</span>
-                        <div class="content-day__slot drag-zone" data-day="${day}" data-max-items="1" style="min-height:50px;"></div>
-                    </div>
-                `).join('')}
-            </div>
-            <div class="quiz-hint hidden" id="interactive-hint" style="margin-top:18px; padding:14px 18px; background-color:#fef9e7; border-left:4px solid var(--color-warning); border-radius:0 var(--radius-sm) var(--radius-sm) 0;"></div>
-            <button class="btn btn--primary" id="interactive-check-btn" style="display:block; margin:0 auto; padding:10px 16px;">Проверить</button>
-        </div>
-    `;
+    const daysHTML = renderContentPlanDays();
+
+    quizContainer.innerHTML = renderContentPlanStep(data, formatsHTML, daysHTML);
 
     const checkBtn = document.getElementById('interactive-check-btn');
     let stepChecked = false;
@@ -387,22 +329,12 @@ function runFunnelStep(step) {
     const data = AppState.marketingData.funnel;
     const steps = [...data.steps].sort(() => Math.random() - 0.5);
 
-    let stepsHTML = steps.map(s => `
-        <div class="funnel-item drag-item" data-id="${s.id}" data-order="${s.order}" draggable="true" style="background-color:var(--color-surface); border:2px solid var(--color-border); border-radius:var(--radius-sm); padding:16px 18px; cursor:grab; display:flex; align-items:center; gap:14px; margin-bottom:8px;">
-            <span class="funnel-item__handle" style="color:var(--color-text-light); font-size:1.3rem; cursor:grab;">☰</span>
-            <span class="funnel-item__text" style="font-size:0.95rem;">${s.text}</span>
-        </div>
-    `).join('');
+    let stepsHTML = '';
+    steps.forEach(s => {
+        stepsHTML += renderFunnelItem(s);
+    });
 
-    quizContainer.innerHTML = `
-        <div class="interactive-step">
-            <p class="interactive-step__instruction">${data.instruction}</p>
-            <p class="interactive-step__sub" style="font-size:0.9rem; color:var(--color-text-light); margin-bottom:24px;">Перетащите шаги в правильном порядке (сверху вниз: 1 → 6)</p>
-            <div class="funnel-container drag-zone" id="funnel-container" data-zone="funnel" style="max-width:600px; margin-bottom:28px;">${stepsHTML}</div>
-            <div class="quiz-hint hidden" id="interactive-hint" style="margin-top:18px; padding:14px 18px; background-color:#fef9e7; border-left:4px solid var(--color-warning); border-radius:0 var(--radius-sm) var(--radius-sm) 0;"></div>
-            <button class="btn btn--primary" id="interactive-check-btn" style="display:block; margin:0 auto; padding:10px 16px;">Проверить</button>
-        </div>
-    `;
+    quizContainer.innerHTML = renderFunnelStep(stepsHTML);
 
     const container = document.getElementById('funnel-container');
     const checkBtn = document.getElementById('interactive-check-btn');
@@ -501,26 +433,17 @@ function runAiToolsStep(step) {
     const data = AppState.marketingData.aiTools;
     const allTasks = [...data.allTasks].sort(() => Math.random() - 0.5);
 
-    let toolsHTML = data.tools.map(t => `
-        <div class="ai-tool" style="background-color:var(--color-surface); border:2px solid var(--color-border); border-radius:var(--radius); padding:18px; text-align:center;">
-            <h3 style="font-size:1rem; margin-bottom:12px;">🛠️ ${t.name}</h3>
-            <div class="ai-tool__tasks drag-zone" data-tool="${t.name}" data-max-items="3" style="min-height:100px;"></div>
-        </div>
-    `).join('');
+    let toolsHTML = '';
+    data.tools.forEach(tool => {
+        toolsHTML += renderAiToolColumn(tool);
+    });
 
-    let tasksHTML = allTasks.map(task => `
-        <div class="ai-task drag-item" data-task="${task}" draggable="true" style="background-color:var(--color-surface); border:2px solid var(--color-border); border-radius:var(--radius-sm); padding:10px 16px; cursor:grab; font-size:0.85rem; transition:all var(--transition); display:inline-block; margin:5px;">${task}</div>
-    `).join('');
+    let tasksHTML = '';
+    allTasks.forEach(task => {
+        tasksHTML += renderAiTask(task);
+    });
 
-    quizContainer.innerHTML = `
-        <div class="interactive-step">
-            <p class="interactive-step__instruction">${data.instruction}</p>
-            <div class="ai-tools-container" style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px;">${toolsHTML}</div>
-            <div class="ai-tasks-container" id="ai-tasks" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:28px; justify-content:center;">${tasksHTML}</div>
-            <div class="quiz-hint hidden" id="interactive-hint" style="margin-top:18px; padding:14px 18px; background-color:#fef9e7; border-left:4px solid var(--color-warning); border-radius:0 var(--radius-sm) var(--radius-sm) 0;"></div>
-            <button class="btn btn--primary" id="interactive-check-btn" style="display:block; margin:0 auto; padding:10px 16px;">Проверить</button>
-        </div>
-    `;
+    quizContainer.innerHTML = renderAiToolsStep(data, toolsHTML, tasksHTML);
 
     const checkBtn = document.getElementById('interactive-check-btn');
     let stepChecked = false;
@@ -596,22 +519,12 @@ function runAnalyticsStep(step) {
     const data = AppState.marketingData.analytics;
     const options = [...data.options].sort(() => Math.random() - 0.5);
 
-    let optionsHTML = options.map(opt => `
-        <label class="analytics-option" style="display:flex; align-items:center; gap:14px; background-color:var(--color-surface); border:2px solid var(--color-border); border-radius:var(--radius-sm); padding:16px 18px; cursor:pointer; margin-bottom:8px;">
-            <input type="checkbox" value="${opt.id}" data-key="${opt.key}" style="display:none;">
-            <span class="analytics-option__checkmark" style="width:24px; height:24px; border:2px solid var(--color-border); border-radius:4px; flex-shrink:0;"></span>
-            <span>${opt.text}</span>
-        </label>
-    `).join('');
+    let optionsHTML = '';
+    options.forEach(opt => {
+        optionsHTML += renderAnalyticsOption(opt);
+    });
 
-    quizContainer.innerHTML = `
-        <div class="interactive-step">
-            <p class="interactive-step__instruction">${data.instruction}</p>
-            <div class="analytics-container" style="max-width:600px; margin-bottom:28px;">${optionsHTML}</div>
-            <div class="quiz-hint hidden" id="interactive-hint" style="margin-top:18px; padding:14px 18px; background-color:#fef9e7; border-left:4px solid var(--color-warning); border-radius:0 var(--radius-sm) var(--radius-sm) 0;"></div>
-            <button class="btn btn--primary" id="interactive-check-btn" disabled style="display:block; margin:0 auto; padding:10px 16px;">Проверить</button>
-        </div>
-    `;
+    quizContainer.innerHTML = renderAnalyticsStep(data, optionsHTML);
 
     const checkBtn = document.getElementById('interactive-check-btn');
     const checkboxes = quizContainer.querySelectorAll('input[type="checkbox"]');
