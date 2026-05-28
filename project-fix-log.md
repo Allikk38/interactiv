@@ -74,7 +74,7 @@
 | C‑01 | Использование `var` вместо `let`/`const` | `ratings.html` | 🟢 Закрыта |
 | C‑02 | Магические числа (500, 600, 10000 и др.) | `map.js`, `client-journey.js` | 🔴 Открыта |
 | C‑03 | Отсутствие JSDoc-документации | Все JS-файлы | 🔴 Открыта |
-| C‑04 | Callback hell в `runMapStep` | `map.js` | 🔴 Открыта |
+| C‑04 | Callback hell в runMapStep | js/map/map-step.js | 🟢 Закрыта |
 | C‑05 | Использование устаревшего API Яндекс.Карт (2.1 вместо 4.0) | `index.html` | 🔴 Открыта |
 | C‑06 | Отсутствие TypeScript | Все JS-файлы | 🔴 Открыта |
 | C‑07 | Неиспользуемые переменные в map.js | js/map/map-core.js, js/map/map-ui.js | 🟢 Закрыта |
@@ -115,6 +115,7 @@
 | 2026-05-28 | C‑01 | Исправлено | Заменены все `var` на `let`/`const` в `ratings.html` в соответствии со стандартами ES6. |
 | 2026-05-28 | A‑04 | Исправлено | Создан единый модуль `utils/escape.js`, удалены дубликаты из 6 файлов-шаблонов |
 | 2026-05-28 | C‑07 | Исправлено | Удалены неиспользуемые переменные из `map-core.js` (ymapsReady, ymapsQueue, onYmapsReady, setYmapsReady, notifyYmapsReady) и `map-ui.js` (carouselScrollInterval) |
+| 2026-05-28 | C‑04 | Исправлено | Добавлена функция `waitForYmaps()` с Promise, заменены вложенные setInterval/setTimeout на асинхронный подход в `runMapStep` |
 
 ---
 
@@ -126,9 +127,9 @@
 | Архитектура | 3 | 0 | 5 | 8 |
 | Service Worker / PWA | 3 | 0 | 4 | 7 |
 | UI/UX | 10 | 0 | 0 | 10 |
-| Качество кода | 6 | 0 | 2 | 8 |
+| Качество кода | 5 | 0 | 3 | 8 |
 | Производительность | 3 | 0 | 0 | 3 |
-| Итого | 32 | 0 | 12 | 44 |
+| Итого | 31 | 0 | 13 | 44 |
 
 ---
 
