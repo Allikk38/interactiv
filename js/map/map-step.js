@@ -7,19 +7,19 @@ function runMapStep(step) {
     
     mapScreen.classList.remove('hidden');
     
-    const mapProgress = Store.getMapProgress();
+    const mapProgress = StoreInstance.getMapProgress();
     if (mapProgress) {
         mapProgress.style.display = 'block';
     }
     
     const jkIds = step.jk_ids;
-    const allJks = Store.getAllJks();
+    const allJks = StoreInstance.getAllJks();
     const filteredJks = jkIds.length > 0
         ? allJks.filter(jk => jkIds.includes(jk.id))
         : allJks;
     
-    const mapProgressTotal = Store.getMapProgressTotal();
-    const mapProgressCount = Store.getMapProgressCount();
+    const mapProgressTotal = StoreInstance.getMapProgressTotal();
+    const mapProgressCount = StoreInstance.getMapProgressCount();
     
     if (mapProgressTotal) {
         mapProgressTotal.textContent = filteredJks.length;
@@ -29,11 +29,11 @@ function runMapStep(step) {
     }
     
     mapStepTitle.textContent = step.title;
-    mapStepCounter.textContent = `Шаг ${Store.getCurrentStepIndex() + 1} из ${Store.getCurrentScenario().steps.length}`;
+    mapStepCounter.textContent = `Шаг ${StoreInstance.getCurrentStepIndex() + 1} из ${StoreInstance.getCurrentScenario().steps.length}`;
     
-    Store.setSelectedJkId(null);
-    Store.clearPlacedJks();
-    Store.setCurrentStepJks(filteredJks);
+    StoreInstance.setSelectedJkId(null);
+    StoreInstance.clearPlacedJks();
+    StoreInstance.setCurrentStepJks(filteredJks);
     
     // Обновляем панель со списком ЖК для десктопа
     updateDesktopDrawerList(filteredJks);
@@ -95,14 +95,14 @@ function runMapStep(step) {
 }
 
 function selectJk(id) {
-    if (Store.hasPlacedJk(id)) {
+    if (StoreInstance.hasPlacedJk(id)) {
         showToast('⚠️', 'Этот ЖК уже расставлен', 'error');
         return;
     }
-    Store.setSelectedJkId(id);
+    StoreInstance.setSelectedJkId(id);
     updateSelectedCard();
     
-    const allJks = Store.getAllJks();
+    const allJks = StoreInstance.getAllJks();
     const jk = allJks.find(j => j.id === id);
     if (jk) {
         showToast('📍', `Выбран: ${jk.name}. Нажмите на карту, чтобы поставить метку`, 'success');
@@ -110,12 +110,12 @@ function selectJk(id) {
 }
 
 function updateMapProgress() {
-    const currentStepJks = Store.getCurrentStepJks();
+    const currentStepJks = StoreInstance.getCurrentStepJks();
     const total = currentStepJks ? currentStepJks.length : 0;
-    const placed = Store.getPlacedJksSize();
+    const placed = StoreInstance.getPlacedJksSize();
     
-    const mapProgressCount = Store.getMapProgressCount();
-    const mapProgressTotal = Store.getMapProgressTotal();
+    const mapProgressCount = StoreInstance.getMapProgressCount();
+    const mapProgressTotal = StoreInstance.getMapProgressTotal();
     
     if (mapProgressCount) {
         mapProgressCount.textContent = placed;
@@ -133,7 +133,7 @@ function updateMapProgress() {
     updateCarouselCounter();
     
     if (window.innerWidth > 768) {
-        const currentStepJks = Store.getCurrentStepJks();
+        const currentStepJks = StoreInstance.getCurrentStepJks();
         updateDesktopDrawerList(currentStepJks);
     }
     
@@ -143,14 +143,14 @@ function updateMapProgress() {
 }
 
 function onMapClick(e) {
-    const selectedJkId = Store.getSelectedJkId();
+    const selectedJkId = StoreInstance.getSelectedJkId();
     
     if (selectedJkId === null) {
         showToast('👆', 'Сначала выберите ЖК из списка', 'error');
         return;
     }
     
-    const allJks = Store.getAllJks();
+    const allJks = StoreInstance.getAllJks();
     const jk = allJks.find(j => j.id === selectedJkId);
     if (!jk) return;
     
@@ -162,16 +162,16 @@ function onMapClick(e) {
     const isCorrect = distance <= jk.radius;
     
     if (isCorrect) {
-        Store.addPlacedJk(jk.id, { lat, lng, correct: true });
+        StoreInstance.addPlacedJk(jk.id, { lat, lng, correct: true });
         showToast('✅', `Правильно! ${jk.name} на месте.`, 'success');
         
-        Store.setSelectedJkId(null);
+        StoreInstance.setSelectedJkId(null);
         updateSelectedCard();
         sendToGoogle(jk.name, true, distance);
         updateMapProgress();
         renderMarkers();
         
-        const currentStepJks = Store.getCurrentStepJks();
+        const currentStepJks = StoreInstance.getCurrentStepJks();
         if (window.innerWidth <= 768) {
             renderCarousel(currentStepJks);
         } else {
@@ -182,7 +182,7 @@ function onMapClick(e) {
             window.navigator.vibrate(100);
         }
     } else {
-        const currentMap = Store.getMap();
+        const currentMap = StoreInstance.getMap();
         const wrongMarker = new ymaps.Placemark([lat, lng], {
             hintContent: `${jk.name} (неверно)`
         }, {
@@ -206,11 +206,11 @@ function onMapClick(e) {
 }
 
 function checkMapStepComplete() {
-    const currentStepJks = Store.getCurrentStepJks();
+    const currentStepJks = StoreInstance.getCurrentStepJks();
     const filteredJks = currentStepJks;
-    const placedSize = Store.getPlacedJksSize();
-    const currentStepIndex = Store.getCurrentStepIndex();
-    const stepStats = Store.getStepStats();
+    const placedSize = StoreInstance.getPlacedJksSize();
+    const currentStepIndex = StoreInstance.getCurrentStepIndex();
+    const stepStats = StoreInstance.getStepStats();
     
     if (placedSize === filteredJks.length && filteredJks.length > 0) {
         const alreadySaved = stepStats.some(s => 
@@ -218,8 +218,8 @@ function checkMapStepComplete() {
         );
         
         if (!alreadySaved) {
-            const currentScenario = Store.getCurrentScenario();
-            Store.addToStepStats({
+            const currentScenario = StoreInstance.getCurrentScenario();
+            StoreInstance.addToStepStats({
                 step: currentStepIndex + 1,
                 type: 'map',
                 title: currentScenario.steps[currentStepIndex].title,
@@ -234,15 +234,15 @@ function checkMapStepComplete() {
 
 function resetMapStep() {
     if (confirm('Вы уверены? Весь прогресс на этом шаге будет потерян.')) {
-        Store.resetMapState();
+        StoreInstance.resetMapState();
         
-        const currentMap = Store.getMap();
+        const currentMap = StoreInstance.getMap();
         if (currentMap) {
             renderMarkers();
             currentMap.setCenter(MAP_CENTER, MAP_ZOOM, { duration: 300 });
         }
         
-        const currentStepJks = Store.getCurrentStepJks();
+        const currentStepJks = StoreInstance.getCurrentStepJks();
         if (window.innerWidth <= 768) {
             renderCarousel(currentStepJks);
         } else {
@@ -259,7 +259,7 @@ function resetMapStep() {
 
 // Обработчик изменения размера окна
 window.addEventListener('resize', () => {
-    const currentMap = Store.getMap();
+    const currentMap = StoreInstance.getMap();
     if (currentMap) {
         setTimeout(() => {
             currentMap.container.fitToViewport();
