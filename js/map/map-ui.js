@@ -1,7 +1,5 @@
 // ===== MAP UI: УПРАВЛЕНИЕ СПИСКОМ ЖК И КАРУСЕЛЬЮ =====
 
-let carouselScrollInterval = null;
-
 // Обновление списка ЖК для десктопной панели
 function updateDesktopDrawerList(jks) {
     const drawerList = document.getElementById('jk-drawer-list');
@@ -115,8 +113,7 @@ function initCarouselScroll() {
     
     slides.addEventListener('scroll', updateButtons);
     slides.addEventListener('touchstart', () => {
-        if (carouselScrollInterval) clearTimeout(carouselScrollInterval);
-        carouselScrollInterval = setTimeout(updateButtons, 100);
+        setTimeout(updateButtons, 100);
     });
     
     setTimeout(updateButtons, 100);
