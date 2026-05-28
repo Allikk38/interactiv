@@ -67,17 +67,5 @@ function renderScenarioGroup(groupName, scenariosCount, groupIcon, cardsHtml) {
     `;
 }
 
-/**
- * Экранирует HTML-спецсимволы
- * @param {string} str - входная строка
- * @returns {string} экранированная строка
- */
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
-}
+// Функция escapeHtml теперь глобальная (из utils/escape.js)
+// Локальное определение УДАЛЕНО
