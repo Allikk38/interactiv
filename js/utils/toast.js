@@ -26,5 +26,4 @@ function showToast(icon, message, type) {
     }, 3000);
 }
 
-// Экспортируем в глобальную область для использования в других скриптах
-window.showToast = showToast;
+// window.showToast = showToast;  // УДАЛЕНО — функция и так глобальна
