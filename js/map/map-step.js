@@ -272,5 +272,3 @@ window.addEventListener('resize', () => {
         }, 100);
     }
 });
-
-window.resetMapStep = resetMapStep;
