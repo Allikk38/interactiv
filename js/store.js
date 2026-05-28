@@ -349,3 +349,4 @@ window.AppState = {
     get toastTimer() { return StoreInstance.getToastTimer(); },
     set toastTimer(v) { StoreInstance.setToastTimer(v); }
 };
+window.StoreInstance = StoreInstance;
