@@ -15,3 +15,5 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 }
+
+// window.escapeHtml = escapeHtml;  // УДАЛЕНО — не нужно, функция и так глобальна
