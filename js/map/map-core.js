@@ -27,12 +27,12 @@ function initMap() {
         return;
     }
     
-    const currentMap = Store.getMap();
+    const currentMap = StoreInstance.getMap();
     if (currentMap && currentMap.destroy) {
         try {
             currentMap.destroy();
         } catch(e) {}
-        Store.setMap(null);
+        StoreInstance.setMap(null);
     }
     
     mapContainer.innerHTML = '';
@@ -78,7 +78,7 @@ function initMap() {
             }
         }, 100);
         
-        Store.setMap(map);
+        StoreInstance.setMap(map);
         
     } catch (error) {
         console.error('Ошибка инициализации карты:', error);
@@ -88,15 +88,15 @@ function initMap() {
 
 // Рендер маркеров на карте
 function renderMarkers() {
-    const currentMap = Store.getMap();
+    const currentMap = StoreInstance.getMap();
     if (!currentMap) return;
 
-    const currentMarkers = Store.getCurrentMarkers();
+    const currentMarkers = StoreInstance.getCurrentMarkers();
     currentMarkers.forEach(marker => currentMap.geoObjects.remove(marker));
-    Store.clearCurrentMarkers();
+    StoreInstance.clearCurrentMarkers();
 
-    const placedJks = Store.getPlacedJks();
-    const allJks = Store.getAllJks();
+    const placedJks = StoreInstance.getPlacedJks();
+    const allJks = StoreInstance.getAllJks();
     
     placedJks.forEach((data, id) => {
         const jk = allJks.find(j => j.id === id);
@@ -135,13 +135,13 @@ function renderMarkers() {
         marker.properties.set('name', jk.name);
         
         currentMap.geoObjects.add(marker);
-        Store.addToCurrentMarkers(marker);
+        StoreInstance.addToCurrentMarkers(marker);
     });
 }
 
 // Приближение к маркеру
 window.zoomToMarker = function(lat, lng) {
-    const currentMap = Store.getMap();
+    const currentMap = StoreInstance.getMap();
     if (currentMap) {
         currentMap.setCenter([lat, lng], 17, {
             duration: 300,
