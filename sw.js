@@ -1,5 +1,4 @@
 // ===== SERVICE WORKER ДЛЯ PWA (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
-const CACHE_NAME = 'realty-trainer-v3';
 const STATIC_CACHE = 'realty-static-v3';
 const DATA_CACHE = 'realty-data-v3';
 
@@ -65,7 +64,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cache => {
-          if (cache !== STATIC_CACHE && cache !== DATA_CACHE && cache !== CACHE_NAME) {
+          if (cache !== STATIC_CACHE && cache !== DATA_CACHE) {
             console.log('[SW] Удалён старый кеш:', cache);
             return caches.delete(cache);
           }
@@ -75,59 +74,15 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Страница офлайн режима
-const OFFLINE_PAGE = `<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Нет соединения</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .offline-card {
-            background: white;
-            border-radius: 24px;
-            padding: 40px 32px;
-            text-align: center;
-            max-width: 400px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
-        .offline-icon { font-size: 64px; margin-bottom: 16px; }
-        h1 { font-size: 24px; margin-bottom: 12px; color: #2d3436; }
-        p { color: #636e72; margin-bottom: 24px; line-height: 1.5; }
-        .btn {
-            background: #2e86de;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-        }
-        .btn:hover { background: #1b6dc1; }
-        .retry-hint { font-size: 12px; margin-top: 16px; color: #b2bec3; }
-    </style>
-</head>
-<body>
-    <div class="offline-card">
-        <div class="offline-icon">📡</div>
-        <h1>Нет соединения с интернетом</h1>
-        <p>Для работы тренажёра требуется подключение к сети.<br>Проверьте Wi-Fi или мобильные данные.</p>
-        <button class="btn" onclick="location.reload()">🔄 Попробовать снова</button>
-        <p class="retry-hint">После восстановления соединения нажмите "Попробовать снова"</p>
-    </div>
-</body>
-</html>`;
+// Вспомогательная функция для проверки пути запроса
+function isPathRequest(requestUrl, targetPath) {
+  try {
+    const url = new URL(requestUrl);
+    return url.pathname === targetPath;
+  } catch (e) {
+    return false;
+  }
+}
 
 // Перехват запросов — стратегия: сначала кеш, потом сеть
 self.addEventListener('fetch', event => {
@@ -166,8 +121,8 @@ self.addEventListener('fetch', event => {
   // Статические файлы (CSS, JS, HTML) — стратегия: кеш, потом сеть
   if (event.request.url.includes('/css/') || 
       event.request.url.includes('/js/') ||
-      event.request.url === './' ||
-      event.request.url.includes('/index.html')) {
+      isPathRequest(event.request.url, '/') ||
+      isPathRequest(event.request.url, '/index.html')) {
     
     event.respondWith(
       caches.match(event.request)
@@ -187,20 +142,6 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Обработка корневого запроса (/) — перенаправляем на index.html
-  if (event.request.url === self.location.origin + '/' || 
-      event.request.url === self.location.origin + '/?') {
-    event.respondWith(
-      caches.match('./index.html')
-        .then(response => response || caches.match('/index.html'))
-        .then(response => {
-          if (response) return response;
-          return fetch('./index.html');
-        })
-    );
-    return;
-  }
-  
   // Иконки и изображения
   if (event.request.url.includes('/icons/')) {
     event.respondWith(
@@ -210,18 +151,12 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Навигация — страница офлайн
+  // Навигация — fallback на index.html (кеширован)
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .catch(() => {
-          return caches.match('./index.html')
-            .then(response => {
-              if (response) return response;
-              return new Response(OFFLINE_PAGE, {
-                headers: { 'Content-Type': 'text/html' }
-              });
-            });
+          return caches.match('./index.html');
         })
     );
     return;
@@ -234,9 +169,20 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Обработка сообщений от клиента (проверка обновлений)
+// Обработка сообщений от клиента
 self.addEventListener('message', event => {
   if (event.data === 'skipWaiting') {
     self.skipWaiting();
+  }
+  
+  // Обработка запроса на проверку обновлений
+  if (event.data === 'checkUpdate') {
+    self.skipWaiting();
+    // Уведомляем всех клиентов о необходимости обновления
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage('updateAvailable');
+      });
+    });
   }
 });
