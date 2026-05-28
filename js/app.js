@@ -23,7 +23,7 @@ async function loadData() {
                 AppState.marketingData = await marketingRes.json();
             }
         } catch (e) {
-            console.log('marketing-steps.json не загружен — интерактивные шаги недоступны');
+            logInfo('marketing-steps.json не загружен — интерактивные шаги недоступны');
         }
 
         if (!User.get()) {
@@ -47,7 +47,7 @@ async function loadData() {
         }
 
     } catch (error) {
-        console.error('Ошибка загрузки:', error);
+        logError('Ошибка загрузки:', error);
         showToast('❌', 'Не удалось загрузить данные. Обновите страницу.', 'error');
     }
 }
@@ -75,30 +75,25 @@ function runStep() {
 
     const step = AppState.currentScenario.steps[AppState.currentStepIndex];
 
-    // Скрываем все экраны
     document.getElementById('map-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.add('hidden');
     document.getElementById('client-journey-screen').classList.add('hidden');
     document.getElementById('finish-screen').classList.add('hidden');
 
-    // Показываем прогресс-бар (кроме финиша)
     if (step.type !== 'finish') {
         ProgressBar.show();
         ProgressBar.update(AppState.currentStepIndex, AppState.currentScenario.steps.length - 1, AppState.currentScenario.steps);
     }
 
-    // finish обрабатываем отдельно, не идём в реестр
     if (step.type === 'finish') {
         showFinish();
         return;
     }
 
-    // Используем реестр шагов для всех остальных типов
     const handled = StepRegistry.run(step, AppState);
     
     if (!handled) {
-        // fallback для неизвестных типов
-        console.warn(`Неизвестный тип шага: ${step.type}, пропускаем`);
+        logWarn(`Неизвестный тип шага: ${step.type}, пропускаем`);
         AppState.currentStepIndex++;
         runStep();
     }
@@ -311,7 +306,7 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js')
       .then(registration => {
         swRegistration = registration;
-        console.log('Service Worker зарегистрирован:', registration.scope);
+        logInfo('Service Worker зарегистрирован:', registration.scope);
         
         setInterval(() => {
           registration.update();
@@ -324,7 +319,7 @@ if ('serviceWorker' in navigator) {
         });
       })
       .catch(error => {
-        console.error('Ошибка регистрации Service Worker:', error);
+        logError('Ошибка регистрации Service Worker:', error);
       });
   });
 }
