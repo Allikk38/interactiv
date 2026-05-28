@@ -57,52 +57,24 @@ function renderClientJourneyStage(stageIndex) {
     const container = document.getElementById('journey-container');
     if (!container) return;
     
-    // В зависимости от типа задания рендерим разный интерфейс
+    // В зависимости от типа задания рендерим разный интерфейс через шаблоны
     if (stage.type === 'select-plans') {
-        renderSelectPlansStage(stage, container, stageIndex);
+        renderSelectPlansStageWithTemplate(stage, container, stageIndex);
     } else if (stage.type === 'notify-developer') {
-        renderNotifyDeveloperStage(stage, container, stageIndex);
+        renderNotifyDeveloperStageWithTemplate(stage, container, stageIndex);
     } else if (stage.type === 'calculate-benefit') {
-        renderCalculateBenefitStage(stage, container, stageIndex);
+        renderCalculateBenefitStageWithTemplate(stage, container, stageIndex);
     } else if (stage.type === 'sort-steps') {
-        renderSortStepsStage(stage, container, stageIndex);
+        renderSortStepsStageWithTemplate(stage, container, stageIndex);
     } else {
-        renderDialogueStage(stage, container, stageIndex);
+        renderDialogueStageWithTemplate(stage, container, stageIndex);
     }
 }
 
-// ===== ОБЫЧНЫЙ ДИАЛОГ (как было) =====
-function renderDialogueStage(stage, container, stageIndex) {
-    let optionsHTML = '';
-    if (stage.options) {
-        stage.options.forEach((opt, idx) => {
-            optionsHTML += `
-                <div class="journey-option" data-opt-index="${idx}" data-next-stage="${opt.nextStage !== undefined ? opt.nextStage : stageIndex + 1}">
-                    <div class="journey-option__text">${escapeHtml(opt.text)}</div>
-                </div>
-            `;
-        });
-    }
-    
-    container.innerHTML = `
-        <div class="journey-container-inner">
-            <div class="journey-progress">
-                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / ClientJourney.stages.length) * 100}%"></div>
-            </div>
-            <div class="journey-client">
-                <div class="journey-client__avatar"><i class="fas ${stage.clientIcon || 'fa-user-circle'}"></i></div>
-                <div class="journey-client__name">${escapeHtml(stage.clientName || 'Клиент')}</div>
-                <div class="journey-client__message">${escapeHtml(stage.clientMessage || '')}</div>
-            </div>
-            <div class="journey-agent">
-                <div class="journey-agent__label"><i class="fas fa-comment-dots"></i> Ваш ответ:</div>
-                <div class="journey-agent__options">${optionsHTML}</div>
-            </div>
-            <div class="journey-feedback" style="display: none;"></div>
-            <button class="btn btn--primary journey-next-btn" style="display: none;">Далее</button>
-        </div>
-    `;
-    
+// ===== ДИАЛОГ С ИСПОЛЬЗОВАНИЕМ ШАБЛОНА =====
+function renderDialogueStageWithTemplate(stage, container, stageIndex) {
+    const totalStages = ClientJourney.stages.length;
+    container.innerHTML = renderDialogueStage(stage, stageIndex, totalStages);
     attachDialogueHandlers(stage, stageIndex);
 }
 
@@ -124,12 +96,12 @@ function attachDialogueHandlers(stage, stageIndex) {
             
             const feedbackDiv = document.querySelector('.journey-feedback');
             if (feedbackDiv) {
+                feedbackDiv.innerHTML = renderJourneyFeedback(
+                    isCorrect, 
+                    selectedOption.feedback, 
+                    selectedOption.feedback
+                );
                 feedbackDiv.style.display = 'flex';
-                feedbackDiv.innerHTML = `
-                    <div class="journey-feedback__icon"><i class="fas ${isCorrect ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i></div>
-                    <div class="journey-feedback__text"><strong>${isCorrect ? 'Верно' : 'Можно лучше:'}</strong><br>${escapeHtml(selectedOption.feedback)}</div>
-                `;
-                feedbackDiv.classList.add(isCorrect ? 'journey-feedback--correct' : 'journey-feedback--wrong');
             }
             
             ClientJourney.decisions.push({
@@ -142,7 +114,10 @@ function attachDialogueHandlers(stage, stageIndex) {
             const nextBtn = document.querySelector('.journey-next-btn');
             if (nextBtn) {
                 nextBtn.style.display = 'block';
-                const nextStage = selectedOption.nextStage !== undefined ? parseInt(selectedOption.nextStage) : ClientJourney.currentStage + 1;
+                let nextStage = parseInt(opt.dataset.nextStage);
+                if (isNaN(nextStage) || nextStage === 'next') {
+                    nextStage = ClientJourney.currentStage + 1;
+                }
                 nextBtn.onclick = () => {
                     ClientJourney.currentStage = nextStage;
                     renderClientJourneyStage(nextStage);
@@ -152,8 +127,10 @@ function attachDialogueHandlers(stage, stageIndex) {
     });
 }
 
-// ===== ЗАДАНИЕ 1: ВЫБОР ПЛАНИРОВОК =====
-async function renderSelectPlansStage(stage, container, stageIndex) {
+// ===== ВЫБОР ПЛАНИРОВОК С ИСПОЛЬЗОВАНИЕМ ШАБЛОНА =====
+async function renderSelectPlansStageWithTemplate(stage, container, stageIndex) {
+    const totalStages = ClientJourney.stages.length;
+    
     // Загружаем планировки
     let plans = [];
     try {
@@ -163,46 +140,7 @@ async function renderSelectPlansStage(stage, container, stageIndex) {
         console.error('Ошибка загрузки планировок', e);
     }
     
-    let plansHTML = '';
-    plans.forEach(plan => {
-        plansHTML += `
-            <div class="plan-card" data-plan-id="${plan.id}" data-price="${plan.price}" data-rooms="${plan.rooms}">
-                <div class="plan-card__image">
-                    ${plan.image ? `<img src="${plan.image}" alt="${plan.name}">` : '<div class="plan-card__placeholder"><i class="fas fa-building"></i></div>'}
-                </div>
-                <div class="plan-card__info">
-                    <h4>${escapeHtml(plan.name)}</h4>
-                    <p>${plan.rooms} комната · ${plan.area} м²</p>
-                    <p class="plan-card__price">${(plan.price / 1000000).toFixed(1)} млн ₽</p>
-                    <p class="plan-card__complex">${escapeHtml(plan.complex)}</p>
-                </div>
-                <div class="plan-card__select">
-                    <i class="far fa-square"></i>
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = `
-        <div class="journey-container-inner">
-            <div class="journey-progress">
-                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / ClientJourney.stages.length) * 100}%"></div>
-            </div>
-            <div class="journey-client">
-                <div class="journey-client__avatar"><i class="fas ${stage.clientIcon || 'fa-user-circle'}"></i></div>
-                <div class="journey-client__name">${escapeHtml(stage.clientName || 'Клиент')}</div>
-                <div class="journey-client__message">${escapeHtml(stage.clientMessage || '')}</div>
-            </div>
-            <div class="journey-task">
-                <div class="journey-task__title">${stage.taskTitle || 'Выберите подходящие планировки'}</div>
-                <div class="journey-task__desc">${stage.taskDescription || ''}</div>
-                <div class="plans-grid" id="plans-grid">${plansHTML}</div>
-                <button class="btn btn--primary check-plans-btn">Проверить</button>
-            </div>
-            <div class="journey-feedback" style="display: none;"></div>
-            <button class="btn btn--primary journey-next-btn" style="display: none;">Далее</button>
-        </div>
-    `;
+    container.innerHTML = renderSelectPlansStage(stage, stageIndex, totalStages, plans);
     
     // Обработка выбора планировок
     let selectedPlans = [];
@@ -230,14 +168,12 @@ async function renderSelectPlansStage(stage, container, stageIndex) {
         });
         
         const feedbackDiv = document.querySelector('.journey-feedback');
+        feedbackDiv.innerHTML = renderJourneyFeedback(
+            isCorrect,
+            stage.correctFeedback || 'Вы выбрали подходящие под бюджет планировки.',
+            stage.wrongFeedback || 'Учтите бюджет клиента и его пожелания.'
+        );
         feedbackDiv.style.display = 'flex';
-        if (isCorrect) {
-            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-check-circle"></i></div><div class="journey-feedback__text"><strong>Верно!</strong><br>${stage.correctFeedback || 'Вы выбрали подходящие под бюджет планировки.'}</div>`;
-            feedbackDiv.classList.add('journey-feedback--correct');
-        } else {
-            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-exclamation-triangle"></i></div><div class="journey-feedback__text"><strong>Неверно</strong><br>${stage.wrongFeedback || 'Учтите бюджет клиента и его пожелания.'}</div>`;
-            feedbackDiv.classList.add('journey-feedback--wrong');
-        }
         
         ClientJourney.decisions.push({
             stage: ClientJourney.currentStage,
@@ -255,37 +191,17 @@ async function renderSelectPlansStage(stage, container, stageIndex) {
     });
 }
 
-// ===== ЗАДАНИЕ 2: УВЕДОМЛЕНИЕ ЗАСТРОЙЩИКА =====
-function renderNotifyDeveloperStage(stage, container, stageIndex) {
-    let optionsHTML = '';
-    stage.options.forEach((opt, idx) => {
-        optionsHTML += `
-            <div class="journey-option notify-option" data-opt-index="${idx}" data-correct="${opt.correct}">
-                <div class="journey-option__text">${escapeHtml(opt.text)}</div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = `
-        <div class="journey-container-inner">
-            <div class="journey-progress">
-                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / ClientJourney.stages.length) * 100}%"></div>
-            </div>
-            <div class="journey-task">
-                <div class="journey-task__title">${stage.taskTitle || 'Уведомление застройщика'}</div>
-                <div class="journey-task__desc">${stage.taskDescription || ''}</div>
-                <div class="journey-agent__options">${optionsHTML}</div>
-            </div>
-            <div class="journey-feedback" style="display: none;"></div>
-            <button class="btn btn--primary journey-next-btn" style="display: none;">Далее</button>
-        </div>
-    `;
+// ===== УВЕДОМЛЕНИЕ ЗАСТРОЙЩИКА С ИСПОЛЬЗОВАНИЕМ ШАБЛОНА =====
+function renderNotifyDeveloperStageWithTemplate(stage, container, stageIndex) {
+    const totalStages = ClientJourney.stages.length;
+    container.innerHTML = renderNotifyDeveloperStage(stage, stageIndex, totalStages);
     
     document.querySelectorAll('.notify-option').forEach(opt => {
         opt.addEventListener('click', () => {
             if (opt.classList.contains('journey-option--selected')) return;
             
             const isCorrect = opt.dataset.correct === 'true';
+            const optionText = opt.querySelector('.journey-option__text').textContent;
             
             document.querySelectorAll('.notify-option').forEach(o => {
                 o.style.pointerEvents = 'none';
@@ -295,19 +211,17 @@ function renderNotifyDeveloperStage(stage, container, stageIndex) {
             else opt.classList.add('journey-option--wrong');
             
             const feedbackDiv = document.querySelector('.journey-feedback');
+            feedbackDiv.innerHTML = renderJourneyFeedback(
+                isCorrect,
+                stage.correctFeedback || 'Клиент закреплён за вами.',
+                stage.wrongFeedback || 'Нужно зафиксировать клиента в отделе продаж.'
+            );
             feedbackDiv.style.display = 'flex';
-            if (isCorrect) {
-                feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-check-circle"></i></div><div class="journey-feedback__text"><strong>Верно!</strong><br>${stage.correctFeedback || 'Клиент закреплён за вами.'}</div>`;
-                feedbackDiv.classList.add('journey-feedback--correct');
-            } else {
-                feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-exclamation-triangle"></i></div><div class="journey-feedback__text"><strong>Неверно</strong><br>${stage.wrongFeedback || 'Нужно зафиксировать клиента в отделе продаж.'}</div>`;
-                feedbackDiv.classList.add('journey-feedback--wrong');
-            }
             
             ClientJourney.decisions.push({
                 stage: ClientJourney.currentStage,
                 stageTitle: stage.title,
-                choice: opt.querySelector('.journey-option__text').textContent,
+                choice: optionText,
                 isCorrect: isCorrect
             });
             
@@ -321,45 +235,10 @@ function renderNotifyDeveloperStage(stage, container, stageIndex) {
     });
 }
 
-// ===== ЗАДАНИЕ 3: РАСЧЁТ ВЫГОДЫ =====
-function renderCalculateBenefitStage(stage, container, stageIndex) {
-    container.innerHTML = `
-        <div class="journey-container-inner">
-            <div class="journey-progress">
-                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / ClientJourney.stages.length) * 100}%"></div>
-            </div>
-            <div class="journey-client">
-                <div class="journey-client__avatar"><i class="fas ${stage.clientIcon || 'fa-user-circle'}"></i></div>
-                <div class="journey-client__name">${escapeHtml(stage.clientName || 'Клиент')}</div>
-                <div class="journey-client__message">${escapeHtml(stage.clientMessage || '')}</div>
-            </div>
-            <div class="journey-task">
-                <div class="journey-task__title">${stage.taskTitle || 'Рассчитайте выгоду'}</div>
-                <div class="journey-task__desc">${stage.taskDescription || ''}</div>
-                <div class="benefit-calculator">
-                    <div class="benefit-field">
-                        <label>Ежемесячный платёж по новостройке (6%):</label>
-                        <input type="number" id="new-payment" placeholder="введите сумму в ₽">
-                    </div>
-                    <div class="benefit-field">
-                        <label>Ежемесячный платёж по вторичке (9%):</label>
-                        <input type="number" id="old-payment" placeholder="введите сумму в ₽">
-                    </div>
-                    <div class="benefit-field">
-                        <label>Разница в месяц (экономия):</label>
-                        <input type="number" id="month-diff" placeholder="введите сумму в ₽">
-                    </div>
-                    <div class="benefit-field">
-                        <label>Экономия в год:</label>
-                        <input type="number" id="year-diff" placeholder="введите сумму в ₽">
-                    </div>
-                    <button class="btn btn--primary check-benefit-btn">Проверить</button>
-                </div>
-            </div>
-            <div class="journey-feedback" style="display: none;"></div>
-            <button class="btn btn--primary journey-next-btn" style="display: none;">Далее</button>
-        </div>
-    `;
+// ===== РАСЧЁТ ВЫГОДЫ С ИСПОЛЬЗОВАНИЕМ ШАБЛОНА =====
+function renderCalculateBenefitStageWithTemplate(stage, container, stageIndex) {
+    const totalStages = ClientJourney.stages.length;
+    container.innerHTML = renderCalculateBenefitStage(stage, stageIndex, totalStages);
     
     document.querySelector('.check-benefit-btn').addEventListener('click', () => {
         const newPayment = parseFloat(document.getElementById('new-payment').value);
@@ -380,15 +259,21 @@ function renderCalculateBenefitStage(stage, container, stageIndex) {
         const isCorrect = isNewOk && isOldOk && isMonthOk && isYearOk;
         
         const feedbackDiv = document.querySelector('.journey-feedback');
-        feedbackDiv.style.display = 'flex';
         
         if (isCorrect) {
-            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-check-circle"></i></div><div class="journey-feedback__text"><strong>Верно!</strong><br>Экономия 11 003 ₽ в месяц и 132 036 ₽ в год. Клиент увидит выгоду!</div>`;
-            feedbackDiv.classList.add('journey-feedback--correct');
+            feedbackDiv.innerHTML = renderJourneyFeedback(
+                true,
+                'Экономия 11 003 ₽ в месяц и 132 036 ₽ в год. Клиент увидит выгоду!',
+                ''
+            );
         } else {
-            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-exclamation-triangle"></i></div><div class="journey-feedback__text"><strong>Неверно</strong><br>Правильные цифры: платеж по новостройке ≈ 43 000 ₽, по вторичке ≈ 54 000 ₽, экономия ≈ 11 000 ₽ в месяц.</div>`;
-            feedbackDiv.classList.add('journey-feedback--wrong');
+            feedbackDiv.innerHTML = renderJourneyFeedback(
+                false,
+                '',
+                'Правильные цифры: платеж по новостройке ≈ 43 000 ₽, по вторичке ≈ 54 000 ₽, экономия ≈ 11 000 ₽ в месяц.'
+            );
         }
+        feedbackDiv.style.display = 'flex';
         
         ClientJourney.decisions.push({
             stage: ClientJourney.currentStage,
@@ -406,37 +291,13 @@ function renderCalculateBenefitStage(stage, container, stageIndex) {
     });
 }
 
-// ===== ЗАДАНИЕ 4: СОРТИРОВКА ШАГОВ =====
-function renderSortStepsStage(stage, container, stageIndex) {
+// ===== СОРТИРОВКА ШАГОВ С ИСПОЛЬЗОВАНИЕМ ШАБЛОНА =====
+function renderSortStepsStageWithTemplate(stage, container, stageIndex) {
+    const totalStages = ClientJourney.stages.length;
     const steps = [...stage.stepsToSort];
     const shuffled = [...steps].sort(() => Math.random() - 0.5);
     
-    let stepsHTML = '';
-    shuffled.forEach((step, idx) => {
-        stepsHTML += `
-            <div class="sort-step" data-step-id="${step.id}" data-order="${step.order}" draggable="true">
-                <span class="sort-step__handle"><i class="fas fa-grip-vertical"></i></span>
-                <span class="sort-step__text">${escapeHtml(step.text)}</span>
-                <span class="sort-step__num"></span>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = `
-        <div class="journey-container-inner">
-            <div class="journey-progress">
-                <div class="journey-progress__bar" style="width: ${((stageIndex + 1) / ClientJourney.stages.length) * 100}%"></div>
-            </div>
-            <div class="journey-task">
-                <div class="journey-task__title">${stage.taskTitle || 'Расставьте шаги в правильном порядке'}</div>
-                <div class="journey-task__desc">${stage.taskDescription || ''}</div>
-                <div class="sort-steps-container" id="sort-steps-container">${stepsHTML}</div>
-                <button class="btn btn--primary check-sort-btn">Проверить</button>
-            </div>
-            <div class="journey-feedback" style="display: none;"></div>
-            <button class="btn btn--primary journey-next-btn" style="display: none;">Далее</button>
-        </div>
-    `;
+    container.innerHTML = renderSortStepsStage(stage, stageIndex, totalStages, shuffled);
     
     // Drag-and-drop логика
     const containerSort = document.getElementById('sort-steps-container');
@@ -490,15 +351,13 @@ function renderSortStepsStage(stage, container, stageIndex) {
         
         const isCorrect = correct === total;
         const feedbackDiv = document.querySelector('.journey-feedback');
-        feedbackDiv.style.display = 'flex';
         
-        if (isCorrect) {
-            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-check-circle"></i></div><div class="journey-feedback__text"><strong>Верно!</strong><br>${stage.correctFeedback || 'Порядок действий соблюдён.'}</div>`;
-            feedbackDiv.classList.add('journey-feedback--correct');
-        } else {
-            feedbackDiv.innerHTML = `<div class="journey-feedback__icon"><i class="fas fa-exclamation-triangle"></i></div><div class="journey-feedback__text"><strong>Неверно</strong><br>${stage.wrongFeedback || 'Правильный порядок: бронирование → эскроу → ДДУ → регистрация → выписка'}</div>`;
-            feedbackDiv.classList.add('journey-feedback--wrong');
-        }
+        feedbackDiv.innerHTML = renderJourneyFeedback(
+            isCorrect,
+            stage.correctFeedback || 'Порядок действий соблюдён.',
+            stage.wrongFeedback || 'Правильный порядок: бронирование → эскроу → ДДУ → регистрация → выписка'
+        );
+        feedbackDiv.style.display = 'flex';
         
         ClientJourney.decisions.push({
             stage: ClientJourney.currentStage,
@@ -540,17 +399,7 @@ function finishClientJourney() {
     }, 2500);
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
-}
-
-// Стили для новых элементов
+// ===== СТИЛИ ДЛЯ НОВЫХ ЭЛЕМЕНТОВ (ОСТАЁТСЯ БЕЗ ИЗМЕНЕНИЙ) =====
 function ensureJourneyStyles() {
     if (document.getElementById('journey-styles')) return;
     
