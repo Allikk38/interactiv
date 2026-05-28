@@ -1,9 +1,23 @@
 // ===== MAP UI: УПРАВЛЕНИЕ СПИСКОМ ЖК И КАРУСЕЛЬЮ =====
 
+// Хеш последнего рендера для предотвращения двойной перерисовки
+let _lastDrawerJksHash = '';
+
 // Обновление списка ЖК для десктопной панели
 function updateDesktopDrawerList(jks) {
     const drawerList = document.getElementById('jk-drawer-list');
     if (!drawerList) return;
+    
+    // Вычисляем хеш текущих данных для сравнения
+    const currentHash = JSON.stringify(jks.map(jk => ({
+        id: jk.id,
+        placed: StoreInstance.hasPlacedJk(jk.id),
+        selected: StoreInstance.getSelectedJkId() === jk.id
+    })));
+    
+    // Если данные не изменились — не перерисовываем
+    if (_lastDrawerJksHash === currentHash) return;
+    _lastDrawerJksHash = currentHash;
     
     drawerList.innerHTML = '';
     
@@ -28,6 +42,8 @@ function updateDesktopDrawerList(jks) {
                     item.classList.remove('jk-list__item--selected');
                 });
                 li.classList.add('jk-list__item--selected');
+                // Сбрасываем хеш после изменения выделения
+                _lastDrawerJksHash = '';
             });
         }
         
