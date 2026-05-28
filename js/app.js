@@ -87,7 +87,13 @@ function runStep() {
         ProgressBar.update(AppState.currentStepIndex, AppState.currentScenario.steps.length - 1, AppState.currentScenario.steps);
     }
 
-    // Используем реестр шагов вместо switch
+    // finish обрабатываем отдельно, не идём в реестр
+    if (step.type === 'finish') {
+        showFinish();
+        return;
+    }
+
+    // Используем реестр шагов для всех остальных типов
     const handled = StepRegistry.run(step, AppState);
     
     if (!handled) {
