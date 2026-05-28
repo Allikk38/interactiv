@@ -527,23 +527,37 @@ function runAnalyticsStep(step) {
     quizContainer.innerHTML = renderAnalyticsStep(data, optionsHTML);
 
     const checkBtn = document.getElementById('interactive-check-btn');
-    const checkboxes = quizContainer.querySelectorAll('input[type="checkbox"]');
+    const hintEl = document.getElementById('interactive-hint');
     let stepChecked = false;
 
+    // Получаем все чекбоксы после рендера
+    const checkboxes = quizContainer.querySelectorAll('input[type="checkbox"]');
+    
+    // Функция обновления состояния кнопки
+    function updateCheckBtnState() {
+        if (stepChecked) return;
+        const checked = quizContainer.querySelectorAll('input:checked');
+        checkBtn.disabled = checked.length !== 3;
+    }
+    
+    // Добавляем обработчики на каждый чекбокс и его label
     checkboxes.forEach(cb => {
-        cb.addEventListener('change', () => {
-            if (stepChecked) return;
-            const checked = quizContainer.querySelectorAll('input:checked');
-            checkBtn.disabled = checked.length !== 3;
-        });
+        // Обработчик на сам чекбокс
+        cb.addEventListener('change', updateCheckBtnState);
         
+        // Находим родительский label
         const label = cb.closest('.analytics-option');
         if (label) {
+            // Добавляем обработчик клика на весь label
             label.addEventListener('click', (e) => {
+                // Если клик не по чекбоксу (и не по его визуальному элементу)
                 if (e.target.tagName !== 'INPUT') {
+                    e.preventDefault();
                     cb.checked = !cb.checked;
-                    const event = new Event('change');
-                    cb.dispatchEvent(event);
+                    // Создаём событие change вручную
+                    const changeEvent = new Event('change', { bubbles: true });
+                    cb.dispatchEvent(changeEvent);
+                    updateCheckBtnState();
                 }
             });
         }
@@ -558,7 +572,6 @@ function runAnalyticsStep(step) {
 
         let correct = 0;
         const total = 3;
-        const hintEl = document.getElementById('interactive-hint');
 
         checkboxes.forEach(cb => {
             cb.disabled = true;
@@ -591,6 +604,10 @@ function runAnalyticsStep(step) {
         }
 
         stepChecked = true;
+        checkBtn.disabled = false;
         checkBtn.textContent = 'Далее';
     });
+    
+    // Начальное состояние кнопки
+    checkBtn.disabled = true;
 }
