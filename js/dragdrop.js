@@ -313,11 +313,5 @@ const DragDrop = {
     }
 };
 
-// Вспомогательная функция для тостов (если showToast не определена)
-function showToast(icon, message, type) {
-    if (typeof window.showToast === 'function') {
-        window.showToast(icon, message, type);
-    } else {
-        console.log(`${icon} ${message}`);
-    }
-}
+// showToast теперь глобальная (из utils/toast.js)
+// Локальное определение УДАЛЕНО
