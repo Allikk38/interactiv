@@ -278,24 +278,8 @@
     </div>
     
     <script src="js/config.js"></script>
+    <script src="js/utils/toast.js"></script>
     <script>
-        // Функция для тостов
-        function showToast(icon, message, type) {
-            const toast = document.getElementById('toast');
-            const toastIcon = document.getElementById('toast-icon');
-            const toastMessage = document.getElementById('toast-message');
-            
-            if (!toast) return;
-            
-            clearTimeout(window.toastTimer);
-            toastIcon.textContent = icon;
-            toastMessage.textContent = message;
-            toast.className = `toast toast--${type} toast--show`;
-            window.toastTimer = setTimeout(() => {
-                toast.classList.remove('toast--show');
-            }, 3000);
-        }
-        
         // Загрузка рейтингов
         async function loadLeaderboard() {
             const tableContent = document.getElementById('table-content');
@@ -351,7 +335,7 @@
                             <td><span class="percent-badge">${user.totalPercent}%</span> (${user.totalCorrect}/${user.totalItems})</td>
                             <td>${user.scenariosCompleted}</td>
                             <td>${escapeHtml(user.bestScenario || '—')}</td>
-                            <td>${user.bestPercent}%</span></td>
+                            <td>${user.bestPercent}%</td>
                         </tr>
                     `;
                 });
