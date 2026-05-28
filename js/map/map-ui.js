@@ -9,8 +9,8 @@ function updateDesktopDrawerList(jks) {
     
     drawerList.innerHTML = '';
     
-    const placedJks = Store.getPlacedJks();
-    const selectedJkId = Store.getSelectedJkId();
+    const placedJks = StoreInstance.getPlacedJks();
+    const selectedJkId = StoreInstance.getSelectedJkId();
     
     jks.forEach(jk => {
         const isPlaced = placedJks.has(jk.id);
@@ -56,8 +56,8 @@ function renderCarousel(jks) {
     }
     
     const track = document.getElementById('carousel-track');
-    const placedJks = Store.getPlacedJks();
-    const selectedJkId = Store.getSelectedJkId();
+    const placedJks = StoreInstance.getPlacedJks();
+    const selectedJkId = StoreInstance.getSelectedJkId();
     
     jks.forEach(jk => {
         const isPlaced = placedJks.has(jk.id);
@@ -126,9 +126,9 @@ function initCarouselScroll() {
 // Обновление счётчика карусели
 function updateCarouselCounter() {
     const counter = document.getElementById('carousel-counter');
-    const currentStepJks = Store.getCurrentStepJks();
+    const currentStepJks = StoreInstance.getCurrentStepJks();
     const total = currentStepJks ? currentStepJks.length : 0;
-    const placed = Store.getPlacedJksSize();
+    const placed = StoreInstance.getPlacedJksSize();
     if (counter) {
         counter.textContent = renderCarouselCounter(placed, total);
     }
@@ -136,7 +136,7 @@ function updateCarouselCounter() {
 
 // Обновление выделенного элемента в карусели и списке
 function updateSelectedCard() {
-    const selectedJkId = Store.getSelectedJkId();
+    const selectedJkId = StoreInstance.getSelectedJkId();
     
     document.querySelectorAll('.jk-card').forEach(card => {
         card.classList.remove('jk-card--selected');
