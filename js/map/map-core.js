@@ -1,24 +1,5 @@
 // ===== MAP CORE: ИНИЦИАЛИЗАЦИЯ КАРТЫ, МАРКЕРЫ, РАССТОЯНИЯ =====
 
-// Глобальные переменные для очереди загрузки
-let ymapsReady = false;
-let ymapsQueue = [];
-
-function onYmapsReady(callback) {
-    if (ymapsReady && typeof ymaps !== 'undefined' && ymaps.Map) {
-        callback();
-    } else {
-        ymapsQueue.push(callback);
-    }
-}
-
-// Функция для установки готовности
-function setYmapsReady() {
-    ymapsReady = true;
-    ymapsQueue.forEach(cb => cb());
-    ymapsQueue = [];
-}
-
 // Инициализация карты
 function initMap() {
     const mapContainer = document.getElementById('map');
@@ -164,9 +145,4 @@ function getDistance(lat1, lng1, lat2, lng2) {
 
 function toRad(deg) {
     return deg * (Math.PI / 180);
-}
-
-// Функция для обновления готовности (будет вызвана из map-step)
-function notifyYmapsReady() {
-    setYmapsReady();
 }
