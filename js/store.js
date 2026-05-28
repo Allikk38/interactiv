@@ -53,7 +53,7 @@ class Store {
                 try {
                     cb(newValue, oldValue);
                 } catch (e) {
-                    console.error(`Ошибка в подписчике ${key}:`, e);
+                    logError(`Ошибка в подписчике ${key}:`, e);
                 }
             });
         }
