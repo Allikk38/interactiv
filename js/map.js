@@ -67,7 +67,7 @@ function initMap() {
         
     } catch (error) {
         console.error('Ошибка инициализации карты:', error);
-        mapContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка загрузки карты. Проверьте подключение к интернету.</div>';
+        mapContainer.innerHTML = renderMapErrorIndicator();
     }
 }
 
@@ -205,7 +205,7 @@ function runMapStep(step) {
     // Показываем индикатор загрузки
     const mapContainer = document.getElementById('map');
     if (mapContainer) {
-        mapContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; background: #f5f6fa;"><div style="text-align: center;"><div style="width: 40px; height: 40px; border: 4px solid #dfe6e9; border-top-color: #2e86de; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div><p style="color: #636e72;">Загрузка карты...</p></div></div>';
+        mapContainer.innerHTML = renderMapLoadingIndicator();
     }
     
     const startMap = () => {
@@ -246,7 +246,7 @@ function runMapStep(step) {
             console.error('Яндекс.Карты не загрузились');
             const mapContainer = document.getElementById('map');
             if (mapContainer) {
-                mapContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; background: #f5f6fa;"><div style="text-align: center;"><p style="color: #e74c3c;">❌ Ошибка загрузки карты</p><button onclick="location.reload()" style="margin-top: 16px; padding: 8px 16px; background: #2e86de; color: white; border: none; border-radius: 8px; cursor: pointer;">Обновить страницу</button></div></div>';
+                mapContainer.innerHTML = renderMapErrorIndicator();
             }
             showToast('❌', 'Ошибка загрузки карты. Обновите страницу.', 'error');
         }, 10000);
@@ -261,15 +261,12 @@ function updateDesktopDrawerList(jks) {
     
     jks.forEach(jk => {
         const isPlaced = AppState.placedJks.has(jk.id);
+        const isSelected = AppState.selectedJkId === jk.id;
+        
         const li = document.createElement('li');
-        li.className = `jk-list__item${isPlaced ? ' jk-list__item--placed' : ''}${AppState.selectedJkId === jk.id ? ' jk-list__item--selected' : ''}`;
+        li.className = `jk-list__item${isPlaced ? ' jk-list__item--placed' : ''}${isSelected ? ' jk-list__item--selected' : ''}`;
         li.dataset.id = jk.id;
-        li.innerHTML = `
-            <div class="jk-list__name">${escapeHtml(jk.name)}</div>
-            <div class="jk-list__developer">${escapeHtml(jk.developer)}</div>
-            ${jk.hint && jk.hint.trim() && !isPlaced ? `<div class="jk-list__hint" style="font-size:0.7rem; color:var(--color-warning); margin-top:4px;">💡 ${escapeHtml(jk.hint.substring(0, 40))}</div>` : ''}
-            ${isPlaced ? '<div style="font-size:0.7rem; color:var(--color-success); margin-top:4px;">✓ Расставлен</div>' : ''}
-        `;
+        li.innerHTML = renderDesktopDrawerItem(jk, isPlaced, isSelected);
         
         if (!isPlaced) {
             li.addEventListener('click', () => {
@@ -292,24 +289,10 @@ function renderCarousel(jks) {
     
     if (!jks.length) return;
     
-    const carouselHTML = `
-        <div class="jk-carousel">
-            <div class="jk-carousel__header">
-                <span class="jk-carousel__title"><i class="fas fa-building"></i> Жилые комплексы</span>
-                <span class="jk-carousel__counter" id="carousel-counter">${AppState.placedJks.size} / ${jks.length} расставлено</span>
-            </div>
-            <div class="jk-carousel__wrapper">
-                <button class="jk-carousel__btn" id="carousel-prev" disabled><i class="fas fa-chevron-left"></i></button>
-                <div class="jk-carousel__slides" id="carousel-slides">
-                    <div class="jk-carousel__track" id="carousel-track"></div>
-                </div>
-                <button class="jk-carousel__btn" id="carousel-next"><i class="fas fa-chevron-right"></i></button>
-            </div>
-        </div>
-    `;
-    
     const mapScreen = document.getElementById('map-screen');
     const progressContainer = document.querySelector('.map-progress')?.parentElement;
+    
+    const carouselHTML = renderCarouselHTML(jks);
     
     if (progressContainer && progressContainer.parentElement) {
         progressContainer.parentElement.insertAdjacentHTML('afterbegin', carouselHTML);
@@ -320,15 +303,12 @@ function renderCarousel(jks) {
     const track = document.getElementById('carousel-track');
     jks.forEach(jk => {
         const isPlaced = AppState.placedJks.has(jk.id);
+        const isSelected = AppState.selectedJkId === jk.id;
+        
         const card = document.createElement('div');
-        card.className = `jk-card${AppState.selectedJkId === jk.id ? ' jk-card--selected' : ''}${isPlaced ? ' jk-card--placed' : ''}`;
+        card.className = `jk-card${isSelected ? ' jk-card--selected' : ''}${isPlaced ? ' jk-card--placed' : ''}`;
         card.dataset.id = jk.id;
-        card.innerHTML = `
-            <div class="jk-card__name">${escapeHtml(jk.name)}</div>
-            <div class="jk-card__developer">${escapeHtml(jk.developer)}</div>
-            ${jk.hint && jk.hint.trim() && !isPlaced ? `<div class="jk-card__hint">💡 ${escapeHtml(jk.hint.substring(0, 40))}</div>` : ''}
-            ${isPlaced ? '<div class="jk-card__status">✓ Расставлен</div>' : ''}
-        `;
+        card.innerHTML = renderCarouselCard(jk, isPlaced, isSelected);
         
         if (!isPlaced) {
             card.addEventListener('click', (e) => {
@@ -342,38 +322,6 @@ function renderCarousel(jks) {
     
     initCarouselScroll();
     updateCarouselCounter();
-}
-
-function updateDesktopDrawerList(jks) {
-    const drawerList = document.getElementById('jk-drawer-list');
-    if (!drawerList) return;
-    
-    drawerList.innerHTML = '';
-    
-    jks.forEach(jk => {
-        const isPlaced = AppState.placedJks.has(jk.id);
-        const li = document.createElement('li');
-        li.className = `jk-list__item${isPlaced ? ' jk-list__item--placed' : ''}${AppState.selectedJkId === jk.id ? ' jk-list__item--selected' : ''}`;
-        li.dataset.id = jk.id;
-        li.innerHTML = `
-            <div class="jk-list__name">${escapeHtml(jk.name)}</div>
-            <div class="jk-list__developer">${escapeHtml(jk.developer)}</div>
-            ${jk.hint && jk.hint.trim() && !isPlaced ? `<div class="jk-list__hint">💡 ${escapeHtml(jk.hint.substring(0, 40))}</div>` : ''}
-            ${isPlaced ? '<div style="font-size:0.7rem; color:var(--color-success); margin-top:4px;">✓ Расставлен</div>' : ''}
-        `;
-        
-        if (!isPlaced) {
-            li.addEventListener('click', () => {
-                selectJk(jk.id);
-                document.querySelectorAll('.jk-list__item').forEach(item => {
-                    item.classList.remove('jk-list__item--selected');
-                });
-                li.classList.add('jk-list__item--selected');
-            });
-        }
-        
-        drawerList.appendChild(li);
-    });
 }
 
 function initCarouselScroll() {
@@ -419,7 +367,7 @@ function updateCarouselCounter() {
     const total = AppState.currentStepJks ? AppState.currentStepJks.length : 0;
     const placed = AppState.placedJks.size;
     if (counter) {
-        counter.textContent = `${placed} / ${total} расставлено`;
+        counter.textContent = renderCarouselCounter(placed, total);
     }
 }
 
