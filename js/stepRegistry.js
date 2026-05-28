@@ -8,7 +8,7 @@ const StepRegistry = {
     // Регистрация обработчика для типа шага
     register(stepType, handlerFn) {
         if (typeof handlerFn !== 'function') {
-            console.error(`StepRegistry: обработчик для "${stepType}" не является функцией`);
+            logError(`StepRegistry: обработчик для "${stepType}" не является функцией`);
             return;
         }
         this._handlers[stepType] = handlerFn;
@@ -28,7 +28,7 @@ const StepRegistry = {
     run(step, context) {
         const handler = this.getHandler(step.type);
         if (!handler) {
-            console.error(`StepRegistry: неизвестный тип шага "${step.type}"`);
+            logError(`StepRegistry: неизвестный тип шага "${step.type}"`);
             return false;
         }
         handler(step, context);
