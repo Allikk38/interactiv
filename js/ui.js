@@ -92,38 +92,18 @@ function renderScenarios() {
     sortedGroups.forEach((groupName, groupIndex) => {
         const scenarios = grouped[groupName];
         
-        // Контейнер группы
-        const groupContainer = document.createElement('div');
-        groupContainer.className = 'scenario-group';
-        groupContainer.dataset.group = groupName;
-        
-        // Заголовок аккордеона
-        const groupHeader = document.createElement('div');
-        groupHeader.className = 'scenario-group__header';
-        
-        // Иконка для группы
+        // Определяем иконку для группы
         let groupIcon = 'fa-folder';
         if (groupName.includes('Картография')) groupIcon = 'fa-map';
         if (groupName.includes('Маркетинг')) groupIcon = 'fa-chart-line';
         if (groupName.includes('Урок')) groupIcon = 'fa-graduation-cap';
         if (groupName.includes('Практика')) groupIcon = 'fa-handshake';
         
-        groupHeader.innerHTML = `
-            <div class="scenario-group__title">
-                <i class="fas ${groupIcon} scenario-group__icon"></i>
-                <span>${escapeHtml(groupName)}</span>
-                <span class="scenario-group__count">${scenarios.length}</span>
-            </div>
-            <i class="fas fa-chevron-down scenario-group__toggle"></i>
-        `;
-        
-        // Контент группы
-        const groupContent = document.createElement('div');
-        groupContent.className = 'scenario-group__content';
-        
+        // Создаём контейнер для карточек внутри группы
         const cardsGrid = document.createElement('div');
         cardsGrid.className = 'scenarios-grid';
         
+        // Генерируем карточки
         scenarios.forEach(scenario => {
             const mapSteps = scenario.steps.filter(s => s.type === 'map').length;
             const quizSteps = scenario.steps.filter(s => s.type === 'quiz').length;
@@ -137,29 +117,36 @@ function renderScenarios() {
             const hasBadge = Badges.has(scenario.badge);
             const scenarioIcon = scenario.icon || 'fa-book-open';
 
+            // Создаём карточку через DOM-элементы (для привязки события click)
             const card = document.createElement('div');
             card.className = 'scenario-card';
-            card.innerHTML = `
-                <div class="scenario-card__icon">
-                    <i class="fas ${scenarioIcon}"></i>
-                    ${hasBadge ? '<i class="fas fa-certificate scenario-card__badge"></i>' : ''}
-                </div>
-                <div class="scenario-card__name">${escapeHtml(scenario.name)}</div>
-                <div class="scenario-card__description">${escapeHtml(scenario.description)}</div>
-                <div class="scenario-card__steps">${stepsDesc.join(' · ') || scenario.steps.length + ' шагов'}</div>
-            `;
+            // Используем шаблон для внутреннего HTML
+            card.innerHTML = renderScenarioCard(scenario, hasBadge, stepsDesc, scenarioIcon);
             
             card.addEventListener('click', () => startScenario(scenario));
             cardsGrid.appendChild(card);
         });
         
-        groupContent.appendChild(cardsGrid);
-        groupContainer.appendChild(groupHeader);
-        groupContainer.appendChild(groupContent);
+        // Создаём группу через шаблон, затем добавляем cardsGrid
+        const groupContainer = document.createElement('div');
+        groupContainer.className = 'scenario-group';
+        groupContainer.dataset.group = groupName;
+        
+        const headerHtml = renderScenarioGroupHeader(groupName, scenarios.length, groupIcon);
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'scenario-group__header';
+        headerDiv.innerHTML = headerHtml;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'scenario-group__content';
+        contentDiv.appendChild(cardsGrid);
+        
+        groupContainer.appendChild(headerDiv);
+        groupContainer.appendChild(contentDiv);
         scenariosGrid.appendChild(groupContainer);
         
-        // Обработчик клика
-        groupHeader.addEventListener('click', (e) => {
+        // Обработчик клика по заголовку
+        headerDiv.addEventListener('click', (e) => {
             e.stopPropagation();
             groupContainer.classList.toggle('scenario-group--open');
         });
@@ -168,15 +155,5 @@ function renderScenarios() {
         if (groupIndex === 0) {
             groupContainer.classList.add('scenario-group--open');
         }
-    });
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
     });
 }
