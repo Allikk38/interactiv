@@ -115,6 +115,6 @@ const User = {
                 steps_detail: JSON.stringify(stepStats),
                 timestamp: new Date().toISOString(),
             }),
-        }).catch(err => console.error('Ошибка отправки результата:', err));
+        }).catch(err => logError('Ошибка отправки результата:', err));
     }
 };
