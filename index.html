@@ -141,6 +141,10 @@
     <!-- СКРИПТЫ -->
     <script src="js/config.js"></script>
     <script src="js/store.js"></script>
+    
+    <!-- УТИЛИТЫ -->
+    <script src="js/utils/escape.js"></script>
+    
     <script src="js/templates/ui-templates.js"></script>
     <script src="js/templates/quiz-templates.js"></script>
     <script src="js/templates/map-templates.js"></script>
@@ -167,9 +171,6 @@
     <script src="js/stepRegistry-init.js"></script>
     
     <script src="js/app.js"></script>
-    
-    <!-- РЕГИСТРАЦИЯ SERVICE WORKER -->
-    <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./interactiv/sw.js')
