@@ -1,5 +1,22 @@
 // ===== MAP STEP: ЛОГИКА ШАГА КАРТЫ, КЛИКИ, ПРОГРЕСС, СБРОС =====
 
+// Ожидание загрузки Яндекс.Карт с таймаутом
+function waitForYmaps(timeoutMs = 10000) {
+    return new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            reject(new Error('Таймаут загрузки Яндекс.Карт'));
+        }, timeoutMs);
+        
+        const checkInterval = setInterval(() => {
+            if (typeof ymaps !== 'undefined' && ymaps.Map) {
+                clearInterval(checkInterval);
+                clearTimeout(timeoutId);
+                resolve();
+            }
+        }, 200);
+    });
+}
+
 function runMapStep(step) {
     const mapScreen = document.getElementById('map-screen');
     const mapStepTitle = document.getElementById('map-step-title');
@@ -49,48 +66,37 @@ function runMapStep(step) {
         mapContainer.innerHTML = renderMapLoadingIndicator();
     }
     
+    // Запуск карты после загрузки API
     const startMap = () => {
         initMap();
         renderMarkers();
         updateMapProgress();
     };
     
-    let checkInterval;
-    let timeoutId;
-    
-    const clearMapLoading = () => {
-        if (checkInterval) clearInterval(checkInterval);
-        if (timeoutId) clearTimeout(timeoutId);
-    };
-    
+    // Проверяем, загружены ли уже карты
     if (typeof ymaps !== 'undefined' && ymaps.Map) {
-        clearMapLoading();
         if (ymaps.ready) {
             ymaps.ready(startMap);
         } else {
             startMap();
         }
     } else {
-        checkInterval = setInterval(() => {
-            if (typeof ymaps !== 'undefined' && ymaps.Map) {
-                clearInterval(checkInterval);
+        waitForYmaps(10000)
+            .then(() => {
                 if (ymaps.ready) {
                     ymaps.ready(startMap);
                 } else {
                     startMap();
                 }
-            }
-        }, 200);
-        
-        timeoutId = setTimeout(() => {
-            clearInterval(checkInterval);
-            console.error('Яндекс.Карты не загрузились');
-            const mapContainer = document.getElementById('map');
-            if (mapContainer) {
-                mapContainer.innerHTML = renderMapErrorIndicator();
-            }
-            showToast('❌', 'Ошибка загрузки карты. Обновите страницу.', 'error');
-        }, 10000);
+            })
+            .catch((error) => {
+                console.error('Ошибка загрузки карты:', error);
+                const mapContainer = document.getElementById('map');
+                if (mapContainer) {
+                    mapContainer.innerHTML = renderMapErrorIndicator();
+                }
+                showToast('❌', 'Ошибка загрузки карты. Обновите страницу.', 'error');
+            });
     }
 }
 
