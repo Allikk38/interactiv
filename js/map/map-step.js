@@ -90,7 +90,7 @@ function runMapStep(step) {
                 }
             })
             .catch((error) => {
-                console.error('Ошибка загрузки карты:', error);
+                logError('Ошибка загрузки карты:', error);
                 const mapContainer = document.getElementById('map');
                 if (mapContainer) {
                     mapContainer.innerHTML = renderMapErrorIndicator();
