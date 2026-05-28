@@ -104,7 +104,7 @@ function renderMarkers() {
 
         const marker = new ymaps.Placemark([data.lat, data.lng], {
             hintContent: jk.name,
-            balloonContent: `<b>${escapeHtmlForMap(jk.name)}</b><br>${escapeHtmlForMap(jk.developer)}<br><br><button onclick="window.zoomToMarker(${jk.lat}, ${jk.lng})" style="padding: 8px 16px; background: #2e86de; color: white; border: none; border-radius: 8px; cursor: pointer;">📍 Показать на карте</button>`
+            balloonContent: `<b>${escapeHtml(jk.name)}</b><br>${escapeHtml(jk.developer)}<br><br><button onclick="window.zoomToMarker(${jk.lat}, ${jk.lng})" style="padding: 8px 16px; background: #2e86de; color: white; border: none; border-radius: 8px; cursor: pointer;">📍 Показать на карте</button>`
         }, {
             iconLayout: 'default#imageWithContent',
             iconImageHref: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1" height="1"%3E%3C/svg%3E',
@@ -164,17 +164,6 @@ function getDistance(lat1, lng1, lat2, lng2) {
 
 function toRad(deg) {
     return deg * (Math.PI / 180);
-}
-
-// Вспомогательная функция экранирования для карты
-function escapeHtmlForMap(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
 }
 
 // Функция для обновления готовности (будет вызвана из map-step)
