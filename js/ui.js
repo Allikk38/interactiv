@@ -1,18 +1,7 @@
 // ===== UI КОМПОНЕНТЫ =====
 
-function showToast(icon, message, type) {
-    const toast = document.getElementById('toast');
-    const toastIcon = document.getElementById('toast-icon');
-    const toastMessage = document.getElementById('toast-message');
-    
-    clearTimeout(AppState.toastTimer);
-    toastIcon.textContent = icon;
-    toastMessage.textContent = message;
-    toast.className = `toast toast--${type} toast--show`;
-    AppState.toastTimer = setTimeout(() => {
-        toast.classList.remove('toast--show');
-    }, 3000);
-}
+// Функция showToast теперь глобальная (из utils/toast.js)
+// Локальное определение УДАЛЕНО
 
 function showContinueButton() {
     if (document.getElementById('step-continue-btn')) return;
