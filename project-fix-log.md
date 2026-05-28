@@ -106,6 +106,7 @@
 | 2026-05-28 | A‑08 | В работе | Создан `js/templates/map-templates.js`, рефакторинг `map.js` (этап 3) |
 | 2026-05-28 | A‑08 | В работе | Создан `js/templates/client-journey-templates.js`, рефакторинг `client-journey.js` (этап 4) |
 | 2026-05-28 | A‑08 | Закрыта | Создан `js/templates/interactive-templates.js`, рефакторинг `interactive.js` (этап 5). Рефакторинг A‑08 полностью завершён. |
+| 2026-05-28 | A‑01 | В работе | Создан `js/store.js`, заменён `state.js` в `index.html`. Добавлен объект-прокси `window.AppState` для обратной совместимости (этап 1-2) |
 
 ---
 
