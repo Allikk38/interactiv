@@ -38,25 +38,9 @@ function renderQuestion(index) {
     quizNextBtn.textContent = 'Проверить';
     
     const isCheckbox = q.type === 'multiple';
-    let optionsHTML = '';
     
-    q.options.forEach((opt, i) => {
-        optionsHTML += `
-            <label class="quiz-option" data-index="${i}" style="cursor:pointer; display:flex; align-items:flex-start; gap:14px; padding:14px 18px; border:2px solid var(--color-border); border-radius:var(--radius-sm); margin-bottom:8px;">
-                <input type="${isCheckbox ? 'checkbox' : 'radio'}" name="quiz-option" value="${opt}" style="display:none;">
-                <span class="quiz-option__indicator ${isCheckbox ? 'quiz-option__indicator--checkbox' : ''}" style="width:22px; height:22px; border:2px solid var(--color-border); border-radius:50%; flex-shrink:0;"></span>
-                <span>${opt}</span>
-            </label>
-        `;
-    });
-    
-    quizContainer.innerHTML = `
-        <div class="quiz-question">
-            <div class="quiz-question__text">${index + 1}. ${q.text}</div>
-            <div class="quiz-question__options">${optionsHTML}</div>
-            <div class="quiz-hint hidden" id="quiz-hint"></div>
-        </div>
-    `;
+    // Используем шаблон для генерации HTML
+    quizContainer.innerHTML = renderQuizQuestion(q, index, isCheckbox);
     
     const options = quizContainer.querySelectorAll('.quiz-option');
     const hintEl = document.getElementById('quiz-hint');
@@ -104,7 +88,7 @@ function renderQuestion(index) {
             });
 
             if (!isCorrect) {
-                hintEl.textContent = '💡 ' + q.hint;
+                hintEl.innerHTML = renderQuizHint(q.hint);
                 hintEl.classList.remove('hidden');
             }
 
