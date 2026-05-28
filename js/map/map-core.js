@@ -4,7 +4,7 @@
 function initMap() {
     const mapContainer = document.getElementById('map');
     if (!mapContainer) {
-        console.error('Контейнер карты не найден');
+        logError('Контейнер карты не найден');
         return;
     }
     
@@ -62,7 +62,7 @@ function initMap() {
         StoreInstance.setMap(map);
         
     } catch (error) {
-        console.error('Ошибка инициализации карты:', error);
+        logError('Ошибка инициализации карты:', error);
         mapContainer.innerHTML = renderMapErrorIndicator();
     }
 }
