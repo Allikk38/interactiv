@@ -120,7 +120,7 @@ function renderMarkers() {
     });
 }
 
-// Приближение к маркеру
+// Приближение к маркеру (нужно для вызова из HTML)
 window.zoomToMarker = function(lat, lng) {
     const currentMap = StoreInstance.getMap();
     if (currentMap) {
