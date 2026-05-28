@@ -75,33 +75,26 @@ function runStep() {
 
     const step = AppState.currentScenario.steps[AppState.currentStepIndex];
 
+    // Скрываем все экраны
     document.getElementById('map-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.add('hidden');
     document.getElementById('client-journey-screen').classList.add('hidden');
     document.getElementById('finish-screen').classList.add('hidden');
 
+    // Показываем прогресс-бар (кроме финиша)
     if (step.type !== 'finish') {
         ProgressBar.show();
         ProgressBar.update(AppState.currentStepIndex, AppState.currentScenario.steps.length - 1, AppState.currentScenario.steps);
     }
 
-    switch (step.type) {
-        case 'brief': runBriefStep(step); break;
-        case 'matching': runMatchingStep(step); break;
-        case 'pipeline': runPipelineStep(step); break;
-        case 'dialogue': runDialogueStep(step); break;
-        case 'map': runMapStep(step); break;
-        case 'quiz': runQuizStep(step); break;
-        case 'platforms': runPlatformsStep(step); break;
-        case 'rule3t': runRule3tStep(step); break;
-        case 'profile': runProfileStep(step); break;
-        case 'content-plan': runContentPlanStep(step); break;
-        case 'funnel': runFunnelStep(step); break;
-        case 'ai-tools': runAiToolsStep(step); break;
-        case 'analytics': runAnalyticsStep(step); break;
-        case 'client-journey': runClientJourneyStep(step); break;
-        case 'finish': showFinish(); break;
-        default: AppState.currentStepIndex++; runStep();
+    // Используем реестр шагов вместо switch
+    const handled = StepRegistry.run(step, AppState);
+    
+    if (!handled) {
+        // fallback для неизвестных типов
+        console.warn(`Неизвестный тип шага: ${step.type}, пропускаем`);
+        AppState.currentStepIndex++;
+        runStep();
     }
 }
 
