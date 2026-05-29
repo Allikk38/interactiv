@@ -57,32 +57,401 @@ function addUserChangeButton() {
     }
 }
 
-// ===== НОВЫЕ ФУНКЦИИ ДЛЯ ИНТЕРФЕЙСА =====
+// ===== ФУНКЦИИ ДЛЯ НОВОГО ДИЗАЙНА =====
 
-function updateStreakDisplay() {
-    const streakContainer = document.getElementById('streak-container');
-    const streakValue = document.getElementById('streak-value');
+// Определение сложности сценария
+function getDifficultyInfo(scenario) {
+    const stepCount = scenario.steps.length;
+    let difficulty = 'medium';
+    let difficultyLabel = 'Средний';
+    let difficultyStars = '★★';
     
-    if (!streakContainer) return;
-    
-    const user = User.get();
-    if (!user) {
-        streakContainer.style.display = 'none';
-        return;
+    if (stepCount <= 3) {
+        difficulty = 'easy';
+        difficultyLabel = 'Лёгкий';
+        difficultyStars = '★';
+    } else if (stepCount >= 8) {
+        difficulty = 'hard';
+        difficultyLabel = 'Сложный';
+        difficultyStars = '★★★';
     }
     
-    const streak = User.getStreak();
-    if (streak.count === 0) {
-        streakContainer.style.display = 'none';
-        return;
-    }
-    
-    streakContainer.style.display = 'flex';
-    if (streakValue) streakValue.textContent = streak.count;
-    
-    // Подсказка при наведении/клике
-    streakContainer.title = streak.count === 1 ? '🔥 1 день подряд!' : `🔥 ${streak.count} дней подряд!`;
+    return { difficulty, difficultyLabel, difficultyStars };
 }
+
+// Получение иконки для категории шагов
+function getStepIcon(stepType) {
+    const icons = {
+        'map': '<i class="fas fa-map-marker-alt"></i>',
+        'quiz': '<i class="fas fa-question-circle"></i>',
+        'brief': '<i class="fas fa-book-open"></i>',
+        'matching': '<i class="fas fa-puzzle-piece"></i>',
+        'pipeline': '<i class="fas fa-chart-line"></i>',
+        'dialogue': '<i class="fas fa-comments"></i>',
+        'platforms': '<i class="fab fa-instagram"></i>',
+        'rule3t': '<i class="fas fa-music"></i>',
+        'profile': '<i class="fas fa-user-circle"></i>',
+        'content-plan': '<i class="fas fa-calendar-alt"></i>',
+        'funnel': '<i class="fas fa-funnel-dollar"></i>',
+        'ai-tools': '<i class="fas fa-robot"></i>',
+        'analytics': '<i class="fas fa-chart-simple"></i>',
+        'timer-quiz': '<i class="fas fa-stopwatch"></i>',
+        'decision-chain': '<i class="fas fa-code-branch"></i>',
+        'client-journey': '<i class="fas fa-handshake"></i>'
+    };
+    return icons[stepType] || '<i class="fas fa-cog"></i>';
+}
+
+// Подсчёт количества шагов по типам
+function countStepsByType(steps) {
+    const counts = {};
+    for (const step of steps) {
+        if (step.type === 'finish') continue;
+        counts[step.type] = (counts[step.type] || 0) + 1;
+    }
+    return counts;
+}
+
+// Рендер дашборда агента
+function renderAgentDashboard() {
+    const user = User.get();
+    if (!user) return;
+    
+    const dashboard = document.getElementById('agent-dashboard');
+    const quickStats = document.getElementById('quick-stats');
+    if (!dashboard) return;
+    
+    dashboard.style.display = 'block';
+    quickStats.style.display = 'grid';
+    
+    // Аватар и имя
+    const initial = user.name.charAt(0).toUpperCase();
+    document.getElementById('dashboard-avatar').textContent = initial;
+    document.getElementById('dashboard-name').textContent = user.name;
+    
+    // Дата регистрации (первое сохранение)
+    const savedAt = user.savedAt;
+    if (savedAt) {
+        const date = new Date(savedAt);
+        const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        document.getElementById('dashboard-joined').textContent = `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    }
+    
+    // XP и уровень
+    const xpProgress = User.getXPProgress();
+    document.getElementById('dashboard-level').textContent = xpProgress.level;
+    const percentToNext = xpProgress.percentToNext;
+    document.getElementById('dashboard-progress-fill').style.width = `${percentToNext}%`;
+    document.getElementById('dashboard-next').textContent = `До следующего уровня: ${xpProgress.xpNeededForNext} XP`;
+    
+    // Серия (стрик)
+    const streak = User.getStreak();
+    const streakEl = document.getElementById('dashboard-streak');
+    if (streak && streak.count > 0) {
+        streakEl.style.display = 'flex';
+        document.getElementById('streak-count').textContent = streak.count;
+    } else {
+        streakEl.style.display = 'none';
+    }
+    
+    // Кольцевой прогресс
+    updateRingProgress();
+}
+
+function updateRingProgress() {
+    const canvas = document.getElementById('ring-canvas');
+    if (!canvas) return;
+    
+    const totalScenarios = allScenarios.length;
+    const badges = Badges.getAll();
+    const completed = allScenarios.filter(s => badges.includes(s.badge)).length;
+    const percent = totalScenarios > 0 ? Math.round((completed / totalScenarios) * 100) : 0;
+    
+    const size = 80;
+    const center = size / 2;
+    const radius = 32;
+    const startAngle = -0.5 * Math.PI;
+    const endAngle = startAngle + (2 * Math.PI * percent / 100);
+    
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.clearRect(0, 0, size, size);
+    
+    // Фон
+    ctx.beginPath();
+    ctx.arc(center, center, radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+    
+    // Прогресс
+    ctx.beginPath();
+    ctx.arc(center, center, radius, startAngle, endAngle);
+    ctx.strokeStyle = '#f39c12';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+    
+    document.getElementById('ring-value').textContent = `${percent}%`;
+}
+
+function updateQuickStats() {
+    const badges = Badges.getAll();
+    const completedCount = allScenarios.filter(s => badges.includes(s.badge)).length;
+    const xpProgress = User.getXPProgress();
+    
+    document.getElementById('quick-scenarios').innerHTML = `${completedCount}/<span id="quick-total">${allScenarios.length}</span>`;
+    document.getElementById('quick-xp').textContent = xpProgress.currentXP;
+    document.getElementById('quick-badges').textContent = badges.length;
+}
+
+// ===== КАТЕГОРИИ =====
+let currentCategory = 'all';
+let allScenarios = [];
+
+function renderCategoryChips() {
+    const container = document.getElementById('categories-list');
+    if (!container) return;
+    
+    const categories = new Set();
+    const categoryCounts = {};
+    
+    categories.add('all');
+    categoryCounts['all'] = allScenarios.length;
+    
+    for (const scenario of allScenarios) {
+        if (scenario.group) {
+            categories.add(scenario.group);
+            categoryCounts[scenario.group] = (categoryCounts[scenario.group] || 0) + 1;
+        }
+    }
+    
+    const sortedCategories = Array.from(categories).sort((a, b) => {
+        if (a === 'all') return -1;
+        if (b === 'all') return 1;
+        return a.localeCompare(b);
+    });
+    
+    let chipsHTML = '';
+    for (const cat of sortedCategories) {
+        const displayName = cat === 'all' ? 'Все' : cat;
+        const activeClass = currentCategory === cat ? 'category-chip--active' : '';
+        const icon = cat === 'all' ? '<i class="fas fa-th-large"></i>' : 
+                     cat === 'Картография' ? '<i class="fas fa-map-marked-alt"></i>' :
+                     cat === 'Обучение' ? '<i class="fas fa-graduation-cap"></i>' :
+                     cat === 'Практика: работа с клиентом' ? '<i class="fas fa-handshake"></i>' :
+                     cat === 'Быстрые игры' ? '<i class="fas fa-stopwatch"></i>' :
+                     '<i class="fas fa-folder"></i>';
+        
+        chipsHTML += `
+            <button class="category-chip ${activeClass}" data-category="${escapeHtml(cat)}">
+                ${icon} ${escapeHtml(displayName)}
+                <span class="category-chip__count">${categoryCounts[cat]}</span>
+            </button>
+        `;
+    }
+    
+    container.innerHTML = chipsHTML;
+    
+    document.querySelectorAll('.category-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const category = chip.dataset.category;
+            if (category === currentCategory) return;
+            
+            currentCategory = category;
+            
+            document.querySelectorAll('.category-chip').forEach(c => {
+                c.classList.remove('category-chip--active');
+            });
+            chip.classList.add('category-chip--active');
+            
+            renderScenariosGrid();
+        });
+    });
+}
+
+// Рендер сетки сценариев (новая версия)
+function renderScenariosGrid() {
+    const container = document.getElementById('scenarios-grid');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    let filteredScenarios = allScenarios;
+    if (currentCategory !== 'all') {
+        filteredScenarios = allScenarios.filter(s => s.group === currentCategory);
+    }
+    
+    if (filteredScenarios.length === 0) {
+        container.innerHTML = '<div class="empty-message"><i class="fas fa-folder-open"></i> Нет сценариев в этой категории</div>';
+        return;
+    }
+    
+    for (const scenario of filteredScenarios) {
+        const hasBadge = Badges.has(scenario.badge);
+        const { difficulty, difficultyLabel, difficultyStars } = getDifficultyInfo(scenario);
+        const difficultyClass = difficulty === 'easy' ? 'scenario-card-new__difficulty--easy' : 
+                                (difficulty === 'hard' ? 'scenario-card-new__difficulty--hard' : 'scenario-card-new__difficulty--medium');
+        
+        // Иконка сценария
+        const icon = scenario.icon || 'fa-book-open';
+        
+        // Подсчёт шагов по типам
+        const stepCounts = countStepsByType(scenario.steps);
+        let stepsHtml = '';
+        const stepTypes = ['map', 'quiz', 'timer-quiz', 'decision-chain', 'client-journey', 'platforms', 'rule3t', 'profile', 'content-plan', 'funnel', 'ai-tools', 'analytics', 'matching', 'pipeline', 'dialogue', 'brief'];
+        for (const type of stepTypes) {
+            if (stepCounts[type]) {
+                stepsHtml += `<span class="step-tag">${getStepIcon(type)} ${stepCounts[type]}</span>`;
+            }
+        }
+        if (!stepsHtml) {
+            stepsHtml = `<span class="step-tag"><i class="fas fa-cog"></i> ${scenario.steps.filter(s => s.type !== 'finish').length}</span>`;
+        }
+        
+        // Прогресс
+        let progressHtml = '';
+        let actionHtml = '';
+        const savedProgress = User.getScenarioProgress(scenario.id);
+        
+        if (savedProgress && savedProgress.stepIndex > 0) {
+            const percent = Math.round((savedProgress.stepIndex / scenario.steps.filter(s => s.type !== 'finish').length) * 100);
+            progressHtml = `
+                <div class="scenario-card-new__progress">
+                    <div class="scenario-card-new__progress-bar">
+                        <div class="scenario-card-new__progress-fill" style="width: ${percent}%"></div>
+                    </div>
+                    <div class="scenario-card-new__progress-text">
+                        <span>${percent}%</span>
+                        <span>шаг ${savedProgress.stepIndex + 1}/${scenario.steps.length}</span>
+                    </div>
+                </div>
+            `;
+            actionHtml = `
+                <div class="scenario-card-new__action">
+                    <button class="scenario-card-new__btn" data-scenario-id="${scenario.id}">
+                        <i class="fas fa-play"></i> Продолжить
+                    </button>
+                </div>
+            `;
+        } else if (hasBadge) {
+            actionHtml = `
+                <div class="scenario-card-new__action">
+                    <span style="font-size:0.7rem; color:var(--color-success);"><i class="fas fa-check-circle"></i> Пройден</span>
+                </div>
+            `;
+        } else {
+            actionHtml = `
+                <div class="scenario-card-new__action">
+                    <button class="scenario-card-new__btn" data-scenario-id="${scenario.id}">
+                        <i class="fas fa-play"></i> Начать
+                    </button>
+                </div>
+            `;
+        }
+        
+        const card = document.createElement('div');
+        card.className = 'scenario-card-new';
+        card.dataset.scenarioId = scenario.id;
+        
+        card.innerHTML = `
+            <div class="scenario-card-new__preview">
+                <i class="fas ${icon}"></i>
+                ${hasBadge ? '<div class="scenario-card-new__badge"><i class="fas fa-check"></i> Пройдено</div>' : ''}
+                <div class="scenario-card-new__difficulty ${difficultyClass}">
+                    ${difficultyStars} ${difficultyLabel}
+                </div>
+            </div>
+            <div class="scenario-card-new__content">
+                <div class="scenario-card-new__title">
+                    ${escapeHtml(scenario.name)}
+                    ${hasBadge ? '<i class="fas fa-check-circle scenario-card-new__completed-icon"></i>' : ''}
+                </div>
+                <div class="scenario-card-new__description">${escapeHtml(scenario.description)}</div>
+                <div class="scenario-card-new__steps">${stepsHtml}</div>
+                ${progressHtml}
+                ${actionHtml}
+            </div>
+        `;
+        
+        // Обработчик клика
+        card.addEventListener('click', (e) => {
+            // Если клик на кнопке, не запускаем повторно
+            if (e.target.closest('.scenario-card-new__btn')) return;
+            startScenario(scenario);
+        });
+        
+        // Обработчик кнопки
+        const btn = card.querySelector('.scenario-card-new__btn');
+        if (btn) {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                startScenario(scenario);
+            });
+        }
+        
+        container.appendChild(card);
+    }
+}
+
+// Рекомендации
+function renderRecommendations() {
+    const container = document.getElementById('recommendations');
+    const grid = document.getElementById('recommendations-grid');
+    if (!container || !grid) return;
+    
+    const badges = Badges.getAll();
+    const completedIds = allScenarios.filter(s => badges.includes(s.badge)).map(s => s.id);
+    
+    // Находим непройденные сценарии
+    const notCompleted = allScenarios.filter(s => !badges.includes(s.badge));
+    
+    if (notCompleted.length === 0 || notCompleted.length === allScenarios.length) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+    
+    // Берём 3 случайных непройденных сценария
+    const shuffled = [...notCompleted].sort(() => 0.5 - Math.random());
+    const recommendations = shuffled.slice(0, 3);
+    
+    let recHtml = '';
+    for (const rec of recommendations) {
+        const icon = rec.icon || 'fa-book-open';
+        recHtml += `
+            <div class="recommendation-card" data-scenario-id="${rec.id}">
+                <div class="recommendation-card__icon"><i class="fas ${icon}"></i></div>
+                <div class="recommendation-card__title">${escapeHtml(rec.name)}</div>
+                <div class="recommendation-card__desc">${escapeHtml(rec.description.substring(0, 60))}${rec.description.length > 60 ? '…' : ''}</div>
+            </div>
+        `;
+    }
+    
+    grid.innerHTML = recHtml;
+    
+    document.querySelectorAll('.recommendation-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const scenarioId = card.dataset.scenarioId;
+            const scenario = allScenarios.find(s => s.id === scenarioId);
+            if (scenario) startScenario(scenario);
+        });
+    });
+}
+
+// Обновление прогресса и рекомендаций после завершения сценария
+function refreshMainScreen() {
+    updateRingProgress();
+    updateQuickStats();
+    renderScenariosGrid();
+    renderRecommendations();
+    updateContinueLearning();
+    updateHeaderXP();
+}
+
+// ===== СТАРЫЕ ФУНКЦИИ (адаптированы под новый дизайн) =====
 
 function updateHeaderXP() {
     const xpCard = document.getElementById('xp-card');
@@ -104,9 +473,6 @@ function updateHeaderXP() {
     if (userLevelEl) userLevelEl.textContent = `Уровень ${progress.level}`;
     if (userXpEl) userXpEl.textContent = `${progress.currentXP} XP`;
     if (progressFill) progressFill.style.width = `${progress.percentToNext}%`;
-    
-    // Обновляем отображение серии
-    updateStreakDisplay();
 }
 
 function updateHeaderUser() {
@@ -150,7 +516,7 @@ function updateContinueLearning() {
     let lastScenario = null;
     let lastProgress = null;
     
-    for (const scenario of AppState.scenarios) {
+    for (const scenario of allScenarios) {
         const progress = User.getScenarioProgress(scenario.id);
         if (progress && progress.stepIndex < scenario.steps.length - 1) {
             const lastStep = scenario.steps[progress.stepIndex];
@@ -208,170 +574,24 @@ function updateContinueLearning() {
     }
 }
 
-let currentCategory = 'all';
-let allScenarios = [];
-
-function renderCategoryTabs() {
-    const tabsContainer = document.getElementById('category-tabs');
-    if (!tabsContainer) return;
-    
-    const categories = new Set();
-    categories.add('all');
-    
-    for (const scenario of allScenarios) {
-        if (scenario.group) {
-            categories.add(scenario.group);
-        }
-    }
-    
-    const sortedCategories = Array.from(categories).sort();
-    
-    let tabsHTML = '';
-    for (const cat of sortedCategories) {
-        const displayName = cat === 'all' ? 'Все' : cat;
-        const activeClass = currentCategory === cat ? 'category-tab--active' : '';
-        tabsHTML += `<button class="category-tab ${activeClass}" data-category="${escapeHtml(cat)}">${escapeHtml(displayName)}</button>`;
-    }
-    
-    tabsContainer.innerHTML = tabsHTML;
-    
-    document.querySelectorAll('.category-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            const category = tab.dataset.category;
-            if (category === currentCategory) return;
-            
-            currentCategory = category;
-            
-            document.querySelectorAll('.category-tab').forEach(t => {
-                t.classList.remove('category-tab--active');
-            });
-            tab.classList.add('category-tab--active');
-            
-            renderScenariosGrid();
-        });
-    });
-}
-
-function renderScenariosGrid() {
-    const scenariosGrid = document.getElementById('scenarios-grid');
-    if (!scenariosGrid) return;
-    
-    scenariosGrid.innerHTML = '';
-    
-    let filteredScenarios = allScenarios;
-    if (currentCategory !== 'all') {
-        filteredScenarios = allScenarios.filter(s => s.group === currentCategory);
-    }
-    
-    if (filteredScenarios.length === 0) {
-        scenariosGrid.innerHTML = '<div class="empty-message" style="text-align:center; padding:40px; color:var(--color-text-light);">Нет сценариев в этой категории</div>';
-        return;
-    }
-    
-    for (const scenario of filteredScenarios) {
-        const hasBadge = Badges.has(scenario.badge);
-        const scenarioIcon = scenario.icon || 'fa-book-open';
-        const isCompleted = hasBadge;
-        
-        let difficulty = 'medium';
-        let difficultyColor = '#f39c12';
-        if (scenario.steps.length <= 3) {
-            difficulty = 'easy';
-            difficultyColor = '#27ae60';
-        } else if (scenario.steps.length >= 8) {
-            difficulty = 'hard';
-            difficultyColor = '#e74c3c';
-        }
-        
-        const mapSteps = scenario.steps.filter(s => s.type === 'map').length;
-        const quizSteps = scenario.steps.filter(s => s.type === 'quiz').length;
-        const interactiveSteps = scenario.steps.filter(s => !['map', 'quiz', 'finish', 'brief', 'client-journey'].includes(s.type)).length;
-        
-        let stepsDesc = [];
-        if (mapSteps > 0) stepsDesc.push(`${mapSteps} карт`);
-        if (quizSteps > 0) stepsDesc.push(`${quizSteps} тестов`);
-        if (interactiveSteps > 0) stepsDesc.push(`${interactiveSteps} заданий`);
-        
-        const stepsText = stepsDesc.join(' · ') || `${scenario.steps.length} шагов`;
-        
-        let progressPercent = 0;
-        let progressHtml = '';
-        const savedProgress = User.getScenarioProgress(scenario.id);
-        if (savedProgress && savedProgress.stepIndex > 0) {
-            progressPercent = Math.round((savedProgress.stepIndex / scenario.steps.length) * 100);
-            progressHtml = `
-                <div style="margin-top: 12px;">
-                    <div style="height: 4px; background: var(--color-border); border-radius: 2px; overflow: hidden;">
-                        <div style="width: ${progressPercent}%; height: 100%; background: #f39c12; border-radius: 2px;"></div>
-                    </div>
-                    <div style="font-size: 0.65rem; color: var(--color-text-light); margin-top: 4px;">${progressPercent}% завершено</div>
-                </div>
-            `;
-        }
-        
-        const card = document.createElement('div');
-        card.className = 'scenario-card';
-        card.style.position = 'relative';
-        card.style.overflow = 'hidden';
-        card.style.cursor = 'pointer';
-        
-        card.innerHTML = `
-            <div style="position: absolute; top: 12px; right: 12px;">
-                <span style="background: ${difficultyColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.65rem; font-weight: 600;">
-                    ${difficulty === 'easy' ? '★ Лёгкий' : difficulty === 'hard' ? '★★★ Сложный' : '★★ Средний'}
-                </span>
-            </div>
-            <div class="scenario-card__icon" style="position: relative;">
-                <i class="fas ${scenarioIcon}" style="font-size: 2rem; color: #f39c12;"></i>
-                ${hasBadge ? '<i class="fas fa-check-circle" style="position: absolute; bottom: -8px; right: -8px; color: #27ae60; background: white; border-radius: 50%; font-size: 1rem;"></i>' : ''}
-            </div>
-            <div class="scenario-card__name">${escapeHtml(scenario.name)}</div>
-            <div class="scenario-card__description">${escapeHtml(scenario.description)}</div>
-            <div class="scenario-card__steps">${stepsText}</div>
-            ${progressHtml}
-            ${isCompleted ? '<div style="margin-top: 8px;"><span style="background: #eafaf1; color: #27ae60; padding: 4px 12px; border-radius: 16px; font-size: 0.7rem; font-weight: 600;"><i class="fas fa-check"></i> Пройдено</span></div>' : ''}
-            ${!isCompleted && progressPercent > 0 ? '<div style="margin-top: 8px;"><span style="background: #fef9e7; color: #f39c12; padding: 4px 12px; border-radius: 16px; font-size: 0.7rem; font-weight: 600;"><i class="fas fa-play"></i> Продолжить</span></div>' : ''}
-        `;
-        
-        card.addEventListener('click', () => startScenario(scenario));
-        scenariosGrid.appendChild(card);
-    }
-}
-
-function updateStatsWidget() {
-    const scenariosTotalEl = document.getElementById('stat-total-scenarios');
-    const scenariosCompletedEl = document.getElementById('stat-scenarios');
-    const xpEl = document.getElementById('stat-xp');
-    const badgesEl = document.getElementById('stat-badges');
-    
-    if (!scenariosTotalEl) return;
-    
-    const totalScenarios = allScenarios.length;
-    scenariosTotalEl.textContent = totalScenarios;
-    
-    const badges = Badges.getAll();
-    const completedScenarios = allScenarios.filter(s => badges.includes(s.badge)).length;
-    if (scenariosCompletedEl) scenariosCompletedEl.textContent = completedScenarios;
-    
-    const xpProgress = User.getXPProgress();
-    if (xpEl) xpEl.textContent = xpProgress.currentXP;
-    
-    if (badgesEl) badgesEl.textContent = badges.length;
-}
-
+// ===== ГЛАВНАЯ ФУНКЦИЯ РЕНДЕРИНГА =====
 function renderScenarios() {
     if (!AppState.scenarios) return;
     
     allScenarios = AppState.scenarios;
     
+    renderAgentDashboard();
+    updateQuickStats();
+    renderCategoryChips();
+    renderScenariosGrid();
+    renderRecommendations();
+    updateContinueLearning();
     updateHeaderXP();
     updateHeaderUser();
-    renderCategoryTabs();
-    renderScenariosGrid();
-    updateContinueLearning();
-    updateStatsWidget();
 }
 
+// Экспорт глобальных функций
 window.updateHeaderXP = updateHeaderXP;
 window.updateHeaderUser = updateHeaderUser;
 window.updateContinueLearning = updateContinueLearning;
+window.refreshMainScreen = refreshMainScreen;

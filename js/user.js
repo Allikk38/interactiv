@@ -2,6 +2,7 @@
 const User = {
     STORAGE_KEY: 'realty_trainer_user',
     XP_KEY: 'realty_trainer_xp',
+    STREAK_KEY: 'realty_trainer_streak',
     LEVEL_MULTIPLIER: 100,
 
     get() {
@@ -20,12 +21,18 @@ const User = {
             this.setXP(0);
         }
         
+        // Инициализируем серию, если её нет
+        if (this.getStreak() === null) {
+            this.updateStreak();
+        }
+        
         return user;
     },
 
     clear() {
         localStorage.removeItem(this.STORAGE_KEY);
         localStorage.removeItem(this.XP_KEY);
+        localStorage.removeItem(this.STREAK_KEY);
     },
 
     getXP() {
@@ -45,6 +52,9 @@ const User = {
         
         const oldLevel = this.getLevel(currentXP);
         const newLevel = this.getLevel(newXP);
+        
+        // Обновляем серию при получении XP
+        this.updateStreak();
         
         return {
             xp: newXP,
@@ -74,6 +84,62 @@ const User = {
         };
     },
 
+    // ===== СИСТЕМА СЕРИЙ (STREAK) =====
+    getStreak() {
+        try {
+            return JSON.parse(localStorage.getItem(this.STREAK_KEY));
+        } catch {
+            return null;
+        }
+    },
+
+    updateStreak() {
+        const today = new Date().toDateString();
+        let streak = this.getStreak();
+        
+        if (!streak) {
+            // Новая серия
+            streak = {
+                count: 1,
+                lastActivityDate: today,
+                bestCount: 1
+            };
+        } else if (streak.lastActivityDate === today) {
+            // Уже обновлено сегодня
+            return streak;
+        } else {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayString = yesterday.toDateString();
+            
+            if (streak.lastActivityDate === yesterdayString) {
+                // Продолжение серии
+                streak.count++;
+                if (streak.count > streak.bestCount) {
+                    streak.bestCount = streak.count;
+                }
+            } else {
+                // Серия прервана
+                streak.count = 1;
+            }
+            streak.lastActivityDate = today;
+        }
+        
+        localStorage.setItem(this.STREAK_KEY, JSON.stringify(streak));
+        return streak;
+    },
+
+    resetStreak() {
+        const streak = {
+            count: 0,
+            lastActivityDate: null,
+            bestCount: 0
+        };
+        localStorage.setItem(this.STREAK_KEY, JSON.stringify(streak));
+        return streak;
+    },
+
+    // ===== ПРОГРЕСС СЦЕНАРИЕВ =====
     saveScenarioProgress(scenarioId, stepIndex, stepStats) {
         const key = `scenario_progress_${scenarioId}`;
         const progress = {
@@ -83,6 +149,9 @@ const User = {
             lastUpdated: Date.now()
         };
         localStorage.setItem(key, JSON.stringify(progress));
+        
+        // Обновляем серию при сохранении прогресса
+        this.updateStreak();
     },
 
     getScenarioProgress(scenarioId) {
@@ -99,6 +168,29 @@ const User = {
         localStorage.removeItem(key);
     },
 
+    // ===== РАСЧЁТ XP =====
+    calculateScenarioXP(totalCorrect, totalItems, durationSec) {
+        let xp = totalCorrect * 10;
+        
+        // Бонус за идеальное прохождение
+        if (totalCorrect === totalItems && totalItems > 0) {
+            xp += 50;
+        }
+        
+        // Бонус за скорость
+        if (durationSec && totalItems > 0) {
+            const avgTimePerQuestion = durationSec / totalItems;
+            if (avgTimePerQuestion < 30) {
+                xp += 25;
+            } else if (avgTimePerQuestion < 60) {
+                xp += 10;
+            }
+        }
+        
+        return Math.min(xp, 500);
+    },
+
+    // ===== ОТПРАВКА РЕЗУЛЬТАТОВ =====
     sendResult(scenarioName, stepStats, totalCorrect, totalItems, durationSec) {
         const user = this.get();
         if (!user) return;
@@ -111,6 +203,7 @@ const User = {
             this.clearScenarioProgress(scenarioId);
         }
         
+        // Отправка в Google Sheets (асинхронно, без ожидания)
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -138,25 +231,7 @@ const User = {
         };
     },
 
-    calculateScenarioXP(totalCorrect, totalItems, durationSec) {
-        let xp = totalCorrect * 10;
-        
-        if (totalCorrect === totalItems && totalItems > 0) {
-            xp += 50;
-        }
-        
-        if (durationSec && totalItems > 0) {
-            const avgTimePerQuestion = durationSec / totalItems;
-            if (avgTimePerQuestion < 30) {
-                xp += 25;
-            } else if (avgTimePerQuestion < 60) {
-                xp += 10;
-            }
-        }
-        
-        return Math.min(xp, 500);
-    },
-
+    // ===== ЭКРАН ВВОДА ИМЕНИ =====
     showNamePrompt(callback) {
         const existing = this.get();
 

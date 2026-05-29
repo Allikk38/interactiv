@@ -29,271 +29,12 @@
     
     <!-- API Яндекс.Карт -->
     <script src="https://api-maps.yandex.ru/2.1/?apikey=7d7f69f2-30f1-4a3c-93bd-b7b99354b7c5&lang=ru_RU"></script>
-    
-    <style>
-        /* Временные стили для нового интерфейса — будут перенесены в base.css */
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        .xp-card {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
-        }
-        
-        .xp-card__stats {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .xp-card__level {
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
-        
-        .xp-card__xp {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #f39c12;
-        }
-        
-        .level-progress {
-            width: 120px;
-            height: 4px;
-            background: var(--color-border);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        
-        .level-progress__fill {
-            height: 100%;
-            background: linear-gradient(90deg, #f39c12, #e67e22);
-            border-radius: 4px;
-            transition: width 0.3s ease;
-            width: 0%;
-        }
-        
-        .user-name {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            padding: 6px 12px;
-            border-radius: 32px;
-            background: var(--color-bg);
-            transition: all 0.2s ease;
-        }
-        
-        .user-name:hover {
-            background: var(--color-border);
-        }
-        
-        .user-name__avatar {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-        }
-        
-        .user-name__text {
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        
-        /* Герой-блок "Продолжить обучение" */
-        .continue-learning {
-            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-            border-radius: var(--radius);
-            margin: 0 24px 24px 24px;
-            padding: 24px 28px;
-            color: white;
-            display: none;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .continue-learning--visible {
-            display: block;
-        }
-        
-        .continue-learning::before {
-            content: '✨';
-            position: absolute;
-            right: 20px;
-            bottom: 10px;
-            font-size: 80px;
-            opacity: 0.1;
-            pointer-events: none;
-        }
-        
-        .continue-learning__greeting {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        
-        .continue-learning__sub {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            margin-bottom: 20px;
-        }
-        
-        .continue-learning__card {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(8px);
-            border-radius: var(--radius-sm);
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 16px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-        
-        .continue-learning__card:hover {
-            transform: translateX(4px);
-            background: rgba(255,255,255,0.25);
-        }
-        
-        .continue-learning__info h4 {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-        
-        .continue-learning__info p {
-            font-size: 0.75rem;
-            opacity: 0.8;
-        }
-        
-        .continue-learning__progress {
-            min-width: 200px;
-        }
-        
-        .continue-learning__progress-bar {
-            height: 6px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 6px;
-        }
-        
-        .continue-learning__progress-fill {
-            height: 100%;
-            background: white;
-            border-radius: 3px;
-            width: 0%;
-        }
-        
-        .continue-learning__progress-text {
-            font-size: 0.7rem;
-            opacity: 0.8;
-        }
-        
-        .continue-learning__btn {
-            background: white;
-            color: #e67e22;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 32px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .continue-learning__btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        
-        /* Оранжевый акцент на табах */
-        .category-tabs {
-            display: flex;
-            gap: 8px;
-            margin: 0 24px 24px 24px;
-            flex-wrap: wrap;
-            border-bottom: 1px solid var(--color-border);
-            padding-bottom: 12px;
-        }
-        
-        .category-tab {
-            padding: 8px 20px;
-            border-radius: 32px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: transparent;
-            color: var(--color-text-light);
-        }
-        
-        .category-tab:hover {
-            background: var(--color-bg);
-        }
-        
-        .category-tab--active {
-            background: #f39c12;
-            color: white;
-        }
-        
-        @media (max-width: 768px) {
-            .header-right {
-                gap: 10px;
-            }
-            .xp-card__stats {
-                gap: 6px;
-            }
-            .level-progress {
-                width: 80px;
-            }
-            .user-name__text {
-                display: none;
-            }
-            .continue-learning {
-                margin: 0 16px 16px 16px;
-                padding: 16px 20px;
-            }
-            .continue-learning__greeting {
-                font-size: 1.2rem;
-            }
-            .continue-learning__card {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .category-tabs {
-                margin: 0 16px 16px 16px;
-                gap: 4px;
-            }
-            .category-tab {
-                padding: 6px 14px;
-                font-size: 0.75rem;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="container">
         <header class="header">
             <h1 class="header__title"><i class="fas fa-building"></i> Тренажёр агента недвижимости</h1>
             
-            <!-- Скрытый элемент для обратной совместимости с app.js -->
             <div class="header__info" id="header-info" style="display: none;"></div>
             
             <div class="header-right">
@@ -315,36 +56,97 @@
             </div>
         </header>
 
+        <!-- Хлебные крошки -->
+        <div class="breadcrumb" id="breadcrumb" style="display: none;">
+            <a href="#" class="breadcrumb__item" id="breadcrumb-home">
+                <i class="fas fa-home"></i> Главная
+            </a>
+            <span class="breadcrumb__separator">/</span>
+            <span class="breadcrumb__item breadcrumb__item--active" id="breadcrumb-current"></span>
+        </div>
+
         <main class="main">
-            <!-- Экран выбора сценария -->
+            <!-- Экран выбора сценария (НОВЫЙ ДИЗАЙН) -->
             <section class="screen" id="scenario-screen">
-                <!-- Виджеты статистики -->
-                <div class="stats-widget" id="stats-widget">
-                    <div class="stat-card">
-                        <div class="stat-card__icon">📋</div>
-                        <div class="stat-card__right">
-                            <div class="stat-card__value" id="stat-scenarios">0</div>
-                            <div class="stat-card__label">пройдено из <span id="stat-total-scenarios">0</span></div>
+                
+                <!-- Дашборд агента -->
+                <div class="agent-dashboard" id="agent-dashboard" style="display: none;">
+                    <div class="agent-dashboard__row">
+                        <div class="agent-avatar">
+                            <div class="agent-avatar__circle" id="dashboard-avatar">👤</div>
+                            <div class="agent-avatar__info">
+                                <h2 id="dashboard-name">Агент</h2>
+                                <p><i class="fas fa-calendar-alt"></i> <span id="dashboard-joined">Только что</span></p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card__icon">⚡</div>
-                        <div class="stat-card__right">
-                            <div class="stat-card__value" id="stat-xp">0</div>
-                            <div class="stat-card__label">всего XP</div>
+                        
+                        <div class="agent-stats">
+                            <div class="agent-stats__level">УРОВЕНЬ</div>
+                            <div class="agent-stats__value" id="dashboard-level">1</div>
+                            <div class="agent-stats__progress">
+                                <div class="agent-stats__progress-fill" id="dashboard-progress-fill"></div>
+                            </div>
+                            <div class="agent-stats__next" id="dashboard-next">До следующего уровня: 100 XP</div>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card__icon">🏅</div>
-                        <div class="stat-card__right">
-                            <div class="stat-card__value" id="stat-badges">0</div>
-                            <div class="stat-card__label">получено бейджей</div>
+                        
+                        <div class="agent-streak" id="dashboard-streak" style="display: none;">
+                            <div class="agent-streak__icon">🔥</div>
+                            <div>
+                                <div class="agent-streak__count" id="streak-count">0</div>
+                                <div class="agent-streak__label">дней подряд</div>
+                            </div>
+                        </div>
+                        
+                        <div class="ring-progress" id="ring-progress">
+                            <canvas id="ring-canvas" width="80" height="80"></canvas>
+                            <div class="ring-progress__value" id="ring-value">0%</div>
+                            <div class="ring-progress__label">общий прогресс</div>
                         </div>
                     </div>
                 </div>
                 
+                <!-- Быстрая статистика -->
+                <div class="quick-stats" id="quick-stats" style="display: none;">
+                    <div class="quick-stat">
+                        <div class="quick-stat__icon">📋</div>
+                        <div class="quick-stat__value" id="quick-scenarios">0/<span id="quick-total">0</span></div>
+                        <div class="quick-stat__label">пройдено сценариев</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat__icon">⚡</div>
+                        <div class="quick-stat__value" id="quick-xp">0</div>
+                        <div class="quick-stat__label">всего XP</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat__icon">🏅</div>
+                        <div class="quick-stat__value" id="quick-badges">0</div>
+                        <div class="quick-stat__label">бейджей</div>
+                    </div>
+                </div>
+                
+                <!-- Категории (горизонтальный скролл) -->
+                <div class="categories-scroll">
+                    <div class="categories-list" id="categories-list">
+                        <button class="category-chip category-chip--active" data-category="all">
+                            <i class="fas fa-th-large"></i> Все
+                            <span class="category-chip__count" id="cat-all-count">0</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Сетка сценариев -->
+                <div class="scenarios-grid" id="scenarios-grid"></div>
+                
+                <!-- Блок рекомендаций -->
+                <div class="recommendations" id="recommendations" style="display: none;">
+                    <div class="recommendations__title">
+                        <i class="fas fa-lightbulb"></i> Вам может быть интересно
+                    </div>
+                    <div class="recommendations__grid" id="recommendations-grid"></div>
+                </div>
+                
                 <!-- Герой-блок "Продолжить обучение" -->
-                <div class="continue-learning" id="continue-learning">
+                <div class="continue-learning" id="continue-learning" style="display: none;">
                     <div class="continue-learning__greeting" id="continue-greeting">👋 Добро пожаловать!</div>
                     <div class="continue-learning__sub" id="continue-sub">Продолжите с того места, где остановились</div>
                     <div class="continue-learning__card" id="continue-card">
@@ -361,13 +163,6 @@
                         <button class="continue-learning__btn" id="continue-btn">Продолжить →</button>
                     </div>
                 </div>
-                
-                <!-- Табы категорий -->
-                <div class="category-tabs" id="category-tabs">
-                    <button class="category-tab category-tab--active" data-category="all">Все</button>
-                </div>
-                
-                <div class="scenarios-grid" id="scenarios-grid"></div>
             </section>
 
             <!-- Экран карты -->
@@ -491,7 +286,6 @@
     <script src="js/decision-chain.js"></script>
     <script src="js/interactive.js"></script>
     
-    <!-- НОВЫЕ ФАЙЛЫ ДЛЯ РЕЕСТРА ШАГОВ -->
     <script src="js/stepRegistry.js"></script>
     <script src="js/stepRegistry-init.js"></script>
     
