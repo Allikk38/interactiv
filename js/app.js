@@ -30,10 +30,14 @@ async function loadData() {
             User.showNamePrompt(() => {
                 renderScenarios();
                 addUserChangeButton();
+                updateHeaderXP();
+                updateHeaderUser();
             });
         } else {
             renderScenarios();
             addUserChangeButton();
+            updateHeaderXP();
+            updateHeaderUser();
             const user = User.get();
             showToast('👋', `С возвращением, ${user.name}!`, 'success');
         }
@@ -99,6 +103,28 @@ function runStep() {
     }
 }
 
+function saveCurrentProgress() {
+    if (!AppState.currentScenario) return;
+    
+    User.saveScenarioProgress(
+        AppState.currentScenario.id,
+        AppState.currentStepIndex,
+        AppState.stepStats
+    );
+}
+
+function updateHeaderAfterXP(xpResult) {
+    if (xpResult && xpResult.leveledUp) {
+        showToast('🎉', `Поздравляем! Вы достигли ${xpResult.newLevel} уровня!`, 'success');
+    }
+    if (typeof updateHeaderXP === 'function') {
+        updateHeaderXP();
+    }
+    if (typeof updateContinueLearning === 'function') {
+        updateContinueLearning();
+    }
+}
+
 function showFinish() {
     document.getElementById('map-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.add('hidden');
@@ -125,13 +151,21 @@ function showFinish() {
     document.getElementById('finish-text').textContent = `Вы успешно завершили сценарий «${AppState.currentScenario?.name}»!`;
     document.getElementById('finish-stats').textContent = `Правильно: ${totalCorrect} из ${totalItems}`;
 
-    User.sendResult(
+    const xpResult = User.sendResult(
         AppState.currentScenario?.name || '',
         AppState.stepStats,
         totalCorrect,
         totalItems,
         durationSec
     );
+    
+    if (xpResult) {
+        updateHeaderAfterXP(xpResult);
+    }
+    
+    if (AppState.currentScenario?.id) {
+        User.clearScenarioProgress(AppState.currentScenario.id);
+    }
 
     if (AppState.currentScenario?.badge) {
         const isNew = Badges.award(AppState.currentScenario.badge);
@@ -150,30 +184,39 @@ function showFinish() {
     }
 }
 
-// Обработчики для кнопки возврата на клиентском пути
 document.getElementById('journey-back-btn')?.addEventListener('click', () => {
     AppState.currentScenario = null;
     document.getElementById('client-journey-screen').classList.add('hidden');
     document.getElementById('scenario-screen').classList.remove('hidden');
     document.getElementById('header-info').innerHTML = '';
     ProgressBar.hide();
+    if (typeof renderScenarios === 'function') {
+        renderScenarios();
+    }
 });
 
-// Остальные обработчики
 document.getElementById('back-to-scenarios-btn').addEventListener('click', () => {
+    saveCurrentProgress();
     AppState.currentScenario = null;
     document.getElementById('map-screen').classList.add('hidden');
     document.getElementById('scenario-screen').classList.remove('hidden');
     document.getElementById('header-info').innerHTML = '';
     ProgressBar.hide();
+    if (typeof renderScenarios === 'function') {
+        renderScenarios();
+    }
 });
 
 document.getElementById('quiz-back-btn').addEventListener('click', () => {
+    saveCurrentProgress();
     AppState.currentScenario = null;
     document.getElementById('quiz-screen').classList.add('hidden');
     document.getElementById('scenario-screen').classList.remove('hidden');
     document.getElementById('header-info').innerHTML = '';
     ProgressBar.hide();
+    if (typeof renderScenarios === 'function') {
+        renderScenarios();
+    }
 });
 
 document.getElementById('finish-restart-btn').addEventListener('click', () => {
@@ -191,6 +234,9 @@ document.getElementById('finish-scenarios-btn').addEventListener('click', () => 
     document.getElementById('finish-screen').classList.add('hidden');
     document.getElementById('scenario-screen').classList.remove('hidden');
     document.getElementById('header-info').innerHTML = '';
+    if (typeof renderScenarios === 'function') {
+        renderScenarios();
+    }
 });
 
 const hintBtn = document.getElementById('hint-btn');
@@ -207,7 +253,6 @@ if (resetBtn) {
     resetBtn.addEventListener('click', resetMapStep);
 }
 
-// ===== PWA: ОБРАБОТКА ОБНОВЛЕНИЙ =====
 function setupPWAUpdates() {
   if (!('serviceWorker' in navigator)) return;
   

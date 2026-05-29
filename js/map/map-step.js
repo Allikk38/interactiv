@@ -52,28 +52,23 @@ function runMapStep(step) {
     StoreInstance.clearPlacedJks();
     StoreInstance.setCurrentStepJks(filteredJks);
     
-    // Обновляем панель со списком ЖК для десктопа
     updateDesktopDrawerList(filteredJks);
     
-    // Создаём карусель только для мобильных
     if (window.innerWidth <= 768) {
         renderCarousel(filteredJks);
     }
     
-    // Показываем индикатор загрузки
     const mapContainer = document.getElementById('map');
     if (mapContainer) {
         mapContainer.innerHTML = renderMapLoadingIndicator();
     }
     
-    // Запуск карты после загрузки API
     const startMap = () => {
         initMap();
         renderMarkers();
         updateMapProgress();
     };
     
-    // Проверяем, загружены ли уже карты
     if (typeof ymaps !== 'undefined' && ymaps.Map) {
         if (ymaps.ready) {
             ymaps.ready(startMap);
@@ -232,6 +227,14 @@ function checkMapStepComplete() {
                 placed: placedSize,
                 total: filteredJks.length,
             });
+            
+            if (typeof saveCurrentProgress === 'function') {
+                saveCurrentProgress();
+            }
+            
+            if (typeof updateHeaderXP === 'function') {
+                updateHeaderXP();
+            }
         }
         
         showToast('🎉', 'Все ЖК расставлены! Нажмите "Продолжить".', 'success');
@@ -263,7 +266,6 @@ function resetMapStep() {
     }
 }
 
-// Обработчик изменения размера окна
 window.addEventListener('resize', () => {
     const currentMap = StoreInstance.getMap();
     if (currentMap) {

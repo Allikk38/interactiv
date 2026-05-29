@@ -387,6 +387,14 @@ function finishClientJourney() {
             total: total,
             decisions: ClientJourney.decisions
         });
+        
+        if (typeof saveCurrentProgress === 'function') {
+            saveCurrentProgress();
+        }
+        
+        if (typeof updateHeaderXP === 'function') {
+            updateHeaderXP();
+        }
     }
     
     showToast('📋', `Сценарий завершён. Правильных ответов: ${correct}/${total}`, correct === total ? 'success' : 'warning');
@@ -399,7 +407,7 @@ function finishClientJourney() {
     }, 2500);
 }
 
-// ===== СТИЛИ ДЛЯ НОВЫХ ЭЛЕМЕНТОВ (ОСТАЁТСЯ БЕЗ ИЗМЕНЕНИЙ) =====
+// ===== СТИЛИ ДЛЯ НОВЫХ ЭЛЕМЕНТОВ =====
 function ensureJourneyStyles() {
     if (document.getElementById('journey-styles')) return;
     

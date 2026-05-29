@@ -58,6 +58,18 @@
         StepRegistry.register('analytics', runAnalyticsStep);
     }
     
+    // Из timer-quiz.js
+    if (typeof runTimerQuizStep === 'function') {
+        StepRegistry.register('timer-quiz', runTimerQuizStep);
+        logInfo('StepRegistry: зарегистрирован тип шага "timer-quiz"');
+    }
+    
+    // Из decision-chain.js (НОВЫЙ ТИП ШАГА)
+    if (typeof runDecisionChainStep === 'function') {
+        StepRegistry.register('decision-chain', runDecisionChainStep);
+        logInfo('StepRegistry: зарегистрирован тип шага "decision-chain"');
+    }
+    
     // Из client-journey.js
     if (typeof runClientJourneyStep === 'function') {
         StepRegistry.register('client-journey', runClientJourneyStep);

@@ -73,6 +73,14 @@ function runPlatformsStep(step) {
             total: total,
         });
 
+        if (typeof saveCurrentProgress === 'function') {
+            saveCurrentProgress();
+        }
+        
+        if (typeof updateHeaderXP === 'function') {
+            updateHeaderXP();
+        }
+
         if (correct < total) {
             hintEl.textContent = '💡 ' + data.hint;
             hintEl.classList.remove('hidden');
@@ -148,6 +156,14 @@ function runRule3tStep(step) {
             total: 3,
         });
 
+        if (typeof saveCurrentProgress === 'function') {
+            saveCurrentProgress();
+        }
+        
+        if (typeof updateHeaderXP === 'function') {
+            updateHeaderXP();
+        }
+
         if (correct < 3) {
             hintEl.textContent = '💡 ' + data.hint;
             hintEl.classList.remove('hidden');
@@ -219,6 +235,14 @@ function runProfileStep(step) {
             correct: correct,
             total: data.sections.length,
         });
+
+        if (typeof saveCurrentProgress === 'function') {
+            saveCurrentProgress();
+        }
+        
+        if (typeof updateHeaderXP === 'function') {
+            updateHeaderXP();
+        }
 
         if (correct < data.sections.length) {
             hintEl.textContent = '💡 ' + data.hint;
@@ -303,6 +327,14 @@ function runContentPlanStep(step) {
             correct: correct,
             total: total,
         });
+
+        if (typeof saveCurrentProgress === 'function') {
+            saveCurrentProgress();
+        }
+        
+        if (typeof updateHeaderXP === 'function') {
+            updateHeaderXP();
+        }
 
         if (correct < total) {
             hintEl.textContent = '💡 ' + data.hint;
@@ -408,6 +440,14 @@ function runFunnelStep(step) {
             total: total,
         });
 
+        if (typeof saveCurrentProgress === 'function') {
+            saveCurrentProgress();
+        }
+        
+        if (typeof updateHeaderXP === 'function') {
+            updateHeaderXP();
+        }
+
         if (correct < total) {
             hintEl.textContent = '💡 ' + data.hint;
             hintEl.classList.remove('hidden');
@@ -493,6 +533,14 @@ function runAiToolsStep(step) {
             correct: correct,
             total: total,
         });
+
+        if (typeof saveCurrentProgress === 'function') {
+            saveCurrentProgress();
+        }
+        
+        if (typeof updateHeaderXP === 'function') {
+            updateHeaderXP();
+        }
 
         if (correct < total) {
             hintEl.textContent = '💡 ' + data.hint;
@@ -595,6 +643,14 @@ function runAnalyticsStep(step) {
             correct: correct,
             total: total,
         });
+
+        if (typeof saveCurrentProgress === 'function') {
+            saveCurrentProgress();
+        }
+        
+        if (typeof updateHeaderXP === 'function') {
+            updateHeaderXP();
+        }
 
         if (correct < total) {
             hintEl.textContent = '💡 ' + data.hint;

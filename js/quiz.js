@@ -39,7 +39,6 @@ function renderQuestion(index) {
     
     const isCheckbox = q.type === 'multiple';
     
-    // Используем шаблон для генерации HTML
     quizContainer.innerHTML = renderQuizQuestion(q, index, isCheckbox);
     
     const options = quizContainer.querySelectorAll('.quiz-option');
@@ -121,6 +120,14 @@ function finishQuizStep() {
         correct: correctCount,
         total: totalCount,
     });
+    
+    if (typeof saveCurrentProgress === 'function') {
+        saveCurrentProgress();
+    }
+    
+    if (typeof updateHeaderXP === 'function') {
+        updateHeaderXP();
+    }
     
     showToast('🎉', `Викторина пройдена! ${correctCount}/${totalCount} правильно.`, 'success');
     

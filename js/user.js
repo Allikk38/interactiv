@@ -1,8 +1,9 @@
 // ===== ПОЛЬЗОВАТЕЛЬ И ОТПРАВКА РЕЗУЛЬТАТОВ =====
 const User = {
     STORAGE_KEY: 'realty_trainer_user',
+    XP_KEY: 'realty_trainer_xp',
+    LEVEL_MULTIPLIER: 100,
 
-    // Получить сохранённого пользователя
     get() {
         try {
             return JSON.parse(localStorage.getItem(this.STORAGE_KEY));
@@ -11,23 +12,154 @@ const User = {
         }
     },
 
-    // Сохранить пользователя
     save(name) {
         const user = { name, savedAt: new Date().toISOString() };
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+        
+        if (this.getXP() === null) {
+            this.setXP(0);
+        }
+        
         return user;
     },
 
-    // Очистить (сброс)
     clear() {
         localStorage.removeItem(this.STORAGE_KEY);
+        localStorage.removeItem(this.XP_KEY);
     },
 
-    // Показать экран ввода имени (если не сохранён)
+    getXP() {
+        const xp = localStorage.getItem(this.XP_KEY);
+        return xp !== null ? parseInt(xp, 10) : null;
+    },
+
+    setXP(xp) {
+        localStorage.setItem(this.XP_KEY, Math.max(0, xp));
+        return this.getXP();
+    },
+
+    addXP(amount) {
+        const currentXP = this.getXP() || 0;
+        const newXP = currentXP + amount;
+        this.setXP(newXP);
+        
+        const oldLevel = this.getLevel(currentXP);
+        const newLevel = this.getLevel(newXP);
+        
+        return {
+            xp: newXP,
+            leveledUp: newLevel > oldLevel,
+            oldLevel: oldLevel,
+            newLevel: newLevel
+        };
+    },
+
+    getLevel(xp = null) {
+        const currentXP = xp !== null ? xp : (this.getXP() || 0);
+        return Math.floor(currentXP / this.LEVEL_MULTIPLIER) + 1;
+    },
+
+    getXPProgress() {
+        const currentXP = this.getXP() || 0;
+        const level = this.getLevel(currentXP);
+        const xpInLevel = currentXP % this.LEVEL_MULTIPLIER;
+        const percentToNext = (xpInLevel / this.LEVEL_MULTIPLIER) * 100;
+        
+        return {
+            currentXP,
+            level,
+            xpInLevel,
+            xpNeededForNext: this.LEVEL_MULTIPLIER - xpInLevel,
+            percentToNext: Math.min(100, Math.max(0, percentToNext))
+        };
+    },
+
+    saveScenarioProgress(scenarioId, stepIndex, stepStats) {
+        const key = `scenario_progress_${scenarioId}`;
+        const progress = {
+            scenarioId,
+            stepIndex,
+            stepStats,
+            lastUpdated: Date.now()
+        };
+        localStorage.setItem(key, JSON.stringify(progress));
+    },
+
+    getScenarioProgress(scenarioId) {
+        const key = `scenario_progress_${scenarioId}`;
+        try {
+            return JSON.parse(localStorage.getItem(key));
+        } catch {
+            return null;
+        }
+    },
+
+    clearScenarioProgress(scenarioId) {
+        const key = `scenario_progress_${scenarioId}`;
+        localStorage.removeItem(key);
+    },
+
+    sendResult(scenarioName, stepStats, totalCorrect, totalItems, durationSec) {
+        const user = this.get();
+        if (!user) return;
+        
+        const xpEarned = this.calculateScenarioXP(totalCorrect, totalItems, durationSec);
+        const xpResult = this.addXP(xpEarned);
+        
+        const scenarioId = AppState?.currentScenario?.id;
+        if (scenarioId) {
+            this.clearScenarioProgress(scenarioId);
+        }
+        
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'save_result',
+                user_name: user.name,
+                scenario_name: scenarioName,
+                total_correct: totalCorrect,
+                total_items: totalItems,
+                percent: totalItems > 0 ? Math.round((totalCorrect / totalItems) * 100) : 0,
+                duration_sec: durationSec || 0,
+                xp_earned: xpEarned,
+                total_xp_after: this.getXP(),
+                steps_detail: JSON.stringify(stepStats),
+                timestamp: new Date().toISOString(),
+            }),
+        }).catch(err => logError('Ошибка отправки результата:', err));
+        
+        return {
+            xpEarned,
+            totalXP: xpResult.xp,
+            leveledUp: xpResult.leveledUp,
+            newLevel: xpResult.newLevel
+        };
+    },
+
+    calculateScenarioXP(totalCorrect, totalItems, durationSec) {
+        let xp = totalCorrect * 10;
+        
+        if (totalCorrect === totalItems && totalItems > 0) {
+            xp += 50;
+        }
+        
+        if (durationSec && totalItems > 0) {
+            const avgTimePerQuestion = durationSec / totalItems;
+            if (avgTimePerQuestion < 30) {
+                xp += 25;
+            } else if (avgTimePerQuestion < 60) {
+                xp += 10;
+            }
+        }
+        
+        return Math.min(xp, 500);
+    },
+
     showNamePrompt(callback) {
         const existing = this.get();
 
-        // Создаём модальное окно
         const overlay = document.createElement('div');
         overlay.className = 'name-prompt-overlay';
 
@@ -59,16 +191,14 @@ const User = {
         const saveBtn = document.getElementById('name-save-btn');
         const clearBtn = document.getElementById('name-clear-btn');
 
-        // Валидация: минимум 3 символа, не только пробелы
         const validate = () => {
             const value = input.value.trim();
             saveBtn.disabled = value.length < 3 || /^\s*$/.test(value);
         };
 
         input.addEventListener('input', validate);
-        validate(); // начальная проверка
+        validate();
 
-        // Автофокус и Enter
         setTimeout(() => input.focus(), 300);
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !saveBtn.disabled) {
@@ -93,28 +223,5 @@ const User = {
                 clearBtn.remove();
             });
         }
-    },
-
-    // Отправить результат прохождения сценария
-    sendResult(scenarioName, stepStats, totalCorrect, totalItems, durationSec) {
-        const user = this.get();
-        if (!user) return;
-
-        fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'save_result',
-                user_name: user.name,
-                scenario_name: scenarioName,
-                total_correct: totalCorrect,
-                total_items: totalItems,
-                percent: totalItems > 0 ? Math.round((totalCorrect / totalItems) * 100) : 0,
-                duration_sec: durationSec || 0,
-                steps_detail: JSON.stringify(stepStats),
-                timestamp: new Date().toISOString(),
-            }),
-        }).catch(err => logError('Ошибка отправки результата:', err));
     }
 };
