@@ -7,6 +7,33 @@
     box-sizing: border-box;
 }
 
+/* Улучшение скролла на мобильных */
+html {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Убираем задержку при тапе на iOS */
+button,
+a,
+.btn,
+.jk-card,
+.category-chip,
+.scenario-card-new,
+.quiz-option,
+.dialogue-option,
+.platform-item,
+.rule3t-option,
+.profile-option,
+.content-format-item,
+.ai-task,
+.matching-item,
+.pipeline-item,
+.funnel-item,
+.sort-step {
+    touch-action: manipulation;
+}
+
 :root {
     --color-bg: #f5f6fa;
     --color-surface: #ffffff;
@@ -33,6 +60,9 @@
     --spacing-xl: 20px;
     --spacing-2xl: 24px;
     --spacing-3xl: 32px;
+    
+    /* Минимальный размер для тап-целей (Apple/Google guideline) */
+    --tap-target-size: 44px;
 }
 
 html {
@@ -172,12 +202,14 @@ body {
     font-size: 0.9rem;
 }
 
-/* ===== Кнопки ===== */
+/* ===== Кнопки (увеличены для мобильных) ===== */
 .btn {
-    padding: 10px 16px;
+    padding: 12px 20px;
+    min-height: var(--tap-target-size);
+    min-width: var(--tap-target-size);
     border: none;
     border-radius: var(--radius-sm);
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition);
@@ -185,9 +217,16 @@ body {
     text-align: center;
 }
 
+/* Активное состояние для мобильных (тап-фидбек) */
+.btn:active {
+    transform: scale(0.96);
+    transition: transform 0.05s ease;
+}
+
 .btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+    transform: none;
 }
 
 .btn--primary {
@@ -200,14 +239,19 @@ body {
     transform: translateY(-1px);
 }
 
+.btn--primary:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
 .btn--secondary {
     background-color: var(--color-bg);
     color: var(--color-text);
     border: 1px solid var(--color-border);
 }
 
-.btn--secondary:hover:not(:disabled) {
+.btn--secondary:active:not(:disabled) {
     background-color: var(--color-border);
+    transform: scale(0.96);
 }
 
 .btn--danger {
@@ -215,12 +259,14 @@ body {
     color: #fff;
 }
 
-.btn--danger:hover:not(:disabled) {
+.btn--danger:active:not(:disabled) {
     background-color: var(--color-danger-hover);
+    transform: scale(0.96);
 }
 
 .btn--small {
-    padding: 6px 14px;
+    padding: 8px 16px;
+    min-height: 36px;
     font-size: 0.85rem;
 }
 
@@ -576,16 +622,22 @@ body {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-xl);
+    padding: 12px 20px;
+    min-height: var(--tap-target-size);
     background: var(--color-bg);
     border-radius: 40px;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: 500;
     color: var(--color-text);
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
     border: 1px solid var(--color-border);
+}
+
+.category-chip:active {
+    transform: scale(0.96);
+    background: var(--color-border);
 }
 
 .category-chip i {
@@ -639,6 +691,11 @@ body {
     cursor: pointer;
     border: 1px solid var(--color-border);
     position: relative;
+}
+
+.scenario-card-new:active {
+    transform: scale(0.99);
+    transition: transform 0.05s ease;
 }
 
 .scenario-card-new:hover {
@@ -1070,6 +1127,46 @@ body {
     .continue-learning__progress {
         min-width: auto;
     }
+    
+    /* Увеличение зоны нажатия для маркеров на карте */
+    .floating-list-btn {
+        width: 56px;
+        height: 56px;
+        min-width: 56px;
+        min-height: 56px;
+    }
+    
+    .floating-list-btn:active {
+        transform: scale(0.94);
+    }
+    
+    .jk-carousel__btn {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .jk-list__item {
+        padding: 14px 16px;
+        min-height: 70px;
+    }
+    
+    .jk-card {
+        min-width: 180px;
+        padding: 14px 12px;
+    }
+}
+
+/* Дополнительные улучшения для мобильных устройств */
+button,
+.btn,
+[role="button"] {
+    touch-action: manipulation;
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
 }
 
 @media (max-width: 480px) {
@@ -1080,6 +1177,18 @@ body {
     
     .scenario-card-new__title {
         font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .category-chip {
+        padding: 10px 16px;
+        font-size: 0.85rem;
     }
 }
 

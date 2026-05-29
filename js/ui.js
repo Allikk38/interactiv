@@ -759,7 +759,43 @@ if (originalRunStep) {
         setTimeout(() => updateSkipButtonVisibility(), 100);
     };
 }
+// ===== HAPTIC FEEDBACK ДЛЯ КНОПОК (ОПЦИОНАЛЬНО) =====
+function initHapticFeedback() {
+    // Добавляем вибрацию на все кнопки (кроме тех, где это не нужно)
+    const hapticSelectors = [
+        '.btn',
+        '.category-chip',
+        '.scenario-card-new',
+        '.quiz-option',
+        '.dialogue-option',
+        '.jk-card',
+        '.jk-list__item',
+        '.floating-list-btn',
+        '.continue-learning__btn'
+    ];
+    
+    const selector = hapticSelectors.join(',');
+    
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest(selector);
+        if (!target) return;
+        
+        // Проверяем, не отключено ли через атрибут data-haptic="false"
+        if (target.dataset.haptic === 'false') return;
+        
+        // Лёгкая вибрация при клике (только если не на disabled)
+        if (!target.disabled && window.vibrate) {
+            window.vibrate('light');
+        }
+    });
+}
 
+// Инициализируем при загрузке DOM
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHapticFeedback);
+} else {
+    initHapticFeedback();
+}
 // Экспорт функций для использования в консоли (для администратора)
 window.enableAdminMode = enableAdminMode;
 window.disableAdminMode = disableAdminMode;

@@ -7,14 +7,26 @@
     
     <!-- PWA Meta -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f39c12">
+    <meta name="theme-color" content="#2e86de">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Агент Недв">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Агент Недв">
     
-    <!-- Иконки для iOS и Android -->
-    <link rel="apple-touch-icon" href="icons/icon-152.png">
+    <!-- iOS иконки (разные размеры для разных устройств) -->
+    <link rel="apple-touch-icon" sizes="57x57" href="icons/icon-57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="icons/icon-60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="icons/icon-72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="icons/icon-76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="icons/icon-114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+    
+    <!-- Android иконки -->
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
     
@@ -251,6 +263,12 @@
         <div class="toast hidden" id="toast">
             <span class="toast__icon" id="toast-icon"></span>
             <span class="toast__message" id="toast-message"></span>
+        </div>
+
+        <!-- Офлайн-индикатор -->
+        <div class="offline-indicator" id="offline-indicator">
+            <i class="fas fa-wifi"></i>
+            <span>Нет соединения с интернетом. Некоторые функции могут быть недоступны.</span>
         </div>
     </div>
 

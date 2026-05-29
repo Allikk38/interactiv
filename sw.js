@@ -1,6 +1,6 @@
-// ===== SERVICE WORKER ДЛЯ PWA (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
-const STATIC_CACHE = 'realty-static-v3';
-const DATA_CACHE = 'realty-data-v3';
+// ===== SERVICE WORKER ДЛЯ PWA (С ОФЛАЙН-ИНДИКАЦИЕЙ) =====
+const STATIC_CACHE = 'realty-static-v4';
+const DATA_CACHE = 'realty-data-v4';
 
 // Файлы для кеширования при установке
 const urlsToCache = [
@@ -11,7 +11,7 @@ const urlsToCache = [
   './css/steps.css',
   './css/drawer.css',
   './js/config.js',
-  './js/state.js',
+  './js/store.js',
   './js/dragdrop.js',
   './js/badges.js',
   './js/user.js',
@@ -20,10 +20,17 @@ const urlsToCache = [
   './js/interactive-lesson1.js',
   './js/drawer.js',
   './js/ui.js',
-  './js/map.js',
+  './js/map/map-core.js',
+  './js/map/map-utils.js',
+  './js/map/map-ui.js',
+  './js/map/map-step.js',
   './js/quiz.js',
+  './js/timer-quiz.js',
+  './js/decision-chain.js',
   './js/interactive.js',
   './js/client-journey.js',
+  './js/stepRegistry.js',
+  './js/stepRegistry-init.js',
   './js/app.js',
   './manifest.json'
 ];
@@ -83,6 +90,29 @@ function isPathRequest(requestUrl, targetPath) {
     return false;
   }
 }
+
+// Функция для отправки статуса соединения всем клиентам
+function broadcastConnectionStatus(isOnline) {
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'CONNECTION_STATUS',
+        isOnline: isOnline
+      });
+    });
+  });
+}
+
+// Отслеживаем онлайн/офлайн статус
+self.addEventListener('online', () => {
+  console.log('[SW] Соединение восстановлено');
+  broadcastConnectionStatus(true);
+});
+
+self.addEventListener('offline', () => {
+  console.log('[SW] Соединение потеряно');
+  broadcastConnectionStatus(false);
+});
 
 // Перехват запросов — стратегия: сначала кеш, потом сеть
 self.addEventListener('fetch', event => {
@@ -181,7 +211,19 @@ self.addEventListener('message', event => {
     // Уведомляем всех клиентов о необходимости обновления
     self.clients.matchAll().then(clients => {
       clients.forEach(client => {
-        client.postMessage('updateAvailable');
+        client.postMessage({ type: 'updateAvailable' });
+      });
+    });
+  }
+  
+  // Запрос текущего статуса соединения
+  if (event.data === 'getConnectionStatus') {
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'CONNECTION_STATUS',
+          isOnline: navigator.onLine
+        });
       });
     });
   }

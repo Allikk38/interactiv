@@ -1,6 +1,9 @@
 // ===== ОСНОВНАЯ ЛОГИКА ПРИЛОЖЕНИЯ =====
 
 async function loadData() {
+    // Инициализируем офлайн-индикатор
+    initOfflineIndicator();
+    
     try {
         const [jksRes, questionsRes, scenariosRes] = await Promise.all([
             fetch('data/jks.json'),
@@ -462,3 +465,49 @@ if ('serviceWorker' in navigator) {
 }
 
 document.addEventListener('DOMContentLoaded', loadData);
+
+// ===== ОФЛАЙН-ИНДИКАТОР =====
+function initOfflineIndicator() {
+    const indicator = document.getElementById('offline-indicator');
+    if (!indicator) return;
+    
+    // Функция обновления видимости индикатора
+    function updateOfflineIndicator(isOnline) {
+        if (!indicator) return;
+        if (!isOnline) {
+            indicator.classList.add('offline-indicator--visible');
+            showToast('📡', 'Нет соединения с интернетом. Данные сохраняются локально.', 'error');
+        } else {
+            indicator.classList.remove('offline-indicator--visible');
+            // Не показываем тост при восстановлении, чтобы не раздражать
+        }
+    }
+    
+    // Проверяем текущий статус
+    updateOfflineIndicator(navigator.onLine);
+    
+    // Слушаем события online/offline
+    window.addEventListener('online', () => {
+        updateOfflineIndicator(true);
+        // Пытаемся отправить сохранённые результаты в фоне
+        if (window.User && window.User.sendPendingResults) {
+            window.User.sendPendingResults();
+        }
+    });
+    
+    window.addEventListener('offline', () => {
+        updateOfflineIndicator(false);
+    });
+    
+    // Слушаем сообщения от Service Worker
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'CONNECTION_STATUS') {
+                updateOfflineIndicator(event.data.isOnline);
+            }
+        });
+        
+        // Запрашиваем текущий статус у SW
+        navigator.serviceWorker.controller.postMessage('getConnectionStatus');
+    }
+}
