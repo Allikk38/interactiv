@@ -329,7 +329,13 @@ window.AppState = {
     get selectedJkId() { return StoreInstance.getSelectedJkId(); },
     set selectedJkId(v) { StoreInstance.setSelectedJkId(v); },
     get placedJks() { return StoreInstance.getPlacedJks(); },
-    set placedJks(v) { StoreInstance.setPlacedJks(v); },
+    // ИСПРАВЛЕНО: убираем setPlacedJks
+    set placedJks(v) { 
+        StoreInstance.clearPlacedJks();
+        if (v && v.forEach) {
+            v.forEach((value, key) => StoreInstance.addPlacedJk(key, value));
+        }
+    },
     get currentMarkers() { return StoreInstance.getCurrentMarkers(); },
     set currentMarkers(v) { StoreInstance.setCurrentMarkers(v); },
     get currentStepJks() { return StoreInstance.getCurrentStepJks(); },

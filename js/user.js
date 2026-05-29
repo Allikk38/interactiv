@@ -21,7 +21,6 @@ const User = {
             this.setXP(0);
         }
         
-        // Инициализируем серию, если её нет
         if (this.getStreak() === null) {
             this.updateStreak();
         }
@@ -53,7 +52,6 @@ const User = {
         const oldLevel = this.getLevel(currentXP);
         const newLevel = this.getLevel(newXP);
         
-        // Обновляем серию при получении XP
         this.updateStreak();
         
         return {
@@ -98,14 +96,12 @@ const User = {
         let streak = this.getStreak();
         
         if (!streak) {
-            // Новая серия
             streak = {
                 count: 1,
                 lastActivityDate: today,
                 bestCount: 1
             };
         } else if (streak.lastActivityDate === today) {
-            // Уже обновлено сегодня
             return streak;
         } else {
             const yesterday = new Date();
@@ -113,13 +109,11 @@ const User = {
             const yesterdayString = yesterday.toDateString();
             
             if (streak.lastActivityDate === yesterdayString) {
-                // Продолжение серии
                 streak.count++;
                 if (streak.count > streak.bestCount) {
                     streak.bestCount = streak.count;
                 }
             } else {
-                // Серия прервана
                 streak.count = 1;
             }
             streak.lastActivityDate = today;
@@ -139,18 +133,16 @@ const User = {
         return streak;
     },
 
-    // ===== ПРОГРЕСС СЦЕНАРИЕВ =====
+    // ===== ПРОГРЕСС СЦЕНАРИЕВ (БАЗОВЫЙ) =====
     saveScenarioProgress(scenarioId, stepIndex, stepStats) {
         const key = `scenario_progress_${scenarioId}`;
         const progress = {
             scenarioId,
             stepIndex,
-            stepStats,
+            stepStats: stepStats || [],
             lastUpdated: Date.now()
         };
         localStorage.setItem(key, JSON.stringify(progress));
-        
-        // Обновляем серию при сохранении прогресса
         this.updateStreak();
     },
 
@@ -166,18 +158,119 @@ const User = {
     clearScenarioProgress(scenarioId) {
         const key = `scenario_progress_${scenarioId}`;
         localStorage.removeItem(key);
+        this.clearQuizAnswers(scenarioId);
+        this.clearMapProgress(scenarioId);
+    },
+
+    // ===== РАСШИРЕННОЕ СОХРАНЕНИЕ ПРОГРЕССА (ДЛЯ АВТОСОХРАНЕНИЯ) =====
+    saveDetailedScenarioProgress(scenarioId, stepIndex, stepStats, quizAnswers, mapPlacedJks) {
+        const key = `scenario_progress_${scenarioId}`;
+        const progress = {
+            scenarioId,
+            stepIndex,
+            stepStats: stepStats || [],
+            quizAnswers: quizAnswers || [],
+            mapPlacedJks: mapPlacedJks || [],
+            lastUpdated: Date.now(),
+            version: 2
+        };
+        localStorage.setItem(key, JSON.stringify(progress));
+        this.updateStreak();
+        return progress;
+    },
+
+    getDetailedScenarioProgress(scenarioId) {
+        const key = `scenario_progress_${scenarioId}`;
+        try {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (data && data.version === 2) {
+                return data;
+            }
+            if (data && !data.version) {
+                return {
+                    ...data,
+                    quizAnswers: [],
+                    mapPlacedJks: [],
+                    version: 2
+                };
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    },
+
+    // ===== СОХРАНЕНИЕ ОТВЕТОВ НА ВОПРОСЫ =====
+    saveQuizAnswer(scenarioId, questionId, userAnswer, isCorrect) {
+        const key = `scenario_answers_${scenarioId}`;
+        let answers = {};
+        try {
+            answers = JSON.parse(localStorage.getItem(key)) || {};
+        } catch {
+            answers = {};
+        }
+        answers[questionId] = {
+            answer: userAnswer,
+            isCorrect: isCorrect,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(key, JSON.stringify(answers));
+    },
+
+    getQuizAnswers(scenarioId) {
+        const key = `scenario_answers_${scenarioId}`;
+        try {
+            return JSON.parse(localStorage.getItem(key)) || {};
+        } catch {
+            return {};
+        }
+    },
+
+    clearQuizAnswers(scenarioId) {
+        const key = `scenario_answers_${scenarioId}`;
+        localStorage.removeItem(key);
+    },
+
+    // ===== СОХРАНЕНИЕ ПРОГРЕССА НА КАРТЕ =====
+    saveMapProgress(scenarioId, stepIndex, placedJks) {
+        const key = `scenario_map_${scenarioId}_step_${stepIndex}`;
+        const data = {
+            placedJks: Array.from(placedJks.entries()),
+            timestamp: Date.now()
+        };
+        localStorage.setItem(key, JSON.stringify(data));
+    },
+
+    getMapProgress(scenarioId, stepIndex) {
+        const key = `scenario_map_${scenarioId}_step_${stepIndex}`;
+        try {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (data) {
+                return new Map(data.placedJks);
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    },
+
+    clearMapProgress(scenarioId) {
+        const keys = Object.keys(localStorage);
+        for (const key of keys) {
+            if (key.startsWith(`scenario_map_${scenarioId}`)) {
+                localStorage.removeItem(key);
+            }
+        }
     },
 
     // ===== РАСЧЁТ XP =====
     calculateScenarioXP(totalCorrect, totalItems, durationSec) {
         let xp = totalCorrect * 10;
         
-        // Бонус за идеальное прохождение
         if (totalCorrect === totalItems && totalItems > 0) {
             xp += 50;
         }
         
-        // Бонус за скорость
         if (durationSec && totalItems > 0) {
             const avgTimePerQuestion = durationSec / totalItems;
             if (avgTimePerQuestion < 30) {
@@ -203,7 +296,6 @@ const User = {
             this.clearScenarioProgress(scenarioId);
         }
         
-        // Отправка в Google Sheets (асинхронно, без ожидания)
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',

@@ -19,7 +19,35 @@ function runQuizStep(step) {
     AppState.currentQuestionIndex = 0;
     AppState.quizAnswers = [];
     
+    // Загружаем сохранённые ответы для этого сценария
+    loadSavedQuizAnswers();
+    
     renderQuestion(0);
+}
+
+// Загрузка сохранённых ответов
+function loadSavedQuizAnswers() {
+    const scenarioId = AppState.currentScenario?.id;
+    if (!scenarioId) return;
+    
+    const savedAnswers = User.getQuizAnswers(scenarioId);
+    if (Object.keys(savedAnswers).length === 0) return;
+    
+    AppState.savedQuizAnswers = savedAnswers;
+    logInfo(`Загружено ${Object.keys(savedAnswers).length} сохранённых ответов`);
+}
+
+// Сохранение ответа на вопрос
+function saveQuizAnswer(questionId, userAnswer, isCorrect) {
+    const scenarioId = AppState.currentScenario?.id;
+    if (!scenarioId) return;
+    
+    User.saveQuizAnswer(scenarioId, questionId, userAnswer, isCorrect);
+    
+    // Автосохранение прогресса сценария
+    if (typeof saveCurrentProgress === 'function') {
+        saveCurrentProgress();
+    }
 }
 
 function renderQuestion(index) {
@@ -44,6 +72,14 @@ function renderQuestion(index) {
     const options = quizContainer.querySelectorAll('.quiz-option');
     const hintEl = document.getElementById('quiz-hint');
     let checked = false;
+    
+    // Восстанавливаем сохранённый ответ, если есть
+    const savedAnswer = getSavedAnswerForQuestion(q.id);
+    if (savedAnswer) {
+        restoreSavedAnswer(savedAnswer, options, isCheckbox);
+        // Если ответ уже был выбран, проверяем его автоматически?
+        // Пока просто восстанавливаем визуально, без авто-проверки
+    }
 
     options.forEach(opt => {
         opt.addEventListener('click', () => {
@@ -71,6 +107,10 @@ function renderQuestion(index) {
             const selectedInputs = quizContainer.querySelectorAll('input:checked');
             const userAnswers = Array.from(selectedInputs).map(inp => inp.value);
             const isCorrect = checkQuizAnswer(q, userAnswers);
+            
+            // Сохраняем ответ
+            saveQuizAnswer(q.id, userAnswers, isCorrect);
+            
             AppState.quizAnswers.push({ questionId: q.id, userAnswers, isCorrect });
 
             options.forEach(opt => {
@@ -97,6 +137,33 @@ function renderQuestion(index) {
             renderQuestion(index + 1);
         }
     };
+}
+
+// Получение сохранённого ответа для вопроса
+function getSavedAnswerForQuestion(questionId) {
+    if (!AppState.savedQuizAnswers) return null;
+    const saved = AppState.savedQuizAnswers[questionId];
+    if (saved && saved.answer) {
+        return saved.answer;
+    }
+    return null;
+}
+
+// Восстановление сохранённого ответа
+function restoreSavedAnswer(savedAnswer, options, isCheckbox) {
+    if (!savedAnswer) return;
+    
+    const savedAnswersArray = Array.isArray(savedAnswer) ? savedAnswer : [savedAnswer];
+    
+    options.forEach(opt => {
+        const input = opt.querySelector('input');
+        const value = input.value;
+        
+        if (savedAnswersArray.includes(value)) {
+            input.checked = true;
+            opt.classList.add('quiz-option--selected');
+        }
+    });
 }
 
 function checkQuizAnswer(question, userAnswers) {
@@ -130,6 +197,12 @@ function finishQuizStep() {
     }
     
     showToast('🎉', `Викторина пройдена! ${correctCount}/${totalCount} правильно.`, 'success');
+    
+    // Очищаем сохранённые ответы после успешного завершения
+    const scenarioId = AppState.currentScenario?.id;
+    if (scenarioId) {
+        User.clearQuizAnswers(scenarioId);
+    }
     
     setTimeout(() => {
         AppState.currentStepIndex++;

@@ -590,8 +590,156 @@ function renderScenarios() {
     updateHeaderUser();
 }
 
-// Экспорт глобальных функций
-window.updateHeaderXP = updateHeaderXP;
-window.updateHeaderUser = updateHeaderUser;
-window.updateContinueLearning = updateContinueLearning;
-window.refreshMainScreen = refreshMainScreen;
+// ===== КНОПКА "ПРОПУСТИТЬ ШАГ" (ДЛЯ АДМИНИСТРАТОРА/ТРЕНЕРА) =====
+
+// Проверка, является ли пользователь администратором
+// Внутренний инструмент — можно добавить простую проверку
+function isAdmin() {
+    // Вариант 1: проверка по имени (для тестирования)
+    const user = User.get();
+    if (!user) return false;
+    
+    // Список администраторов (можно расширить)
+    const adminNames = ['admin', 'тренер', 'Админ', 'Admin', 'Тренер'];
+    if (adminNames.includes(user.name.toLowerCase())) return true;
+    
+    // Вариант 2: проверка по секретному ключу в localStorage
+    const adminKey = localStorage.getItem('realty_admin_key');
+    if (adminKey === 'true') return true;
+    
+    // Вариант 3: проверка по уровню (админы могут быть на уровне 10+)
+    const xpProgress = User.getXPProgress();
+    if (xpProgress.level >= 10) return true;
+    
+    return false;
+}
+
+// Установка режима администратора
+function enableAdminMode() {
+    localStorage.setItem('realty_admin_key', 'true');
+    showToast('🔑', 'Режим администратора включён. Доступен пропуск шагов.', 'success');
+    // Перезагружаем интерфейс, чтобы показать кнопку
+    if (typeof renderScenarios === 'function') {
+        renderScenarios();
+    }
+    // Если мы в сценарии — добавляем кнопку
+    addSkipStepButton();
+}
+
+// Отключение режима администратора
+function disableAdminMode() {
+    localStorage.removeItem('realty_admin_key');
+    showToast('🔒', 'Режим администратора выключен.', 'warning');
+    removeSkipStepButton();
+}
+
+// Добавление кнопки пропуска шага
+let skipButtonAdded = false;
+
+function addSkipStepButton() {
+    if (!isAdmin()) return;
+    if (skipButtonAdded) return;
+    
+    // Проверяем, находимся ли мы в сценарии
+    if (!AppState.currentScenario) return;
+    
+    // Находим контейнер для кнопки (рядом с шапкой шага)
+    const stepHeader = document.querySelector('.step-header');
+    if (!stepHeader) return;
+    
+    // Проверяем, нет ли уже такой кнопки
+    if (document.getElementById('skip-step-btn')) return;
+    
+    const skipBtn = document.createElement('button');
+    skipBtn.id = 'skip-step-btn';
+    skipBtn.className = 'btn btn--warning btn--small';
+    skipBtn.innerHTML = '<i class="fas fa-forward"></i> Пропустить шаг';
+    skipBtn.style.marginLeft = 'auto';
+    skipBtn.style.backgroundColor = '#f39c12';
+    skipBtn.style.color = '#fff';
+    skipBtn.style.border = 'none';
+    skipBtn.style.cursor = 'pointer';
+    
+    skipBtn.addEventListener('click', () => {
+        if (confirm('Вы уверены, что хотите пропустить текущий шаг? Прогресс этого шага будет потерян.')) {
+            skipCurrentStep();
+        }
+    });
+    
+    stepHeader.appendChild(skipBtn);
+    skipButtonAdded = true;
+}
+
+function removeSkipStepButton() {
+    const skipBtn = document.getElementById('skip-step-btn');
+    if (skipBtn) skipBtn.remove();
+    skipButtonAdded = false;
+}
+
+function skipCurrentStep() {
+    if (!AppState.currentScenario) return;
+    
+    const currentStep = AppState.currentScenario.steps[AppState.currentStepIndex];
+    
+    // Добавляем запись о пропуске в статистику
+    AppState.stepStats.push({
+        step: AppState.currentStepIndex + 1,
+        type: currentStep.type,
+        title: currentStep.title,
+        skipped: true,
+        correct: 0,
+        total: 0
+    });
+    
+    // Сохраняем прогресс
+    if (typeof saveCurrentProgress === 'function') {
+        saveCurrentProgress();
+    }
+    
+    // Переходим к следующему шагу
+    AppState.currentStepIndex++;
+    
+    showToast('⏭️', `Шаг "${currentStep.title}" пропущен`, 'warning');
+    
+    // Обновляем прогресс-бар
+    ProgressBar.update(
+        AppState.currentStepIndex, 
+        AppState.currentScenario.steps.length - 1, 
+        AppState.currentScenario.steps
+    );
+    
+    // Запускаем следующий шаг
+    if (typeof runStep === 'function') {
+        runStep();
+    }
+}
+
+// Обновление видимости кнопки пропуска при смене шага
+// Эту функцию нужно вызывать при каждом новом шаге
+function updateSkipButtonVisibility() {
+    if (isAdmin() && AppState.currentScenario) {
+        addSkipStepButton();
+    } else {
+        removeSkipStepButton();
+    }
+}
+
+// Перехватываем runStep для обновления кнопки
+// Сохраняем оригинальную функцию
+const originalRunStep = window.runStep;
+if (originalRunStep) {
+    window.runStep = function() {
+        // Удаляем старую кнопку перед рендером нового шага
+        removeSkipStepButton();
+        // Вызываем оригинальную функцию
+        originalRunStep();
+        // Добавляем кнопку, если нужно
+        setTimeout(() => updateSkipButtonVisibility(), 100);
+    };
+}
+
+// Экспорт функций для использования в консоли (для администратора)
+window.enableAdminMode = enableAdminMode;
+window.disableAdminMode = disableAdminMode;
+window.isAdmin = isAdmin;
+window.skipCurrentStep = skipCurrentStep;

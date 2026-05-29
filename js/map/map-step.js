@@ -52,6 +52,9 @@ function runMapStep(step) {
     StoreInstance.clearPlacedJks();
     StoreInstance.setCurrentStepJks(filteredJks);
     
+    // Восстанавливаем сохранённый прогресс карты для этого шага
+    restoreMapProgress();
+    
     updateDesktopDrawerList(filteredJks);
     
     if (window.innerWidth <= 768) {
@@ -93,6 +96,35 @@ function runMapStep(step) {
                 showToast('❌', 'Ошибка загрузки карты. Обновите страницу.', 'error');
             });
     }
+}
+
+// Восстановление сохранённого прогресса карты
+function restoreMapProgress() {
+    const scenarioId = StoreInstance.getCurrentScenario()?.id;
+    const stepIndex = StoreInstance.getCurrentStepIndex();
+    
+    if (!scenarioId) return;
+    
+    const savedPlacedJks = User.getMapProgress(scenarioId, stepIndex);
+    if (savedPlacedJks && savedPlacedJks.size > 0) {
+        // Восстанавливаем расставленные ЖК
+        for (const [id, data] of savedPlacedJks.entries()) {
+            StoreInstance.addPlacedJk(id, data);
+        }
+        logInfo(`Восстановлено ${savedPlacedJks.size} расставленных ЖК на карте`);
+        showToast('💾', `Восстановлен прогресс: ${savedPlacedJks.size} ЖК уже расставлены`, 'success');
+    }
+}
+
+// Сохранение прогресса карты
+function saveMapProgress() {
+    const scenarioId = StoreInstance.getCurrentScenario()?.id;
+    const stepIndex = StoreInstance.getCurrentStepIndex();
+    const placedJks = StoreInstance.getPlacedJks();
+    
+    if (!scenarioId) return;
+    
+    User.saveMapProgress(scenarioId, stepIndex, placedJks);
 }
 
 function selectJk(id) {
@@ -137,6 +169,9 @@ function updateMapProgress() {
         const currentStepJks = StoreInstance.getCurrentStepJks();
         updateDesktopDrawerList(currentStepJks);
     }
+    
+    // Сохраняем прогресс при каждом изменении
+    saveMapProgress();
     
     if (placed === total && total > 0) {
         showContinueButton();
@@ -228,6 +263,12 @@ function checkMapStepComplete() {
                 total: filteredJks.length,
             });
             
+            // Очищаем сохранённый прогресс карты после завершения шага
+            const scenarioId = currentScenario?.id;
+            if (scenarioId) {
+                User.clearMapProgress(scenarioId);
+            }
+            
             if (typeof saveCurrentProgress === 'function') {
                 saveCurrentProgress();
             }
@@ -244,6 +285,13 @@ function checkMapStepComplete() {
 function resetMapStep() {
     if (confirm('Вы уверены? Весь прогресс на этом шаге будет потерян.')) {
         StoreInstance.resetMapState();
+        
+        // Очищаем сохранённый прогресс
+        const scenarioId = StoreInstance.getCurrentScenario()?.id;
+        const stepIndex = StoreInstance.getCurrentStepIndex();
+        if (scenarioId) {
+            User.saveMapProgress(scenarioId, stepIndex, new Map()); // Очищаем
+        }
         
         const currentMap = StoreInstance.getMap();
         if (currentMap) {
