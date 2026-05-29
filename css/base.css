@@ -299,3 +299,69 @@ body {
     font-size: 0.75rem;
     color: var(--color-text-light);
 }
+/* ===== Виджеты статистики ===== */
+.stats-widget {
+    display: flex;
+    gap: 16px;
+    margin: 0 24px 24px 24px;
+    flex-wrap: wrap;
+}
+
+.stats-widget .stat-card {
+    flex: 1;
+    min-width: 100px;
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 8px var(--color-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats-widget .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px var(--color-shadow);
+}
+
+.stats-widget .stat-card__icon {
+    font-size: 2rem;
+}
+
+.stats-widget .stat-card__value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #f39c12;
+    line-height: 1.2;
+}
+
+.stats-widget .stat-card__label {
+    font-size: 0.7rem;
+    color: var(--color-text-light);
+    margin-top: 4px;
+}
+
+.stats-widget .stat-card__right {
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 768px) {
+    .stats-widget {
+        gap: 12px;
+        margin: 0 16px 20px 16px;
+    }
+    .stats-widget .stat-card {
+        padding: 12px 14px;
+    }
+    .stats-widget .stat-card__icon {
+        font-size: 1.5rem;
+    }
+    .stats-widget .stat-card__value {
+        font-size: 1.2rem;
+    }
+    .stats-widget .stat-card__label {
+        font-size: 0.6rem;
+    }
+}

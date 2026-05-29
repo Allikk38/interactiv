@@ -318,6 +318,31 @@
         <main class="main">
             <!-- Экран выбора сценария -->
             <section class="screen" id="scenario-screen">
+                <!-- Виджеты статистики -->
+                <div class="stats-widget" id="stats-widget">
+                    <div class="stat-card">
+                        <div class="stat-card__icon">📋</div>
+                        <div class="stat-card__right">
+                            <div class="stat-card__value" id="stat-scenarios">0</div>
+                            <div class="stat-card__label">пройдено из <span id="stat-total-scenarios">0</span></div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card__icon">⚡</div>
+                        <div class="stat-card__right">
+                            <div class="stat-card__value" id="stat-xp">0</div>
+                            <div class="stat-card__label">всего XP</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card__icon">🏅</div>
+                        <div class="stat-card__right">
+                            <div class="stat-card__value" id="stat-badges">0</div>
+                            <div class="stat-card__label">получено бейджей</div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Герой-блок "Продолжить обучение" -->
                 <div class="continue-learning" id="continue-learning">
                     <div class="continue-learning__greeting" id="continue-greeting">👋 Добро пожаловать!</div>

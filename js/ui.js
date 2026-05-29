@@ -59,6 +59,31 @@ function addUserChangeButton() {
 
 // ===== НОВЫЕ ФУНКЦИИ ДЛЯ ИНТЕРФЕЙСА =====
 
+function updateStreakDisplay() {
+    const streakContainer = document.getElementById('streak-container');
+    const streakValue = document.getElementById('streak-value');
+    
+    if (!streakContainer) return;
+    
+    const user = User.get();
+    if (!user) {
+        streakContainer.style.display = 'none';
+        return;
+    }
+    
+    const streak = User.getStreak();
+    if (streak.count === 0) {
+        streakContainer.style.display = 'none';
+        return;
+    }
+    
+    streakContainer.style.display = 'flex';
+    if (streakValue) streakValue.textContent = streak.count;
+    
+    // Подсказка при наведении/клике
+    streakContainer.title = streak.count === 1 ? '🔥 1 день подряд!' : `🔥 ${streak.count} дней подряд!`;
+}
+
 function updateHeaderXP() {
     const xpCard = document.getElementById('xp-card');
     const userLevelEl = document.getElementById('user-level');
@@ -79,6 +104,9 @@ function updateHeaderXP() {
     if (userLevelEl) userLevelEl.textContent = `Уровень ${progress.level}`;
     if (userXpEl) userXpEl.textContent = `${progress.currentXP} XP`;
     if (progressFill) progressFill.style.width = `${progress.percentToNext}%`;
+    
+    // Обновляем отображение серии
+    updateStreakDisplay();
 }
 
 function updateHeaderUser() {
@@ -310,6 +338,27 @@ function renderScenariosGrid() {
     }
 }
 
+function updateStatsWidget() {
+    const scenariosTotalEl = document.getElementById('stat-total-scenarios');
+    const scenariosCompletedEl = document.getElementById('stat-scenarios');
+    const xpEl = document.getElementById('stat-xp');
+    const badgesEl = document.getElementById('stat-badges');
+    
+    if (!scenariosTotalEl) return;
+    
+    const totalScenarios = allScenarios.length;
+    scenariosTotalEl.textContent = totalScenarios;
+    
+    const badges = Badges.getAll();
+    const completedScenarios = allScenarios.filter(s => badges.includes(s.badge)).length;
+    if (scenariosCompletedEl) scenariosCompletedEl.textContent = completedScenarios;
+    
+    const xpProgress = User.getXPProgress();
+    if (xpEl) xpEl.textContent = xpProgress.currentXP;
+    
+    if (badgesEl) badgesEl.textContent = badges.length;
+}
+
 function renderScenarios() {
     if (!AppState.scenarios) return;
     
@@ -320,6 +369,7 @@ function renderScenarios() {
     renderCategoryTabs();
     renderScenariosGrid();
     updateContinueLearning();
+    updateStatsWidget();
 }
 
 window.updateHeaderXP = updateHeaderXP;
