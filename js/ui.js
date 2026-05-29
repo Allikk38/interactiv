@@ -271,7 +271,23 @@ function renderCategoryChips() {
     });
 }
 
-// Рендер сетки сценариев (новая версия)
+// Функция сортировки сценариев
+function sortScenarios(scenarios) {
+    return [...scenarios].sort((a, b) => {
+        // Сначала сортируем по полю order (если есть)
+        const orderA = a.order !== undefined ? a.order : Infinity;
+        const orderB = b.order !== undefined ? b.order : Infinity;
+        
+        if (orderA !== orderB) {
+            return orderA - orderB;
+        }
+        
+        // Если order одинаковый или отсутствует — сортируем по названию
+        return a.name.localeCompare(b.name, 'ru');
+    });
+}
+
+// Рендер сетки сценариев (новая версия с сортировкой)
 function renderScenariosGrid() {
     const container = document.getElementById('scenarios-grid');
     if (!container) return;
@@ -282,6 +298,9 @@ function renderScenariosGrid() {
     if (currentCategory !== 'all') {
         filteredScenarios = allScenarios.filter(s => s.group === currentCategory);
     }
+    
+    // СОРТИРУЕМ сценарии внутри категории
+    filteredScenarios = sortScenarios(filteredScenarios);
     
     if (filteredScenarios.length === 0) {
         container.innerHTML = '<div class="empty-message"><i class="fas fa-folder-open"></i> Нет сценариев в этой категории</div>';
@@ -516,7 +535,10 @@ function updateContinueLearning() {
     let lastScenario = null;
     let lastProgress = null;
     
-    for (const scenario of allScenarios) {
+    // Сортируем сценарии для поиска последнего активного
+    const sortedScenarios = sortScenarios(allScenarios);
+    
+    for (const scenario of sortedScenarios) {
         const progress = User.getScenarioProgress(scenario.id);
         if (progress && progress.stepIndex < scenario.steps.length - 1) {
             const lastStep = scenario.steps[progress.stepIndex];
