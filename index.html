@@ -281,12 +281,15 @@
     <script src="js/utils/escape.js"></script>
     <script src="js/utils/toast.js"></script>
     <script src="js/utils/logger.js"></script>
+    <script src="js/utils/analytics.js"></script>   <!-- ПОСЛЕ ЛОГГЕРА, ДО ВСЕХ template -->
     
     <script src="js/templates/ui-templates.js"></script>
     <script src="js/templates/quiz-templates.js"></script>
     <script src="js/templates/map-templates.js"></script>
     <script src="js/templates/client-journey-templates.js"></script>
     <script src="js/templates/interactive-templates.js"></script>
+    <script src="js/templates/triple-templates.js"></script>  <!-- ПЕРЕМЕСТИТЕ СЮДА -->
+    
     <script src="js/dragdrop.js"></script>
     <script src="js/badges.js"></script>
     <script src="js/user.js"></script>
@@ -309,12 +312,7 @@
     <script src="js/stepRegistry.js"></script>
     <script src="js/stepRegistry-init.js"></script>
     
-    <script src="js/templates/triple-templates.js"></script>
-    
-    <script src="js/utils/analytics.js"></script>
-    <script src="js/utils/analytics.js"></script>
     <script src="js/app.js"></script>
-    
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
