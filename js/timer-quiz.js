@@ -55,7 +55,9 @@ async function runTimerQuizStep(step) {
         timerInterval: null,
         gameActive: true,
         answered: false,
-        correctAnswers: 0
+        correctAnswers: 0,
+        stepStartTime: Date.now(),  // Засекаем время начала шага
+        questionStartTime: null      // Время начала текущего вопроса
     };
     
     // Получаем рекорд
@@ -78,6 +80,24 @@ async function runTimerQuizStep(step) {
         const selectedValue = option.dataset.value;
         const currentQuestion = gameState.questions[gameState.currentIndex];
         const isCorrect = checkQuizAnswer(currentQuestion, [selectedValue]);
+        
+        // Рассчитываем время на вопрос
+        let timeSpentOnQuestion = 0;
+        if (gameState.questionStartTime) {
+            timeSpentOnQuestion = Math.round((Date.now() - gameState.questionStartTime) / 1000);
+        }
+        
+        // Отправляем аналитику ответа
+        if (typeof sendQuizAnswer === 'function') {
+            sendQuizAnswer(
+                currentQuestion.id,
+                currentQuestion.text,
+                [selectedValue],
+                isCorrect,
+                timeSpentOnQuestion,
+                false
+            );
+        }
         
         gameState.answered = true;
         
@@ -127,6 +147,9 @@ async function runTimerQuizStep(step) {
         
         quizContainer.innerHTML = renderTimerQuizGame(state.score, state.timeLeft, hs, q, progress, state.currentIndex);
         
+        // Засекаем время начала текущего вопроса
+        state.questionStartTime = Date.now();
+        
         // Обновляем отображение счёта после рендера
         setTimeout(() => {
             updateScoreDisplay(state.score);
@@ -153,6 +176,25 @@ async function runTimerQuizStep(step) {
                 state.answered = true;
                 
                 const currentQuestion = state.questions[state.currentIndex];
+                
+                // Рассчитываем время на вопрос при истечении времени
+                let timeSpentOnQuestion = 0;
+                if (state.questionStartTime) {
+                    timeSpentOnQuestion = Math.round((Date.now() - state.questionStartTime) / 1000);
+                }
+                
+                // Отправляем аналитику неотвеченного вопроса
+                if (typeof sendQuizAnswer === 'function') {
+                    sendQuizAnswer(
+                        currentQuestion.id,
+                        currentQuestion.text,
+                        [],
+                        false,
+                        timeSpentOnQuestion,
+                        false
+                    );
+                }
+                
                 highlightAnswers(currentQuestion, null);
                 showToast('⏰', 'Время вышло!', 'error');
                 state.score -= 3;
@@ -228,6 +270,28 @@ async function runTimerQuizStep(step) {
         }
         
         const totalQuestions = state.questions.length;
+        
+        // Отправляем аналитику результата шага
+        if (typeof sendStepResult === 'function') {
+            sendStepResult(
+                AppState.currentStepIndex,
+                'timer-quiz',
+                step.title,
+                state.correctAnswers,
+                totalQuestions,
+                { score: state.score, is_new_record: isNewRecord }
+            );
+        }
+        
+        // Фиксируем время окончания шага
+        if (typeof endStepTimer === 'function') {
+            endStepTimer(true, { 
+                score: state.score, 
+                correct: state.correctAnswers, 
+                total: totalQuestions,
+                is_new_record: isNewRecord 
+            });
+        }
         
         AppState.stepStats.push({
             step: AppState.currentStepIndex + 1,

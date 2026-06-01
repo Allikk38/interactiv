@@ -135,6 +135,9 @@ function selectJk(id) {
     StoreInstance.setSelectedJkId(id);
     updateSelectedCard();
     
+    // Засекаем время от выбора ЖК до клика по карте
+    window.jkSelectionTime = Date.now();
+    
     const allJks = StoreInstance.getAllJks();
     const jk = allJks.find(j => j.id === id);
     if (jk) {
@@ -175,6 +178,20 @@ function updateMapProgress() {
     
     if (placed === total && total > 0) {
         showContinueButton();
+        // Отправляем аналитику завершения шага карты
+        if (typeof sendStepResult === 'function') {
+            sendStepResult(
+                StoreInstance.getCurrentStepIndex(),
+                'map',
+                StoreInstance.getCurrentScenario()?.steps[StoreInstance.getCurrentStepIndex()]?.title,
+                placed,
+                total
+            );
+        }
+        // Фиксируем время окончания шага
+        if (typeof endStepTimer === 'function') {
+            endStepTimer(true, { placed: placed, total: total });
+        }
     }
 }
 
@@ -196,6 +213,28 @@ function onMapClick(e) {
     
     const distance = getDistance(lat, lng, jk.lat, jk.lng);
     const isCorrect = distance <= jk.radius;
+    
+    // Рассчитываем время от выбора ЖК до клика
+    let timeToPlaceSec = 0;
+    if (window.jkSelectionTime) {
+        timeToPlaceSec = Math.round((Date.now() - window.jkSelectionTime) / 1000);
+        window.jkSelectionTime = null;
+    }
+    
+    // Отправляем аналитику клика по карте
+    if (typeof sendMapClick === 'function') {
+        sendMapClick(
+            jk.id,
+            jk.name,
+            lat,
+            lng,
+            jk.lat,
+            jk.lng,
+            distance,
+            isCorrect,
+            timeToPlaceSec
+        );
+    }
     
     if (isCorrect) {
         StoreInstance.addPlacedJk(jk.id, { lat, lng, correct: true });

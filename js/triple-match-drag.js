@@ -68,7 +68,8 @@ async function runTripleMatchDragStep(step) {
         gameActive: true,
         checked: false,
         roundChecked: false,
-        dragDropInstance: null
+        dragDropInstance: null,
+        stepStartTime: Date.now()  // Засекаем время начала шага
     };
     
     // Запускаем первый раунд
@@ -142,21 +143,26 @@ function getValueDisplayName(attrKey, value) {
             'комфорт': 'Комфорт',
             'бизнес': 'Бизнес',
             'премиум': 'Премиум',
+            'стандарт': 'Стандарт',
             // build_tech
             'монолит': 'Монолит',
             'кирпич': 'Кирпич',
             'панель': 'Панель',
+            'панельный': 'Панельный',
             'монолит-кирпич': 'Монолит-кирпич',
+            'кирпично-монолитный': 'Кирпично-монолитный',
             // finish_type
             'черновая': 'Черновая',
             'white_box': 'White box',
             'чистовая': 'Чистовая',
             'под_ключ': 'Под ключ',
+            'под ключ!': 'Под ключ',
             // parking_type
             'подземная': 'Подземная',
             'наземная': 'Наземная',
             'многоуровневый': 'Многоуровневый',
-            'отсутствует': 'Нет'
+            'отсутствует': 'Нет',
+            'стоянка': 'Стоянка'
         };
         return mappings[value.toLowerCase()] || value;
     }
@@ -247,7 +253,6 @@ function initTripleMatchDragDrop() {
     
     // Удаляем старые обработчики
     if (state.dragDropInstance) {
-        // Просто обнуляем, пересоздадим заново
         state.dragDropInstance = null;
     }
     
@@ -474,15 +479,11 @@ function checkTripleMatchRound() {
             targetValue = targetValue ? 'Есть' : 'Нет';
         }
         
-        // Приводим к строке
+        // Приводим к строке для сравнения
         const attrValueStr = String(attr.attrValue).toLowerCase();
         const targetValueStr = String(targetValue).toLowerCase();
         
-        // ПРОВЕРКА НА ЧАСТИЧНОЕ СОВПАДЕНИЕ
-        // Характеристика правильная, если:
-        // 1. Значения полностью совпадают, ИЛИ
-        // 2. Значение характеристики содержится в значении ЖК (для случаев с перечислением через запятую)
-        // 3. Значение ЖК содержится в значении характеристики
+        // Проверка на частичное совпадение (для случаев с перечислением через запятую)
         const isExactMatch = (attrValueStr === targetValueStr);
         const isPartialMatch = (targetValueStr.includes(attrValueStr) || attrValueStr.includes(targetValueStr));
         const isCorrect = isExactMatch || isPartialMatch;
@@ -529,10 +530,11 @@ function checkTripleMatchRound() {
         round: state.currentRound,
         correct: correctCount,
         wrong: wrongCount,
-        total: state.currentAttributes.filter(a => a.placedInJkId !== null).length,
+        total: state.currentAttributes.length,
         score: roundScore
     });
     
+    // Показываем обратную связь
     const feedbackDiv = document.getElementById('triple-feedback');
     if (feedbackDiv) {
         const feedbackClass = roundScore >= 0 ? 'triple-feedback--success' : 'triple-feedback--error';
@@ -545,11 +547,13 @@ function checkTripleMatchRound() {
         feedbackDiv.style.display = 'block';
     }
     
+    // Обновляем счёт на экране
     const scoreEl = document.getElementById('triple-score-value');
     if (scoreEl) {
         scoreEl.textContent = state.totalScore;
     }
     
+    // Показываем кнопку "Далее"
     const checkBtn = document.getElementById('triple-check-btn');
     const nextBtn = document.getElementById('triple-next-btn');
     if (checkBtn) checkBtn.style.display = 'none';
@@ -584,6 +588,28 @@ function finishTripleMatchGame() {
     // Сохраняем статистику
     const totalCorrect = state.roundResults.reduce((sum, r) => sum + r.correct, 0);
     const totalItems = state.roundResults.reduce((sum, r) => sum + r.total, 0);
+    
+    // Отправляем аналитику результата шага
+    if (typeof sendStepResult === 'function') {
+        sendStepResult(
+            AppState.currentStepIndex,
+            'triple-match-drag',
+            AppState.currentScenario.steps[AppState.currentStepIndex].title,
+            totalCorrect,
+            totalItems,
+            { total_score: state.totalScore, rounds: state.roundResults.length }
+        );
+    }
+    
+    // Фиксируем время окончания шага
+    if (typeof endStepTimer === 'function') {
+        endStepTimer(true, { 
+            total_correct: totalCorrect, 
+            total_items: totalItems,
+            total_score: state.totalScore,
+            rounds_completed: state.roundResults.length
+        });
+    }
     
     AppState.stepStats.push({
         step: AppState.currentStepIndex + 1,

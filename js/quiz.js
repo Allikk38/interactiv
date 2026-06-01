@@ -72,13 +72,12 @@ function renderQuestion(index) {
     const options = quizContainer.querySelectorAll('.quiz-option');
     const hintEl = document.getElementById('quiz-hint');
     let checked = false;
+    let questionStartTime = Date.now(); // Засекаем время на вопрос
     
     // Восстанавливаем сохранённый ответ, если есть
     const savedAnswer = getSavedAnswerForQuestion(q.id);
     if (savedAnswer) {
         restoreSavedAnswer(savedAnswer, options, isCheckbox);
-        // Если ответ уже был выбран, проверяем его автоматически?
-        // Пока просто восстанавливаем визуально, без авто-проверки
     }
 
     options.forEach(opt => {
@@ -107,6 +106,21 @@ function renderQuestion(index) {
             const selectedInputs = quizContainer.querySelectorAll('input:checked');
             const userAnswers = Array.from(selectedInputs).map(inp => inp.value);
             const isCorrect = checkQuizAnswer(q, userAnswers);
+            
+            // Рассчитываем время на вопрос
+            const timeSpentOnQuestion = (Date.now() - questionStartTime) / 1000;
+            
+            // Отправляем детальную аналитику ответа
+            if (typeof sendQuizAnswer === 'function') {
+                sendQuizAnswer(
+                    q.id,
+                    q.text,
+                    userAnswers,
+                    isCorrect,
+                    Math.round(timeSpentOnQuestion),
+                    false // hint_used — можно расширить позже
+                );
+            }
             
             // Сохраняем ответ
             saveQuizAnswer(q.id, userAnswers, isCorrect);
@@ -179,6 +193,22 @@ function checkQuizAnswer(question, userAnswers) {
 function finishQuizStep() {
     const correctCount = AppState.quizAnswers.filter(a => a.isCorrect).length;
     const totalCount = AppState.quizAnswers.length;
+    
+    // Отправляем аналитику результата шага
+    if (typeof sendStepResult === 'function') {
+        sendStepResult(
+            AppState.currentStepIndex,
+            'quiz',
+            AppState.currentScenario.steps[AppState.currentStepIndex].title,
+            correctCount,
+            totalCount
+        );
+    }
+    
+    // Фиксируем время окончания шага
+    if (typeof endStepTimer === 'function') {
+        endStepTimer(true, { correct: correctCount, total: totalCount });
+    }
     
     AppState.stepStats.push({
         step: AppState.currentStepIndex + 1,

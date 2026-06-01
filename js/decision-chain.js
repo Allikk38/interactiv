@@ -1,9 +1,6 @@
 // ===== ЦЕПОЧКА РЕШЕНИЙ (DECISION CHAIN) =====
 // Интерактивный сценарий: серия выборов, где каждый ответ влияет на следующую реплику клиента
 
-// ===== ЦЕПОЧКА РЕШЕНИЙ (DECISION CHAIN) =====
-// Интерактивный сценарий: серия выборов, где каждый ответ влияет на следующую реплику клиента
-
 /**
  * Запускает шаг "Цепочка решений"
  * @param {Object} step - объект шага из сценария
@@ -42,7 +39,8 @@ async function runDecisionChainStep(step) {
         history: [],
         stepHistory: [],
         pendingDocumentSelection: false,
-        selectedDocuments: []
+        selectedDocuments: [],
+        stepStartTime: Date.now()  // Засекаем время начала шага
     };
     
     // Рендерим первый шаг
@@ -408,6 +406,23 @@ async function runDecisionChainStep(step) {
         const finalTrust = state.trust;
         const totalSteps = state.chains.length;
         const completedSteps = state.stepHistory.length + 1;
+        
+        // Отправляем аналитику результата шага
+        if (typeof sendStepResult === 'function') {
+            sendStepResult(
+                AppState.currentStepIndex,
+                'decision-chain',
+                step.title,
+                isWin ? 1 : 0,
+                1,
+                { final_trust: finalTrust, steps_completed: completedSteps, is_win: isWin }
+            );
+        }
+        
+        // Фиксируем время окончания шага
+        if (typeof endStepTimer === 'function') {
+            endStepTimer(true, { is_win: isWin, final_trust: finalTrust });
+        }
         
         AppState.stepStats.push({
             step: AppState.currentStepIndex + 1,

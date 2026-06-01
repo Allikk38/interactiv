@@ -22,6 +22,7 @@ function runPlatformsStep(step) {
 
     const checkBtn = document.getElementById('interactive-check-btn');
     let stepChecked = false;
+    let stepStartTime = Date.now();
 
     if (typeof DragDrop !== 'undefined') {
         DragDrop.init({
@@ -32,6 +33,10 @@ function runPlatformsStep(step) {
 
     checkBtn.addEventListener('click', () => {
         if (stepChecked) {
+            // Фиксируем время окончания шага
+            if (typeof endStepTimer === 'function') {
+                endStepTimer(true);
+            }
             AppState.currentStepIndex++;
             runStep();
             return;
@@ -64,6 +69,17 @@ function runPlatformsStep(step) {
             item.style.pointerEvents = 'none';
             item.classList.add('platform-item--wrong');
         });
+
+        // Отправляем аналитику результата шага
+        if (typeof sendStepResult === 'function') {
+            sendStepResult(
+                AppState.currentStepIndex,
+                'platforms',
+                step.title,
+                correct,
+                total
+            );
+        }
 
         AppState.stepStats.push({
             step: AppState.currentStepIndex + 1,
@@ -116,6 +132,7 @@ function runRule3tStep(step) {
 
     const checkBtn = document.getElementById('interactive-check-btn');
     let stepChecked = false;
+    let stepStartTime = Date.now();
 
     document.querySelectorAll('.rule3t-option').forEach(opt => {
         opt.addEventListener('click', () => {
@@ -130,6 +147,9 @@ function runRule3tStep(step) {
 
     checkBtn.addEventListener('click', () => {
         if (stepChecked) {
+            if (typeof endStepTimer === 'function') {
+                endStepTimer(true);
+            }
             AppState.currentStepIndex++;
             runStep();
             return;
@@ -147,6 +167,16 @@ function runRule3tStep(step) {
             });
             if (selected === p.correct) correct++;
         });
+
+        if (typeof sendStepResult === 'function') {
+            sendStepResult(
+                AppState.currentStepIndex,
+                'rule3t',
+                step.title,
+                correct,
+                3
+            );
+        }
 
         AppState.stepStats.push({
             step: AppState.currentStepIndex + 1,
@@ -198,6 +228,7 @@ function runProfileStep(step) {
 
     const checkBtn = document.getElementById('interactive-check-btn');
     let stepChecked = false;
+    let stepStartTime = Date.now();
 
     document.querySelectorAll('.profile-option').forEach(opt => {
         opt.addEventListener('click', () => {
@@ -212,6 +243,9 @@ function runProfileStep(step) {
 
     checkBtn.addEventListener('click', () => {
         if (stepChecked) {
+            if (typeof endStepTimer === 'function') {
+                endStepTimer(true);
+            }
             AppState.currentStepIndex++;
             runStep();
             return;
@@ -227,6 +261,16 @@ function runProfileStep(step) {
             if (opt.classList.contains('profile-option--selected') && isCorrect) correct++;
             opt.style.pointerEvents = 'none';
         });
+
+        if (typeof sendStepResult === 'function') {
+            sendStepResult(
+                AppState.currentStepIndex,
+                'profile',
+                step.title,
+                correct,
+                data.sections.length
+            );
+        }
 
         AppState.stepStats.push({
             step: AppState.currentStepIndex + 1,
@@ -284,6 +328,7 @@ function runContentPlanStep(step) {
 
     const checkBtn = document.getElementById('interactive-check-btn');
     let stepChecked = false;
+    let stepStartTime = Date.now();
 
     if (typeof DragDrop !== 'undefined') {
         DragDrop.init({
@@ -294,6 +339,9 @@ function runContentPlanStep(step) {
 
     checkBtn.addEventListener('click', () => {
         if (stepChecked) {
+            if (typeof endStepTimer === 'function') {
+                endStepTimer(true);
+            }
             AppState.currentStepIndex++;
             runStep();
             return;
@@ -319,6 +367,16 @@ function runContentPlanStep(step) {
             item.setAttribute('draggable', 'false');
             item.style.pointerEvents = 'none';
         });
+
+        if (typeof sendStepResult === 'function') {
+            sendStepResult(
+                AppState.currentStepIndex,
+                'content-plan',
+                step.title,
+                correct,
+                total
+            );
+        }
 
         AppState.stepStats.push({
             step: AppState.currentStepIndex + 1,
@@ -371,6 +429,7 @@ function runFunnelStep(step) {
     const container = document.getElementById('funnel-container');
     const checkBtn = document.getElementById('interactive-check-btn');
     let stepChecked = false;
+    let stepStartTime = Date.now();
     let draggedItem = null;
 
     if (container) {
@@ -409,6 +468,9 @@ function runFunnelStep(step) {
 
     checkBtn.addEventListener('click', () => {
         if (stepChecked) {
+            if (typeof endStepTimer === 'function') {
+                endStepTimer(true);
+            }
             AppState.currentStepIndex++;
             runStep();
             return;
@@ -430,6 +492,16 @@ function runFunnelStep(step) {
                 item.setAttribute('draggable', 'false');
                 item.style.pointerEvents = 'none';
             });
+        }
+
+        if (typeof sendStepResult === 'function') {
+            sendStepResult(
+                AppState.currentStepIndex,
+                'funnel',
+                step.title,
+                correct,
+                total
+            );
         }
 
         AppState.stepStats.push({
@@ -487,6 +559,7 @@ function runAiToolsStep(step) {
 
     const checkBtn = document.getElementById('interactive-check-btn');
     let stepChecked = false;
+    let stepStartTime = Date.now();
 
     if (typeof DragDrop !== 'undefined') {
         DragDrop.init({
@@ -497,6 +570,9 @@ function runAiToolsStep(step) {
 
     checkBtn.addEventListener('click', () => {
         if (stepChecked) {
+            if (typeof endStepTimer === 'function') {
+                endStepTimer(true);
+            }
             AppState.currentStepIndex++;
             runStep();
             return;
@@ -525,6 +601,16 @@ function runAiToolsStep(step) {
             task.style.pointerEvents = 'none';
             task.classList.add('ai-task--wrong');
         });
+
+        if (typeof sendStepResult === 'function') {
+            sendStepResult(
+                AppState.currentStepIndex,
+                'ai-tools',
+                step.title,
+                correct,
+                total
+            );
+        }
 
         AppState.stepStats.push({
             step: AppState.currentStepIndex + 1,
@@ -577,6 +663,7 @@ function runAnalyticsStep(step) {
     const checkBtn = document.getElementById('interactive-check-btn');
     const hintEl = document.getElementById('interactive-hint');
     let stepChecked = false;
+    let stepStartTime = Date.now();
 
     // Получаем все чекбоксы после рендера
     const checkboxes = quizContainer.querySelectorAll('input[type="checkbox"]');
@@ -613,6 +700,9 @@ function runAnalyticsStep(step) {
 
     checkBtn.addEventListener('click', () => {
         if (stepChecked) {
+            if (typeof endStepTimer === 'function') {
+                endStepTimer(true);
+            }
             AppState.currentStepIndex++;
             runStep();
             return;
@@ -635,6 +725,16 @@ function runAnalyticsStep(step) {
                 if (label) label.classList.add('analytics-option--missed');
             }
         });
+
+        if (typeof sendStepResult === 'function') {
+            sendStepResult(
+                AppState.currentStepIndex,
+                'analytics',
+                step.title,
+                correct,
+                total
+            );
+        }
 
         AppState.stepStats.push({
             step: AppState.currentStepIndex + 1,

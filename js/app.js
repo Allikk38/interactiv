@@ -58,6 +58,9 @@ async function loadData() {
 
         // Настройка автосохранения перед закрытием страницы
         setupAutoSave();
+        
+        // Инициализация аналитики
+        initAnalytics();
 
     } catch (error) {
         logError('Ошибка загрузки:', error);
@@ -159,6 +162,16 @@ function startScenarioFresh(scenario) {
     AppState.quizAnswers = [];
     AppState.placedJks = new Map();
     AppState.scenarioStartTime = Date.now();
+
+    // Отправляем аналитику старта сценария
+    if (typeof sendScenarioStart === 'function') {
+        sendScenarioStart(scenario.id, scenario.name, scenario.steps.length);
+    }
+    
+    // Засекаем время для первого шага
+    if (typeof startStepTimer === 'function') {
+        startStepTimer();
+    }
 
     document.getElementById('scenario-screen').classList.add('hidden');
     document.getElementById('header-info').innerHTML = `${scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : ''} ${scenario.name}`;
@@ -344,6 +357,11 @@ function showContinueModal(scenario, savedProgress) {
         
         AppState.scenarioStartTime = Date.now();
         
+        // Засекаем время для продолженного шага
+        if (typeof startStepTimer === 'function') {
+            startStepTimer();
+        }
+        
         document.getElementById('scenario-screen').classList.add('hidden');
         document.getElementById('header-info').innerHTML = `${scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : ''} ${scenario.name}`;
         
@@ -388,6 +406,11 @@ function runStep() {
     if (step.type === 'finish') {
         showFinish();
         return;
+    }
+
+    // Засекаем время для нового шага (если не было засечено ранее)
+    if (typeof startStepTimer === 'function') {
+        startStepTimer();
     }
 
     const handled = StepRegistry.run(step, AppState);
@@ -440,6 +463,18 @@ function showFinish() {
     document.getElementById('finish-text').textContent = `Вы успешно завершили сценарий «${AppState.currentScenario?.name}»!`;
     document.getElementById('finish-stats').textContent = `Правильно: ${totalCorrect} из ${totalItems}`;
 
+    // Отправляем аналитику завершения сценария
+    if (typeof sendScenarioComplete === 'function' && AppState.currentScenario) {
+        sendScenarioComplete(
+            AppState.currentScenario.id,
+            AppState.currentScenario.name,
+            AppState.currentStepIndex + 1,
+            AppState.currentScenario.steps.length,
+            totalCorrect,
+            isPerfect
+        );
+    }
+
     const xpResult = User.sendResult(
         AppState.currentScenario?.name || '',
         AppState.stepStats,
@@ -480,6 +515,17 @@ function showFinish() {
 
 // ===== НАВИГАЦИЯ =====
 function exitToScenarios() {
+    // Отправляем аналитику выхода (drop-off)
+    if (AppState.currentScenario && typeof sendScenarioDropOff === 'function') {
+        sendScenarioDropOff(
+            AppState.currentScenario.id,
+            AppState.currentScenario.name,
+            AppState.currentStepIndex,
+            AppState.currentScenario.steps.length,
+            AppState.currentScenario.steps[AppState.currentStepIndex]?.type
+        );
+    }
+    
     saveCurrentProgress();
     AppState.currentScenario = null;
     AppState.placedJks = new Map();
@@ -493,6 +539,35 @@ function exitToScenarios() {
     if (typeof renderScenarios === 'function') {
         renderScenarios();
     }
+}
+
+// ===== ИНИЦИАЛИЗАЦИЯ АНАЛИТИКИ =====
+function initAnalytics() {
+    // Отслеживаем закрытие/уход со страницы
+    window.addEventListener('beforeunload', () => {
+        if (AppState.currentScenario && typeof sendScenarioDropOff === 'function') {
+            sendScenarioDropOff(
+                AppState.currentScenario.id,
+                AppState.currentScenario.name,
+                AppState.currentStepIndex,
+                AppState.currentScenario.steps.length,
+                AppState.currentScenario.steps[AppState.currentStepIndex]?.type
+            );
+        }
+    });
+    
+    // Отслеживаем скрытие страницы (мобильные)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && AppState.currentScenario && typeof sendScenarioDropOff === 'function') {
+            sendScenarioDropOff(
+                AppState.currentScenario.id,
+                AppState.currentScenario.name,
+                AppState.currentStepIndex,
+                AppState.currentScenario.steps.length,
+                AppState.currentScenario.steps[AppState.currentStepIndex]?.type
+            );
+        }
+    });
 }
 
 // Обработчики кнопок
@@ -520,7 +595,13 @@ if (hintBtn) {
     hintBtn.addEventListener('click', () => {
         if (AppState.selectedJkId === null) return;
         const jk = AppState.allJks.find(j => j.id === AppState.selectedJkId);
-        if (jk) showToast('💡', jk.hint, 'error');
+        if (jk) {
+            showToast('💡', jk.hint, 'error');
+            // Отправляем аналитику использования подсказки
+            if (typeof sendHintUsed === 'function') {
+                sendHintUsed('map', 'Расстановка ЖК', 'location_hint');
+            }
+        }
     });
 }
 
