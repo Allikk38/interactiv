@@ -1088,5 +1088,28 @@
       "type": "finish"
     }
   ]
+},
+{
+  "id": "triple-match-test",
+  "group": "Быстрые игры",
+  "order": 10,
+  "icon": "fa-layer-group",
+  "badge": "Тройной эксперт",
+  "name": "🔷 Тройная экспертиза",
+  "description": "Сопоставьте каждому ЖК 3 правильные характеристики. 5 раундов, +10 XP за верный ответ, -5 XP за ошибку.",
+  "steps": [
+    {
+      "type": "triple-match-drag",
+      "title": "Тройная экспертиза — раунд 1",
+      "rounds": 5,
+      "pointsPerCorrect": 10,
+      "pointsPerWrong": -5,
+      "attributesPerJk": 3,
+      "availableAttributes": ["class_segment", "build_tech", "finish_type", "parking_type", "has_concierge"]
+    },
+    {
+      "type": "finish"
+    }
+  ]
 }
 ]

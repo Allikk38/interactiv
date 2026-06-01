@@ -7,7 +7,16 @@
     "lat": 55.033584, 
     "lng": 82.910113,
     "radius": 500,
-    "hint": "Центр города, рядом с ЦУМом и станцией метро Площадь Ленина"
+    "hint": "Центр города, рядом с ЦУМом и станцией метро Площадь Ленина",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 2,
@@ -17,7 +26,16 @@
     "lat": 55.100994, 
     "lng": 82.944019, 
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 3,
@@ -27,7 +45,16 @@
     "lat": 55.062710, 
     "lng": 82.906703,  
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 4,
@@ -37,7 +64,16 @@
     "lat": 55.123224, 
     "lng": 82.923349,  
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 5,
@@ -47,7 +83,16 @@
     "lat": 54.927470, 
     "lng": 82.923825,  
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 6,
@@ -57,7 +102,16 @@
     "lat": 54.944249, 
     "lng": 82.902329, 
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "Стандарт",
+    "build_tech": "Панельный",
+    "facade_type": "Вент.фасад (кирпич), Комбинированный",
+    "finish_type": "Под Ключ!",
+    "parking_type": "Стоянка",
+    "ceiling_height": "2.69 ",
+    "has_concierge": false,
+    "has_playground": false,
+    "year_built": 2025
   },
   {
     "id": 7,
@@ -67,7 +121,16 @@
     "lat": 54.871460,
     "lng": 83.132285, 
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 8,
@@ -77,7 +140,16 @@
     "lat": 55.082791, 
     "lng": 82.965635,
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 9,
@@ -87,7 +159,16 @@
     "lat": 55.058528, 
     "lng": 82.924571, 
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 10,
@@ -97,7 +178,16 @@
     "lat": 54.967557,  
     "lng": 82.959948,
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 11,
@@ -107,7 +197,16 @@
     "lat": 55.057156, 
     "lng": 82.914878,  
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 12,
@@ -117,7 +216,16 @@
     "lat": 54.991208, 
     "lng": 82.970957,
     "radius": 400,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 13,
@@ -127,7 +235,16 @@
     "lat": 55.047494,  
     "lng": 82.925615,
     "radius": 400,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 14,
@@ -137,7 +254,16 @@
     "lat": 54.919584, 
     "lng": 82.970226, 
     "radius": 400,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 15,
@@ -147,7 +273,16 @@
     "lat": 55.006703,  
     "lng": 82.956112,
     "radius": 400,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 16,
@@ -157,7 +292,16 @@
     "lat": 55.014190, 
     "lng": 82.936388, 
     "radius": 400,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 17,
@@ -167,7 +311,16 @@
     "lat": 55.038851, 
     "lng": 82.948434, 
     "radius": 400,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 18,
@@ -177,7 +330,16 @@
     "lat": 55.080165, 
     "lng": 82.902496, 
     "radius": 400,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 19,
@@ -187,7 +349,16 @@
     "lat": 55.085029, 
     "lng": 82.926028, 
     "radius": 400,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 20,
@@ -197,7 +368,16 @@
     "lat": 55.051264, 
     "lng": 82.997543, 
     "radius": 400,
-    "hint": "Рядом с Михайловской набережной и Речным вокзалом"
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   { 
     "id": 21,
@@ -207,7 +387,16 @@
     "lat": 54.981144, 
     "lng": 82.797210,
     "radius": 600,
-    "hint": "Ленинский район, недалеко от площади Маркса"
+    "hint": "Я думаю все и так знают где это",
+    "class_segment": "Стандарт",
+    "build_tech": "Кирпично-монолитный, Панельный",
+    "facade_type": "Кирпич, Панель",
+    "finish_type": "Под Ключ!",
+    "parking_type": "Подземный паркинг, Стоянка",
+    "ceiling_height": "от 2.63 до 2.72 м",
+    "has_concierge": false,
+    "has_playground": true,
+    "year_built": 2025
   },
   {
     "id": 22,
@@ -217,7 +406,16 @@
     "lat": 55.117945, 
     "lng": 82.947948, 
     "radius": 600,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 23,
@@ -227,7 +425,16 @@
     "lat": 54.982560,  
     "lng": 82.686723,
     "radius": 600,
-    "hint": ""
+    "hint": "Название хорошо описывает главную особенность локации",
+    "class_segment": "Стандарт",
+    "build_tech": "Панелный",
+    "facade_type": "Комбинированный",
+    "finish_type": "Под Ключ!",
+    "parking_type": "Стоянка",
+    "ceiling_height": 2.63,
+    "has_concierge": false,
+    "has_playground": false,
+    "year_built": 2027
   },
   {
     "id": 24,
@@ -237,7 +444,16 @@
     "lat": 55.114224, 
     "lng": 82.978856, 
     "radius": 600,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 25,
@@ -247,7 +463,16 @@
     "lat": 55.115646, 
     "lng": 82.927167,
     "radius": 500,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 26,
@@ -257,7 +482,16 @@
     "lat": 55.025144, 
     "lng": 82.816425, 
     "radius": 500,
-    "hint": ""
+    "hint": "",
+    "class_segment": "Комфорт",
+    "build_tech": "Панельный, Монолитный",
+    "facade_type": "Штукатурка",
+    "finish_type": "Под Ключ!",
+    "parking_type": "Отдельный многоуровневый паркинг",
+    "ceiling_height": 2.69,
+    "has_concierge": false,
+    "has_playground": true,
+    "year_built": 2027
   },
   {
     "id": 27,
@@ -267,7 +501,16 @@
     "lat": 54.975031, 
     "lng": 82.809074, 
     "radius": 500,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 28,
@@ -277,7 +520,16 @@
     "lat": 55.053744,  
     "lng": 82.949422,
     "radius": 500,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 29,
@@ -287,7 +539,16 @@
     "lat": 54.940008,  
     "lng": 82.964861, 
     "radius": 500,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 30,
@@ -297,7 +558,16 @@
     "lat": 54.985627,   
     "lng": 82.833009, 
     "radius": 500,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 31,
@@ -307,7 +577,16 @@
     "lat": 55.042546,  
     "lng": 82.967932,
     "radius": 450,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 32,
@@ -317,7 +596,16 @@
     "lat": 55.087195,  
     "lng": 82.941399,
     "radius": 450,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 33,
@@ -327,7 +615,16 @@
     "lat": 55.080968,  
     "lng": 82.923103, 
     "radius": 450,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 34,
@@ -337,7 +634,16 @@
     "lat": 54.946099,  
     "lng": 82.942597, 
     "radius": 450,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 35,
@@ -347,7 +653,16 @@
     "lat": 55.042978,   
     "lng": 83.025536,
     "radius": 450,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 36,
@@ -357,7 +672,16 @@
     "lat": 55.021425,   
     "lng": 82.976970, 
     "radius": 450,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 37,
@@ -367,7 +691,16 @@
     "lat": 55.038960,    
     "lng": 82.950085,
     "radius": 450,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 38,
@@ -377,7 +710,16 @@
     "lat": 55.046443, 
     "lng": 82.857031,
     "radius": 400,
-    "hint": "Укрылась у Берега под Соснами"
+    "hint": "Укрылась у Берега под Соснами",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 39,
@@ -387,7 +729,16 @@
     "lat": 55.032984,  
     "lng": 82.945289,
     "radius": 400,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 40,
@@ -397,7 +748,16 @@
     "lat": 55.072747, 
     "lng": 82.898448,
     "radius": 350,
-    "hint": "А вот не подскакжу"
+    "hint": "А вот не подскакжу",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 41,
@@ -407,7 +767,16 @@
     "lat": 55.022182, 
     "lng": 82.860665, 
     "radius": 350,
-    "hint": "А вот не подскакжу"
+    "hint": "А вот не подскакжу",
+    "class_segment": "Стандарт",
+    "build_tech": "Панельный",
+    "facade_type": "Штукатурка",
+    "finish_type": "Под Ключ!",
+    "parking_type": "Стоянка",
+    "ceiling_height": "от 2.65 до 2.7 м",
+    "has_concierge": false,
+    "has_playground": false,
+    "year_built": 2024
   },
   {
     "id": 42,
@@ -417,7 +786,16 @@
     "lat": 55.199426, 
     "lng": 83.141001, 
     "radius": 350,
-    "hint": "А вот не подскакжу"
+    "hint": "А вот не подскакжу",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 43,
@@ -427,7 +805,16 @@
     "lat": 54.999457, 
     "lng": 83.006202, 
     "radius": 350,
-    "hint": "А вот не подскакжу"
+    "hint": "А вот не подскакжу",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 44,
@@ -437,7 +824,16 @@
     "lat": 55.051744, 
     "lng": 82.970184, 
     "radius": 500,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 45,
@@ -447,7 +843,16 @@
     "lat": 55.036401, 
     "lng": 82.951686, 
     "radius": 500,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 46,
@@ -457,7 +862,16 @@
     "lat": 55.038155, 
     "lng": 82.954826, 
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 47,
@@ -467,7 +881,16 @@
     "lat": 55.046247,  
     "lng": 82.859544,
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 48,
@@ -477,7 +900,16 @@
     "lat": 55.077268,  
     "lng": 82.923435,
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 49,
@@ -487,7 +919,16 @@
     "lat": 55.061826,  
     "lng": 82.942070,
     "radius": 500,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 50,
@@ -497,7 +938,16 @@
     "lat": 55.102809,  
     "lng": 82.937698,
     "radius": 500,
-    "hint": ""
+    "hint": "",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 51,
@@ -507,7 +957,16 @@
     "lat": 55.054135,   
     "lng": 82.900325,
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 52,
@@ -517,7 +976,16 @@
     "lat": 54.951576,   
     "lng": 83.215245,
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 53,
@@ -527,7 +995,16 @@
     "lat": 55.090772,  
     "lng": 82.947052, 
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 54,
@@ -537,7 +1014,16 @@
     "lat": 55.110265,   
     "lng": 82.922967,
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 55,
@@ -547,7 +1033,16 @@
     "lat": 54.991026,    
     "lng": 82.680597,
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 56,
@@ -557,7 +1052,16 @@
     "lat": 54.982977,   
     "lng": 82.683804,
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 57,
@@ -567,7 +1071,16 @@
     "lat": 54.992563,   
     "lng": 82.662560, 
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
   },
   {
     "id": 58,
@@ -577,6 +1090,91 @@
     "lat": 54.980271,    
     "lng": 82.684886,
     "radius": 500,
-    "hint": " "
+    "hint": " ",
+    "class_segment": "",
+    "build_tech": "",
+    "facade_type": "",
+    "finish_type": "",
+    "parking_type": "",
+    "ceiling_height": "",
+    "has_concierge": "",
+    "has_playground": "",
+    "year_built": ""
+  },
+  {
+    "id": 59,
+    "name": "Дивногорский",
+    "developer": "СЛК",
+    "sector": "B4",
+    "lat": 55.023012,     
+    "lng": 82.808591,
+    "radius": 500,
+    "hint": " ",
+    "class_segment": "Стандарт",
+    "build_tech": "Кирпичный",
+    "facade_type": "Облицовочный кирпич",
+    "finish_type": "Под Ключ!",
+    "parking_type": "Стоянка",
+    "ceiling_height": 2.7,
+    "has_concierge": false,
+    "has_playground": false,
+    "year_built": 2024
+  },
+  {
+    "id": 60,
+    "name": "Азимут",
+    "developer": "Вотэтодом",
+    "sector": "B4",
+    "lat": 54.960983,     
+    "lng": 82.838964,
+    "radius": 500,
+    "hint": " ",
+    "class_segment": "Стандарт",
+    "build_tech": "Панельный",
+    "facade_type": "Штукатурка",
+    "finish_type": "Под Ключ!",
+    "parking_type": "Стоянка",
+    "ceiling_height": 2.71,
+    "has_concierge": false,
+    "has_playground": false,
+    "year_built": 2024
+  },
+  {
+    "id": 61,
+    "name": "Аэрон",
+    "developer": "СГ Девелопмент",
+    "sector": "B4",
+    "lat": 54.982033,      
+    "lng": 82.894539,
+    "radius": 500,
+    "hint": " ",
+    "class_segment": "Комфорт, Бизнес",
+    "build_tech": "Кирпично-монолитный, Кирпичный",
+    "facade_type": "Штукатурка, Комбинированный",
+    "finish_type": "Под Ключ!",
+    "parking_type": "Стоянка, Подземный паркинг, Отдельный многоуровневый паркинг, Механизированный паркинг",
+    "ceiling_height": "от 2.7 до 3.6 м",
+    "has_concierge": true,
+    "has_playground": true,
+    "year_built": 2026
+  },
+  {
+    "id": 62,
+    "name": "Башни YES",
+    "developer": "СЗ Аврора",
+    "sector": "B4",
+    "lat": 54.991699,       
+    "lng": 82.901625,
+    "radius": 500,
+    "hint": " ",
+    "class_segment": "Комфорт",
+    "build_tech": "Кирпично-монолитный",
+    "facade_type": "Комбинированный",
+    "finish_type": "Под Ключ!",
+    "parking_type": "Подземный паркинг",
+    "ceiling_height": 2.72,
+    "has_concierge": true,
+    "has_playground": true,
+    "year_built": 2030
   }
 ]

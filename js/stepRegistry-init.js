@@ -64,10 +64,16 @@
         logInfo('StepRegistry: зарегистрирован тип шага "timer-quiz"');
     }
     
-    // Из decision-chain.js (НОВЫЙ ТИП ШАГА)
+    // Из decision-chain.js
     if (typeof runDecisionChainStep === 'function') {
         StepRegistry.register('decision-chain', runDecisionChainStep);
         logInfo('StepRegistry: зарегистрирован тип шага "decision-chain"');
+    }
+    
+    // ИЗ triple-match-drag.js (НОВЫЙ ТИП ШАГА)
+    if (typeof runTripleMatchDragStep === 'function') {
+        StepRegistry.register('triple-match-drag', runTripleMatchDragStep);
+        logInfo('StepRegistry: зарегистрирован тип шага "triple-match-drag"');
     }
     
     // Из client-journey.js
