@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Девелопер — стройка с нуля | Тренажёр агента</title>
     
-    <!-- Базовые стили (те же, что на главной) -->
+    <!-- Базовые стили -->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/developer.css">
     
@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
-        /* Дополнительные стили только для страницы игры */
         .game-page {
             min-height: 100vh;
             background-color: var(--color-bg);
@@ -109,7 +108,7 @@
         </div>
     </div>
 
-    <!-- Скрипты (те же, что на главной) -->
+    <!-- Базовые скрипты -->
     <script src="js/config.js"></script>
     <script src="js/store.js"></script>
     <script src="js/utils/escape.js"></script>
@@ -117,29 +116,51 @@
     <script src="js/utils/logger.js"></script>
     <script src="js/user.js"></script>
     <script src="js/badges.js"></script>
+    
+    <!-- Модули игры Девелопер (порядок важен!) -->
+    <script src="js/developer/auction.js"></script>
+    <script src="js/developer/geology.js"></script>
+    <script src="js/developer/shape-drawing.js"></script>
+    <script src="js/developer/materials.js"></script>
+    <script src="js/developer/construction.js"></script>
+    <script src="js/developer/selling.js"></script>
+    
+    <!-- Рефакторинг: разделённые модули -->
+    <script src="js/developer/developer-core.js"></script>
+    <script src="js/developer/developer-ui.js"></script>
+    <script src="js/developer/developer-stages.js"></script>
+    <script src="js/developer/developer-admin.js"></script>
     <script src="js/developer/developer.js"></script>
     
     <script>
-        // Запускаем игру после загрузки
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('[Main] Запуск игры...');
+            console.log('[Main] Модули загружены:', {
+                AuctionModule: !!window.AuctionModule,
+                ShapeDrawing: !!window.ShapeDrawing,
+                MaterialsSelection: !!window.MaterialsSelection,
+                ConstructionModule: !!window.ConstructionModule,
+                DeveloperCore: !!window.DeveloperCore,
+                DeveloperUI: !!window.DeveloperUI,
+                DeveloperStages: !!window.DeveloperStages,
+                DeveloperAdmin: !!window.DeveloperAdmin,
+                DeveloperGame: !!window.DeveloperGame
+            });
+            
             if (window.DeveloperGame) {
                 window.DeveloperGame.init('developer-game-root');
+            } else {
+                console.error('[Main] DeveloperGame не загружен!');
+                document.getElementById('developer-game-root').innerHTML = `
+                    <div class="error-message" style="text-align:center; padding:40px;">
+                        <i class="fas fa-exclamation-triangle" style="font-size:3rem; color:#e74c3c;"></i>
+                        <p>Ошибка загрузки игры. Проверьте подключение файлов.</p>
+                        <p style="font-size:0.8rem; margin-top:10px;">Ожидаются файлы в папке js/developer/</p>
+                        <button onclick="location.reload()" class="btn btn--primary">Обновить</button>
+                    </div>
+                `;
             }
         });
-        
-        // Синхронизация монеток с XP
-        function syncCoins() {
-            if (!window.DeveloperGame || !window.User) return;
-            const user = User.get();
-            if (!user) return;
-            const xpProgress = User.getXPProgress();
-            const coinsFromXP = Math.floor(xpProgress.currentXP / 10);
-            if (window.DeveloperGame.syncCoins) {
-                window.DeveloperGame.syncCoins(coinsFromXP);
-            }
-        }
-        
-        setTimeout(syncCoins, 1000);
     </script>
 </body>
 </html>
