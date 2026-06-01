@@ -143,35 +143,16 @@ function startScenario(scenario) {
     const savedProgress = User.getDetailedScenarioProgress(scenario.id);
     
     if (savedProgress && savedProgress.stepIndex > 0 && savedProgress.stepIndex < scenario.steps.length - 1) {
-        // Спрашиваем, продолжить или начать заново
-        if (confirm(`У вас есть сохранённый прогресс сценария "${scenario.name}" (шаг ${savedProgress.stepIndex + 1} из ${scenario.steps.length}).\n\nПродолжить с сохранённого места?`)) {
-            AppState.currentScenario = scenario;
-            AppState.currentStepIndex = savedProgress.stepIndex;
-            AppState.stepStats = savedProgress.stepStats || [];
-            AppState.quizAnswers = savedProgress.quizAnswers || [];
-            
-            // Восстанавливаем прогресс карты, если есть
-            if (savedProgress.mapPlacedJks && savedProgress.mapPlacedJks.length > 0) {
-                AppState.placedJks = new Map(savedProgress.mapPlacedJks);
-            }
-            
-            AppState.scenarioStartTime = Date.now();
-            
-            document.getElementById('scenario-screen').classList.add('hidden');
-            document.getElementById('header-info').innerHTML = `${scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : ''} ${scenario.name}`;
-            
-            ProgressBar.init();
-            ProgressBar.update(savedProgress.stepIndex, scenario.steps.length - 1, scenario.steps);
-            
-            runStep();
-            return;
-        } else {
-            // Начинаем заново — очищаем сохранённый прогресс
-            User.clearScenarioProgress(scenario.id);
-        }
+        // Показываем модальное окно вместо confirm
+        showContinueModal(scenario, savedProgress);
+        return;
     }
     
     // Новый запуск
+    startScenarioFresh(scenario);
+}
+
+function startScenarioFresh(scenario) {
     AppState.currentScenario = scenario;
     AppState.currentStepIndex = 0;
     AppState.stepStats = [];
@@ -186,6 +167,204 @@ function startScenario(scenario) {
     ProgressBar.update(0, scenario.steps.length - 1, scenario.steps);
 
     runStep();
+}
+
+function showContinueModal(scenario, savedProgress) {
+    // Создаём модальное окно
+    const overlay = document.createElement('div');
+    overlay.className = 'continue-modal-overlay';
+    overlay.innerHTML = `
+        <div class="continue-modal">
+            <div class="continue-modal__icon">💾</div>
+            <h3 class="continue-modal__title">Найден сохранённый прогресс</h3>
+            <p class="continue-modal__text">
+                Сценарий <strong>${escapeHtml(scenario.name)}</strong> уже был начат ранее.
+            </p>
+            <div class="continue-modal__progress">
+                <div class="continue-modal__progress-bar">
+                    <div class="continue-modal__progress-fill" style="width: ${Math.round((savedProgress.stepIndex / scenario.steps.length) * 100)}%"></div>
+                </div>
+                <div class="continue-modal__progress-text">
+                    Пройдено шагов: ${savedProgress.stepIndex + 1} из ${scenario.steps.length}
+                </div>
+            </div>
+            <div class="continue-modal__actions">
+                <button class="btn btn--primary" id="continue-modal-resume">Продолжить</button>
+                <button class="btn btn--secondary" id="continue-modal-restart">Начать заново</button>
+            </div>
+            <button class="continue-modal__close" id="continue-modal-close">✕</button>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Добавляем стили для модального окна (если ещё нет)
+    if (!document.getElementById('continue-modal-styles')) {
+        const style = document.createElement('style');
+        style.id = 'continue-modal-styles';
+        style.textContent = `
+            .continue-modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 3000;
+                animation: fadeIn 0.3s ease;
+            }
+            
+            .continue-modal {
+                background: var(--color-surface);
+                border-radius: var(--radius);
+                max-width: 400px;
+                width: 90%;
+                padding: 32px 28px;
+                text-align: center;
+                position: relative;
+                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+                animation: slideUp 0.4s ease;
+            }
+            
+            .continue-modal__icon {
+                font-size: 3rem;
+                margin-bottom: 16px;
+            }
+            
+            .continue-modal__title {
+                font-size: 1.3rem;
+                font-weight: 700;
+                margin-bottom: 12px;
+                color: var(--color-text);
+            }
+            
+            .continue-modal__text {
+                font-size: 0.95rem;
+                color: var(--color-text-light);
+                margin-bottom: 20px;
+                line-height: 1.5;
+            }
+            
+            .continue-modal__progress {
+                margin: 20px 0;
+                padding: 16px;
+                background: var(--color-bg);
+                border-radius: var(--radius-sm);
+            }
+            
+            .continue-modal__progress-bar {
+                height: 8px;
+                background: var(--color-border);
+                border-radius: 4px;
+                overflow: hidden;
+                margin-bottom: 8px;
+            }
+            
+            .continue-modal__progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, var(--color-primary), var(--color-success));
+                border-radius: 4px;
+                transition: width 0.3s ease;
+            }
+            
+            .continue-modal__progress-text {
+                font-size: 0.8rem;
+                color: var(--color-text-light);
+            }
+            
+            .continue-modal__actions {
+                display: flex;
+                gap: 12px;
+                justify-content: center;
+                margin-top: 20px;
+            }
+            
+            .continue-modal__close {
+                position: absolute;
+                top: 16px;
+                right: 16px;
+                background: none;
+                border: none;
+                font-size: 1.2rem;
+                cursor: pointer;
+                color: var(--color-text-light);
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s ease;
+            }
+            
+            .continue-modal__close:hover {
+                background: var(--color-border);
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            @keyframes slideUp {
+                from {
+                    transform: translateY(30px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Обработчики кнопок
+    const resumeBtn = document.getElementById('continue-modal-resume');
+    const restartBtn = document.getElementById('continue-modal-restart');
+    const closeBtn = document.getElementById('continue-modal-close');
+    
+    const closeModal = () => overlay.remove();
+    
+    resumeBtn?.addEventListener('click', () => {
+        closeModal();
+        
+        AppState.currentScenario = scenario;
+        AppState.currentStepIndex = savedProgress.stepIndex;
+        AppState.stepStats = savedProgress.stepStats || [];
+        AppState.quizAnswers = savedProgress.quizAnswers || [];
+        
+        if (savedProgress.mapPlacedJks && savedProgress.mapPlacedJks.length > 0) {
+            AppState.placedJks = new Map(savedProgress.mapPlacedJks);
+        }
+        
+        AppState.scenarioStartTime = Date.now();
+        
+        document.getElementById('scenario-screen').classList.add('hidden');
+        document.getElementById('header-info').innerHTML = `${scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : ''} ${scenario.name}`;
+        
+        ProgressBar.init();
+        ProgressBar.update(savedProgress.stepIndex, scenario.steps.length - 1, scenario.steps);
+        
+        runStep();
+    });
+    
+    restartBtn?.addEventListener('click', () => {
+        closeModal();
+        User.clearScenarioProgress(scenario.id);
+        startScenarioFresh(scenario);
+    });
+    
+    closeBtn?.addEventListener('click', closeModal);
+    
+    // Закрытие по клику на оверлей
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
 }
 
 function runStep() {

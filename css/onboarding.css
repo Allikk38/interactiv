@@ -1,0 +1,258 @@
+/* ===== ОНБОРДИНГ (КНОПКА "ОБУЧЕНИЕ") ===== */
+
+.onboarding-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-warning), #e67e22);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    z-index: 90;
+    transition: all 0.2s ease;
+}
+
+.onboarding-btn:hover {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, #e67e22, #d35400);
+}
+
+.onboarding-btn:active {
+    transform: scale(0.95);
+}
+
+/* Оверлей */
+.onboarding-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.onboarding-overlay--visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Модальное окно */
+.onboarding-modal {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    max-width: 90vw;
+    width: 480px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+    animation: onboardingSlideUp 0.4s ease;
+}
+
+@keyframes onboardingSlideUp {
+    from {
+        transform: translateY(40px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Заголовок */
+.onboarding-modal__header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, var(--color-primary), #1b6dc1);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.onboarding-modal__title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.onboarding-modal__close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.6rem;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.onboarding-modal__close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Содержимое */
+.onboarding-modal__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+}
+
+/* Шаги онбординга */
+.onboarding-step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.onboarding-step:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.onboarding-step__number {
+    width: 36px;
+    height: 36px;
+    background: var(--color-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.onboarding-step__content h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--color-text);
+}
+
+.onboarding-step__content p {
+    font-size: 0.85rem;
+    color: var(--color-text-light);
+    line-height: 1.5;
+}
+
+.onboarding-step__content i {
+    color: var(--color-warning);
+    margin-right: 6px;
+}
+
+/* Бейджи */
+.onboarding-badge {
+    display: inline-block;
+    background: #fef9e7;
+    color: #e67e22;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+/* Футер */
+.onboarding-modal__footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.onboarding-modal__footer-text {
+    font-size: 0.75rem;
+    color: var(--color-text-light);
+}
+
+/* Кнопки */
+.onboarding-modal__btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 24px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.onboarding-modal__btn--primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.onboarding-modal__btn--primary:hover {
+    background: var(--color-primary-hover);
+}
+
+/* Адаптив для мобильных */
+@media (max-width: 600px) {
+    .onboarding-btn {
+        bottom: 16px;
+        right: 16px;
+        width: 48px;
+        height: 48px;
+        font-size: 1.3rem;
+    }
+    
+    .onboarding-modal {
+        width: 95vw;
+        max-height: 90vh;
+    }
+    
+    .onboarding-modal__header {
+        padding: 16px 20px;
+    }
+    
+    .onboarding-modal__content {
+        padding: 16px 20px;
+    }
+    
+    .onboarding-step {
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+    }
+    
+    .onboarding-step__number {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+    
+    .onboarding-step__content h3 {
+        font-size: 0.9rem;
+    }
+    
+    .onboarding-step__content p {
+        font-size: 0.75rem;
+    }
+}

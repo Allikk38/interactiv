@@ -528,6 +528,7 @@ function updateContinueLearning() {
     
     const user = User.get();
     if (!user) {
+        container.style.display = 'none';
         container.classList.remove('continue-learning--visible');
         return;
     }
@@ -551,10 +552,13 @@ function updateContinueLearning() {
     }
     
     if (!lastScenario || !lastProgress) {
+        container.style.display = 'none';
         container.classList.remove('continue-learning--visible');
         return;
     }
     
+    // ПОКАЗЫВАЕМ БЛОК
+    container.style.display = 'block';
     container.classList.add('continue-learning--visible');
     
     const greetingEl = document.getElementById('continue-greeting');
