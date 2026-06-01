@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Девелопер — стройка с нуля | Тренажёр агента</title>
+    
+    <!-- Базовые стили (те же, что на главной) -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/developer.css">
+    
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* Дополнительные стили только для страницы игры */
+        .game-page {
+            min-height: 100vh;
+            background-color: var(--color-bg);
+        }
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 16px 24px;
+            background: var(--color-surface);
+            border-radius: var(--radius);
+            box-shadow: 0 2px 8px var(--color-shadow);
+            border: 1px solid var(--color-border);
+        }
+        .back-link {
+            color: var(--color-text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--color-bg);
+            padding: 8px 16px;
+            border-radius: 32px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            background: var(--color-border);
+            transform: translateX(-2px);
+        }
+        .game-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--color-text);
+        }
+        .game-title i {
+            color: var(--color-warning);
+        }
+        .game-placeholder {
+            width: 120px;
+        }
+        
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 12px;
+            }
+            .game-header {
+                padding: 12px 16px;
+            }
+            .game-title {
+                font-size: 1rem;
+            }
+            .game-placeholder {
+                width: 40px;
+            }
+            .back-link span {
+                display: none;
+            }
+            .back-link {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body class="game-page">
+    <div class="game-container">
+        <div class="game-header">
+            <a href="./" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                <span>На главную</span>
+            </a>
+            <div class="game-title">
+                <i class="fas fa-city"></i>
+                <span>Девелопер: стройка с нуля</span>
+            </div>
+            <div class="game-placeholder"></div>
+        </div>
+        
+        <div id="developer-game-root">
+            <div class="developer-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Загрузка игры...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты (те же, что на главной) -->
+    <script src="js/config.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/utils/escape.js"></script>
+    <script src="js/utils/toast.js"></script>
+    <script src="js/utils/logger.js"></script>
+    <script src="js/user.js"></script>
+    <script src="js/badges.js"></script>
+    <script src="js/developer/developer.js"></script>
+    
+    <script>
+        // Запускаем игру после загрузки
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.DeveloperGame) {
+                window.DeveloperGame.init('developer-game-root');
+            }
+        });
+        
+        // Синхронизация монеток с XP
+        function syncCoins() {
+            if (!window.DeveloperGame || !window.User) return;
+            const user = User.get();
+            if (!user) return;
+            const xpProgress = User.getXPProgress();
+            const coinsFromXP = Math.floor(xpProgress.currentXP / 10);
+            if (window.DeveloperGame.syncCoins) {
+                window.DeveloperGame.syncCoins(coinsFromXP);
+            }
+        }
+        
+        setTimeout(syncCoins, 1000);
+    </script>
+</body>
+</html>

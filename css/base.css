@@ -1653,3 +1653,46 @@ button,
         min-height: 120px;
     }
 }
+/* ===== КНОПКА ЗАПУСКА ИГРЫ ===== */
+.game-launch-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--color-warning), #e67e22);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 32px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    margin-right: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.game-launch-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    background: linear-gradient(135deg, #e67e22, #d35400);
+}
+
+.game-launch-btn:active {
+    transform: translateY(0);
+}
+
+.game-launch-btn i {
+    font-size: 1rem;
+}
+
+@media (max-width: 600px) {
+    .game-launch-btn span {
+        display: none;
+    }
+    .game-launch-btn {
+        padding: 8px 12px;
+    }
+    .game-launch-btn i {
+        font-size: 1.2rem;
+        margin: 0;
+    }
+}
