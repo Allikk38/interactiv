@@ -1,0 +1,250 @@
+[
+  {
+    "id": "central",
+    "name": "Центральный",
+    "district": "Центральный район",
+    "icon": "🏙️",
+    "characteristics": {
+      "traffic": 98,
+      "ecology": 60,
+      "infrastructure": 99,
+      "prestige": 97,
+      "development": 85
+    },
+    "bonuses": {
+      "priceMultiplier": 1.5,
+      "demandMultiplier": 1.4,
+      "constructionSpeed": 0.8,
+      "materialCost": 1.3
+    },
+    "risks": {
+      "trafficJams": 90,
+      "neighbors": 40,
+      "bureaucracy": 75
+    },
+    "price": 1300,
+    "description": "Сердце Новосибирска: деловые и культурные центры города. Высокая стоимость, но стабильный спрос.",
+    "advantages": [
+      "🚇 Метро в шаговой доступности",
+      "🏛️ Театры и музеи",
+      "💼 Бизнес‑центры и офисы"
+    ],
+    "disadvantages": [
+      "🚗 Постоянные пробки",
+      "🌆 Высокий уровень шума",
+      "💰 Самые дорогие участки"
+    ]
+  },
+  {
+    "id": "zheleznodorozhny",
+    "name": "Железнодорожный",
+    "district": "Железнодорожный район",
+    "icon": "🚂",
+    "characteristics": {
+      "traffic": 92,
+      "ecology": 65,
+      "infrastructure": 88,
+      "prestige": 75,
+      "development": 80
+    },
+    "bonuses": {
+      "priceMultiplier": 1.2,
+      "demandMultiplier": 1.25,
+      "constructionSpeed": 0.9,
+      "materialCost": 1.1
+    },
+    "risks": {
+      "trafficJams": 85,
+      "neighbors": 35,
+      "bureaucracy": 65
+    },
+    "price": 950,
+    "description": "Район вокруг главного вокзала. Высокая транспортная доступность, но шум от железной дороги.",
+    "advantages": [
+      "🚉 Главный вокзал города",
+      "🚌 Развитая сеть общественного транспорта",
+      "🛍️ Торговые центры"
+    ],
+    "disadvantages": [
+      "🔊 Шум от поездов",
+      "🚗 Пробки у вокзала",
+      "🏭 Промышленная зона"
+    ]
+  },
+  {
+    "id": "zaeltsovsky",
+    "name": "Заельцовский",
+    "district": "Заельцовский район",
+    "icon": "🌲",
+    "characteristics": {
+      "traffic": 78,
+      "ecology": 90,
+      "infrastructure": 85,
+      "prestige": 82,
+      "development": 88
+    },
+    "bonuses": {
+      "priceMultiplier": 1.25,
+      "demandMultiplier": 1.2,
+      "constructionSpeed": 1.05,
+      "materialCost": 0.95
+    },
+    "risks": {
+      "trafficJams": 40,
+      "neighbors": 30,
+      "bureaucracy": 50
+    },
+    "price": 1000,
+    "description": "Зелёный район с парками и зоопарком. Хороший баланс экологии и инфраструктуры.",
+    "advantages": [
+      "🦒 Зоопарк",
+      "🌲 Заельцовский парк",
+      "🛒 Развитая инфраструктура"
+    ],
+    "disadvantages": [
+      "⏱️ До центра 20–30 минут",
+      "🌦️ Переменчивая погода из‑за близости леса"
+    ]
+  },
+  {
+    "id": "kalininsky",
+    "name": "Калининский",
+    "district": "Калининский район",
+    "icon": "🏡",
+    "characteristics": {
+      "traffic": 85,
+      "ecology": 72,
+      "infrastructure": 80,
+      "prestige": 70,
+      "development": 90
+    },
+    "bonuses": {
+      "priceMultiplier": 1.15,
+      "demandMultiplier": 1.18,
+      "constructionSpeed": 1.02,
+      "materialCost": 0.97
+    },
+    "risks": {
+      "trafficJams": 70,
+      "neighbors": 38,
+      "bureaucracy": 55
+    },
+    "price": 850,
+    "description": "Развитый спальный район с хорошей транспортной развязкой.",
+    "advantages": [
+      "🚍 Множество автобусных маршрутов",
+      "🛍️ Торговые центры",
+      "🎓 Учебные заведения"
+    ],
+    "disadvantages": [
+      "⏱️ Частые пробки в час пик",
+      "🏢 Высокая плотность застройки"
+    ]
+  },
+  {
+    "id": "kirovsky",
+    "name": "Кировский",
+    "district": "Кировский район",
+    "icon": "🏭",
+    "characteristics": {
+      "traffic": 75,
+      "ecology": 68,
+      "infrastructure": 75,
+      "prestige": 65,
+      "development": 82
+    },
+    "bonuses": {
+      "priceMultiplier": 1.08,
+      "demandMultiplier": 1.1,
+      "constructionSpeed": 1.05,
+      "materialCost": 0.92
+    },
+    "risks": {
+      "trafficJams": 60,
+      "neighbors": 45,
+      "bureaucracy": 48
+    },
+    "price": 700,
+    "description": "Промышленный район с растущим жилым строительством.",
+    "advantages": [
+      "🏭 Наличие рабочих мест на предприятиях",
+      "🛣️ Хорошая дорожная сеть",
+      "👷‍♂️ Квалифицированные строители"
+    ],
+    "disadvantages": [
+      "🏭 Заводы влияют на экологию",
+      "🔇 Шум от производств",
+      "📉 Средний престиж"
+    ]
+  },
+  {
+    "id": "leninsky",
+    "name": "Ленинский",
+    "district": "Ленинский район",
+    "icon": "🏘️",
+    "characteristics": {
+      "traffic": 80,
+      "ecology": 70,
+      "infrastructure": 82,
+      "prestige": 72,
+      "development": 85
+    },
+    "bonuses": {
+      "priceMultiplier": 1.12,
+      "demandMultiplier": 1.15,
+      "constructionSpeed": 1.03,
+      "materialCost": 0.94
+    },
+    "risks": {
+      "trafficJams": 75,
+      "neighbors": 42,
+      "bureaucracy": 52
+    },
+    "price": 800,
+    "description": "Крупный густонаселённый район с развитой инфраструктурой.",
+    "advantages": [
+      "🏫 Школы и детские сады",
+      "🏥 Поликлиники",
+      "🚇 Станция метро"
+    ],
+    "disadvantages": [
+      "🚗 Пробки на ключевых магистралях",
+      "🏢 Ветхий жилой фонд в части кварталов"
+    ]
+  },
+  {
+    "id": "oktyabrsky",
+    "name": "Октябрьский",
+    "district": "Октябрьский район",
+    "icon": "🍁",
+    "characteristics": {
+      "traffic": 82,
+      "ecology": 78,
+      "infrastructure": 84,
+      "prestige": 76,
+      "development": 87
+    },
+    "bonuses": {
+      "priceMultiplier": 1.18,
+      "demandMultiplier": 1.22,
+      "constructionSpeed": 1.04,
+      "materialCost": 0.96
+    },
+    "risks": {
+      "trafficJams": 65,
+      "neighbors": 36,
+      "bureaucracy": 58
+    },
+    "price": 900,
+    "description": "Уютный район с зелёными зонами и хорошей инфраструктурой.",
+    "advantages": [
+      "🌲 Скверы и парки",
+      "🏊‍♂️ Бассейн и спорткомплексы",
+      "🛒 Магазины шаговой доступности"
+    ],
+    "disadvantages": [
+      "⏱️ До центра 25–35 минут",
+      "🚗 Периодические пробки"
+    ]
+  }
+]
