@@ -2,42 +2,8 @@
 console.log('[AuctionModule] Загрузка модуля...');
 
 const AuctionModule = {
-    // Доступные участки
-    plots: [
-        {
-            id: 'center',
-            name: 'Центральный',
-            location: 'Центр, ул. Ленина',
-            price: 800,
-            demand: 95,
-            size: 10,
-            image: '🏙️',
-            description: 'Высокий спрос, отличная транспортная доступность',
-            bonus: '+20% к стоимости квартир'
-        },
-        {
-            id: 'akadem',
-            name: 'Академгородок',
-            location: 'Академгородок, пр. Лаврентьева',
-            price: 650,
-            demand: 85,
-            size: 12,
-            image: '🌲',
-            description: 'Зелёный район, рядом парки и институты',
-            bonus: '+10% к скорости продаж'
-        },
-        {
-            id: 'zaton',
-            name: 'Затулинка',
-            location: 'Затулинский жилмассив',
-            price: 450,
-            demand: 70,
-            size: 15,
-            image: '🏘️',
-            description: 'Бюджетный район, высокая конкуренция',
-            bonus: '-10% к стоимости материалов'
-        }
-    ],
+    // Доступные участки (будут загружены из JSON)
+    plots: [],
     
     // Боты-конкуренты
     bots: [
@@ -54,12 +20,46 @@ const AuctionModule = {
     playerBid: 0,
     callback: null,
     
+    // Загрузка локаций из JSON
+    async loadLocations() {
+        try {
+            const response = await fetch('data/locations.json');
+            const locations = await response.json();
+            this.plots = locations;
+            console.log('[AuctionModule] Загружено локаций:', this.plots.length);
+            return true;
+        } catch (error) {
+            console.error('[AuctionModule] Ошибка загрузки локаций:', error);
+            // Фоллбек на дефолтные локации
+            this.plots = [
+                {
+                    id: 'central',
+                    name: 'Центральный',
+                    district: 'Центральный район',
+                    icon: '🏙️',
+                    price: 1300,
+                    characteristics: { traffic: 98, ecology: 60, infrastructure: 99, prestige: 97, development: 85 },
+                    bonuses: { priceMultiplier: 1.5, demandMultiplier: 1.4, constructionSpeed: 0.8, materialCost: 1.3 },
+                    description: 'Сердце Новосибирска',
+                    advantages: ['🚇 Метро рядом', '🏛️ Театры и музеи'],
+                    disadvantages: ['🚗 Пробки', '💰 Дорого']
+                }
+            ];
+            return false;
+        }
+    },
+    
     // Запуск торгов
-    start(plots, playerCapital, onComplete) {
+    async start(plots, playerCapital, onComplete) {
         console.log('[AuctionModule] start() вызван, playerCapital:', playerCapital);
-        console.log('[AuctionModule] onComplete:', onComplete);
         
-        this.plots = plots || this.plots;
+        // Загружаем локации, если передан пустой массив или undefined
+        if (!plots || plots.length === 0) {
+            await this.loadLocations();
+        } else {
+            this.plots = plots;
+        }
+        
         this.callback = onComplete;
         this.activeBots = this.bots.map(bot => ({ ...bot, currentBid: 0, active: true }));
         this.auctionActive = true;
@@ -72,44 +72,78 @@ const AuctionModule = {
         this.renderPlotSelection(playerCapital);
     },
     
+    // Вспомогательная функция для визуализации звёзд
+    renderStars(value) {
+        const starCount = Math.floor(value / 20);
+        return '⭐'.repeat(starCount) + '☆'.repeat(5 - starCount);
+    },
+    
     // Выбор участка
     renderPlotSelection(playerCapital) {
         console.log('[AuctionModule] renderPlotSelection, playerCapital:', playerCapital);
         
         const containerId = this.callback?.containerId || 'developer-game-root';
-        console.log('[AuctionModule] containerId:', containerId);
-        
         const container = document.getElementById(containerId);
         if (!container) {
             console.error('[AuctionModule] Контейнер не найден:', containerId);
             return;
         }
         
-        console.log('[AuctionModule] Контейнер найден, рендерим участки');
-        
         let plotsHtml = '';
         for (const plot of this.plots) {
             const canAfford = plot.price <= playerCapital;
+            
+            // Визуализация ключевых характеристик
+            const trafficStars = this.renderStars(plot.characteristics?.traffic || 50);
+            const ecologyStars = this.renderStars(plot.characteristics?.ecology || 50);
+            const prestigeStars = this.renderStars(plot.characteristics?.prestige || 50);
+            
+            // Преимущества (первые 2)
+            const advantagesHtml = (plot.advantages || []).slice(0, 2).map(a => `<span style="font-size:0.7rem;">✅ ${this.escapeHtml(a)}</span>`).join(' ');
+            
+            // Недостатки (первые 2)
+            const disadvantagesHtml = (plot.disadvantages || []).slice(0, 2).map(d => `<span style="font-size:0.7rem; color:#e74c3c;">❌ ${this.escapeHtml(d)}</span>`).join(' ');
+            
             plotsHtml += `
                 <div class="auction-plot-card" data-plot-id="${plot.id}" style="
                     background: var(--color-surface);
-                    border: 2px solid var(--color-border);
+                    border: 2px solid ${canAfford ? 'var(--color-border)' : '#e74c3c'};
                     border-radius: var(--radius);
                     padding: 20px;
                     cursor: ${canAfford ? 'pointer' : 'not-allowed'};
-                    opacity: ${canAfford ? 1 : 0.5};
+                    opacity: ${canAfford ? 1 : 0.6};
                     transition: all 0.2s ease;
+                    margin-bottom: 20px;
                 ">
-                    <div class="auction-plot__icon" style="font-size: 3rem; text-align: center;">${plot.image}</div>
-                    <h3 style="margin: 12px 0 4px;">${this.escapeHtml(plot.name)}</h3>
-                    <p style="color: var(--color-text-light); font-size: 0.85rem;">${this.escapeHtml(plot.location)}</p>
-                    <div style="margin: 12px 0; padding: 8px; background: var(--color-bg); border-radius: var(--radius-sm);">
-                        <div>💰 Стартовая цена: ${plot.price} 🪙</div>
-                        <div>📏 Площадь: ${plot.size} соток</div>
-                        <div>📈 Спрос: ${plot.demand}%</div>
-                        <div style="font-size: 0.8rem; color: var(--color-success);">${plot.bonus}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div style="font-size: 2.5rem;">${plot.icon || '🏠'}</div>
+                        <div style="font-size: 1.3rem; font-weight: 700; color: var(--color-warning);">
+                            ${plot.price} 🪙
+                        </div>
                     </div>
-                    <p style="font-size: 0.8rem; color: var(--color-text-light);">${this.escapeHtml(plot.description)}</p>
+                    
+                    <h3 style="margin: 0 0 4px 0;">${this.escapeHtml(plot.name)}</h3>
+                    <div style="color: var(--color-text-light); font-size: 0.8rem; margin-bottom: 12px;">
+                        ${this.escapeHtml(plot.district)}
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px; margin: 12px 0; padding: 8px; background: var(--color-bg); border-radius: var(--radius-sm); font-size: 0.7rem; flex-wrap: wrap;">
+                        <span title="Транспорт">🚇 ${trafficStars}</span>
+                        <span title="Экология">🌿 ${ecologyStars}</span>
+                        <span title="Престиж">👑 ${prestigeStars}</span>
+                    </div>
+                    
+                    <p style="font-size: 0.8rem; color: var(--color-text); margin: 8px 0;">${this.escapeHtml(plot.description)}</p>
+                    
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0;">
+                        ${advantagesHtml}
+                        ${disadvantagesHtml}
+                    </div>
+                    
+                    <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--color-border); font-size: 0.7rem; color: var(--color-text-light);">
+                        <span>📈 Множитель цены: ${plot.bonuses?.priceMultiplier || 1.0}x</span>
+                        <span style="margin-left: 12px;">⚡ Скорость стройки: ${Math.round((plot.bonuses?.constructionSpeed || 1.0) * 100)}%</span>
+                    </div>
                 </div>
             `;
         }
@@ -120,11 +154,12 @@ const AuctionModule = {
                     <h2><i class="fas fa-gavel"></i> Торги за участок</h2>
                     <div class="player-capital">💰 Ваш капитал: ${playerCapital} 🪙</div>
                 </div>
-                <div class="auction-plots">
+                <div class="auction-plots" style="max-height: 60vh; overflow-y: auto; padding-right: 8px;">
                     ${plotsHtml}
                 </div>
                 <div class="auction-hint">
-                    <i class="fas fa-info-circle"></i> Выберите участок для участия в торгах
+                    <i class="fas fa-info-circle"></i> Выберите участок для участия в торгах. 
+                    Характеристики участка повлияют на весь проект!
                 </div>
                 <button class="btn btn--secondary" id="auction-back-btn" style="margin-top: 20px;">
                     <i class="fas fa-arrow-left"></i> Назад
@@ -252,7 +287,7 @@ const AuctionModule = {
                 </div>
                 
                 <div class="auction-hint">
-                    <i class="fas fa-lightbulb"></i> Чем выше спрос на участок, тем дороже будут квартиры
+                    <i class="fas fa-lightbulb"></i> ${this.selectedPlot.bonuses?.demandMultiplier ? 'Спрос на квартиры в этом районе: +' + Math.round((this.selectedPlot.bonuses.demandMultiplier - 1) * 100) + '%' : 'Чем выше спрос на участок, тем дороже будут квартиры'}
                 </div>
                 
                 <button class="btn btn--small btn--secondary" id="auction-cancel-btn" style="margin-top: 16px;">

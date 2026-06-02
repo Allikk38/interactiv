@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Консультация клиента — Тренажёр агента</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/consultation.css">
+</head>
+<body>
+
+    <!-- ИНТРО (название урока) -->
+    <div id="intro-overlay" class="intro-overlay">
+        <div class="intro-card">
+            <h1 class="intro-title">🎓 Консультация клиента</h1>
+            <p class="intro-subtitle">Сбор данных для подборки</p>
+            <div class="intro-timer-bar">
+                <div class="intro-timer-fill" id="intro-timer-fill"></div>
+            </div>
+            <p class="intro-hint">Старт через <span id="intro-countdown">5</span> секунд</p>
+        </div>
+    </div>
+
+    <!-- КОНТЕЙНЕР ВИДЕО (с полями) -->
+    <div class="video-container">
+        <video id="bg-video" muted playsinline>
+            <source src="video/consultation-office.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <!-- ОСНОВНАЯ ОБЁРТКА С ТРЁМЯ КОЛОНКАМИ -->
+    <div class="consultation-layout">
+        
+        <!-- ВЕРХНЯЯ ПАНЕЛЬ (для десктопа и мобильных) -->
+        <div class="top-bar">
+            <div class="top-bar__left">
+                <button class="top-bar__btn top-bar__btn--exit" id="exit-lesson-btn">
+                    <i class="fas fa-times"></i>
+                    <span>Выйти из урока</span>
+                </button>
+                <div class="top-bar__lesson-title">
+                    <i class="fas fa-comments"></i>
+                    <span>Активное слушание: сбор данных для подборки</span>
+                </div>
+            </div>
+            <div class="top-bar__right">
+                <div class="top-bar__progress">
+                    <span class="top-bar__progress-label">Шаг</span>
+                    <span class="top-bar__progress-current" id="top-progress-current">1</span>
+                    <span class="top-bar__progress-sep">/</span>
+                    <span class="top-bar__progress-total" id="top-progress-total">8</span>
+                </div>
+                <button class="top-bar__btn top-bar__btn--help" id="help-btn">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Подсказка</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ЗАПИСНАЯ КНИЖКА АГЕНТА (левая панель) -->
+        <aside class="notebook notebook--left">
+            <div class="notebook__header">
+                <i class="fas fa-book-open"></i>
+                <h3>Заметки агента</h3>
+                <span class="notebook__badge" id="notes-count">0</span>
+            </div>
+            <div class="notebook__content" id="notebook-content">
+                <div class="notebook__empty">
+                    <i class="fas fa-lightbulb"></i>
+                    <p>Здесь появятся потребности клиента</p>
+                </div>
+            </div>
+            <div class="notebook__footer">
+                <i class="fas fa-check-circle"></i> Автоматически из правильных ответов
+            </div>
+        </aside>
+
+        <!-- ОСНОВНАЯ ОБЛАСТЬ ДИАЛОГА -->
+        <main class="dialogue-area">
+            <div id="dialogue-ui" class="dialogue-ui">
+                <div class="characters-layer">
+                    <!-- Агент (слева) -->
+                    <div class="character character--agent" id="character-agent">
+                        <div class="character__avatar"><i class="fas fa-user-tie"></i></div>
+                        <div class="character__name">Агент</div>
+                        <div class="speech-bubble" id="agent-bubble">
+                            <span id="agent-text"></span><span class="typing-cursor"></span>
+                        </div>
+                    </div>
+
+                    <!-- Клиент (справа) -->
+                    <div class="character character--client" id="character-client">
+                        <div class="character__avatar"><i class="fas fa-user"></i></div>
+                        <div class="character__name">Клиент</div>
+                        <div class="speech-bubble" id="client-bubble">
+                            <span id="client-text"></span><span class="typing-cursor"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="answers-panel">
+                    <div class="answers-grid" id="answers-grid"></div>
+                    <div class="feedback-area" id="feedback-area"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ПОРТРЕТ КЛИЕНТА (правая панель) -->
+        <aside class="notebook notebook--right">
+            <div class="notebook__header">
+                <i class="fas fa-user-circle"></i>
+                <h3>Портрет клиента</h3>
+                <span class="notebook__badge" id="portrait-count">0</span>
+            </div>
+            <div class="notebook__content" id="portrait-content">
+                <div class="notebook__empty">
+                    <i class="fas fa-users"></i>
+                    <p>Здесь появится информация о клиенте</p>
+                    <p style="font-size: 0.65rem; margin-top: 6px;">Семья • Работа • Образ жизни</p>
+                </div>
+            </div>
+            <div class="notebook__footer">
+                <i class="fas fa-chart-line"></i> Заполняется автоматически
+            </div>
+        </aside>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ ВЫХОДА -->
+    <div id="exit-modal" class="exit-modal" style="display: none;">
+        <div class="exit-modal__content">
+            <div class="exit-modal__icon">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="exit-modal__title">Выйти из урока?</h3>
+            <p class="exit-modal__text">
+                Весь прогресс в этом уроке будет потерян.
+                Вы можете вернуться и начать заново в любое время.
+            </p>
+            <div class="exit-modal__buttons">
+                <button class="btn btn--secondary" id="exit-modal-cancel">Остаться</button>
+                <button class="btn btn--danger" id="exit-modal-confirm">Выйти</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ПОДСКАЗКИ -->
+    <div id="help-modal" class="help-modal" style="display: none;">
+        <div class="help-modal__content">
+            <div class="help-modal__header">
+                <i class="fas fa-lightbulb"></i>
+                <h3>Как работать с уроком</h3>
+                <button class="help-modal__close" id="help-modal-close">&times;</button>
+            </div>
+            <div class="help-modal__body">
+                <div class="help-step">
+                    <span class="help-step__num">1</span>
+                    <div class="help-step__text">
+                        <strong>Читайте реплику клиента</strong>
+                        <span>Внимательно слушайте (читайте), что говорит клиент</span>
+                    </div>
+                </div>
+                <div class="help-step">
+                    <span class="help-step__num">2</span>
+                    <div class="help-step__text">
+                        <strong>Выбирайте ответ агента</strong>
+                        <span>Только один ответ правильный — он соберёт максимум информации</span>
+                    </div>
+                </div>
+                <div class="help-step">
+                    <span class="help-step__num">3</span>
+                    <div class="help-step__text">
+                        <strong>Изучайте обратную связь</strong>
+                        <span>После ответа вы увидите, почему этот вариант правильный, и какую технику активного слушания вы применили</span>
+                    </div>
+                </div>
+                <div class="help-step">
+                    <span class="help-step__num">4</span>
+                    <div class="help-step__text">
+                        <strong>Следите за заметками и портретом</strong>
+                        <span>Слева собираются ключевые потребности клиента, справа — факты о нём</span>
+                    </div>
+                </div>
+                <div class="help-step">
+                    <span class="help-step__num">5</span>
+                    <div class="help-step__text">
+                        <strong>Выйти можно в любой момент</strong>
+                        <span>Кнопка «Выйти из урока» в верхней панели</span>
+                    </div>
+                </div>
+            </div>
+            <div class="help-modal__footer">
+                <button class="btn btn--primary" id="help-modal-gotit">Понятно, начинаем!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ПОДКЛЮЧЕНИЯ -->
+    <script src="js/utils/escape.js"></script>
+    <script src="js/utils/toast.js"></script>
+    
+    <script src="js/consultation/consultation-core.js"></script>
+    <script src="js/consultation/consultation-ui.js"></script>
+    <script src="js/consultation/consultation-dialog.js"></script>
+    <script src="js/consultation/consultation-main.js"></script>
+</body>
+</html>
