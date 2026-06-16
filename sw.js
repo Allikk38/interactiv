@@ -1,16 +1,26 @@
-// ===== SERVICE WORKER ДЛЯ PWA (С ОФЛАЙН-ИНДИКАЦИЕЙ) =====
-const STATIC_CACHE = 'realty-static-v4';
-const DATA_CACHE = 'realty-data-v4';
+// ===== SERVICE WORKER ДЛЯ PWA (С ОФЛАЙН-ИНДИКАЦИЕЙ И УВЕДОМЛЕНИЕМ ОБ ОБНОВЛЕНИИ) =====
+
+// Версия кеша (увеличивайте при каждом обновлении)
+const CACHE_VERSION = 'v5';
+const STATIC_CACHE = `realty-static-${CACHE_VERSION}`;
+const DATA_CACHE = `realty-data-${CACHE_VERSION}`;
 
 // Файлы для кеширования при установке
 const urlsToCache = [
   './',
   './index.html',
+  './consultation.html',
+  './developer.html',
+  './ratings.html',
   './css/base.css',
   './css/map.css',
   './css/steps.css',
   './css/drawer.css',
+  './css/onboarding.css',
+  './css/consultation.css',
+  './css/developer.css',
   './js/config.js',
+  './js/constants.js',
   './js/store.js',
   './js/dragdrop.js',
   './js/badges.js',
@@ -18,6 +28,7 @@ const urlsToCache = [
   './js/progress.js',
   './js/brief.js',
   './js/interactive-lesson1.js',
+  './js/client-journey.js',
   './js/drawer.js',
   './js/ui.js',
   './js/map/map-core.js',
@@ -27,11 +38,23 @@ const urlsToCache = [
   './js/quiz.js',
   './js/timer-quiz.js',
   './js/decision-chain.js',
+  './js/triple-match-drag.js',
   './js/interactive.js',
-  './js/client-journey.js',
   './js/stepRegistry.js',
   './js/stepRegistry-init.js',
+  './js/onboarding.js',
   './js/app.js',
+  './js/utils/escape.js',
+  './js/utils/toast.js',
+  './js/utils/logger.js',
+  './js/utils/analytics.js',
+  './js/utils/offline-queue.js',
+  './js/templates/ui-templates.js',
+  './js/templates/quiz-templates.js',
+  './js/templates/map-templates.js',
+  './js/templates/client-journey-templates.js',
+  './js/templates/interactive-templates.js',
+  './js/templates/triple-templates.js',
   './manifest.json'
 ];
 
@@ -42,12 +65,14 @@ const dataUrls = [
   './data/scenarios.json',
   './data/marketing-steps.json',
   './data/lesson-1.json',
-  './data/floorplans.json'
+  './data/floorplans.json',
+  './data/consultation-dialogs.json',
+  './data/locations.json'
 ];
 
 // Установка Service Worker — кешируем статику
 self.addEventListener('install', event => {
-  console.log('[SW] Установка...');
+  console.log('[SW] Установка...', CACHE_VERSION);
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then(cache => {
@@ -59,25 +84,41 @@ self.addEventListener('install', event => {
         console.log('[SW] Кеширование данных');
         return cache.addAll(dataUrls);
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log('[SW] Установка завершена, активация...');
+        return self.skipWaiting();
+      })
       .catch(err => console.error('[SW] Ошибка кеширования:', err))
   );
 });
 
 // Активация — удаляем старые кеши
 self.addEventListener('activate', event => {
-  console.log('[SW] Активация...');
+  console.log('[SW] Активация...', CACHE_VERSION);
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cache => {
+          // Удаляем все кеши, которые не относятся к текущей версии
           if (cache !== STATIC_CACHE && cache !== DATA_CACHE) {
             console.log('[SW] Удалён старый кеш:', cache);
             return caches.delete(cache);
           }
         })
       );
-    }).then(() => self.clients.claim())
+    }).then(() => {
+      console.log('[SW] Активация завершена, уведомляем клиентов');
+      // Уведомляем всех клиентов о новой версии
+      return self.clients.matchAll();
+    }).then(clients => {
+      clients.forEach(client => {
+        client.postMessage({ 
+          type: 'SW_ACTIVATED',
+          version: CACHE_VERSION 
+        });
+      });
+      return self.clients.claim();
+    })
   );
 });
 
@@ -97,16 +138,46 @@ function broadcastConnectionStatus(isOnline) {
     clients.forEach(client => {
       client.postMessage({
         type: 'CONNECTION_STATUS',
-        isOnline: isOnline
+        isOnline: isOnline,
+        timestamp: Date.now()
       });
     });
   });
 }
 
+// Функция для отправки уведомления о новой версии
+function broadcastNewVersionAvailable() {
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'UPDATE_AVAILABLE',
+        version: CACHE_VERSION,
+        message: 'Доступна новая версия приложения'
+      });
+    });
+  });
+}
+
+// Функция для проверки обновлений (периодическая)
+function checkForUpdates() {
+  console.log('[SW] Проверка обновлений...');
+  // Отправляем запрос на обновление Service Worker
+  self.registration.update().catch(err => {
+    console.error('[SW] Ошибка проверки обновлений:', err);
+  });
+}
+
+// Периодическая проверка обновлений (каждый час)
+setInterval(() => {
+  checkForUpdates();
+}, 60 * 60 * 1000);
+
 // Отслеживаем онлайн/офлайн статус
 self.addEventListener('online', () => {
   console.log('[SW] Соединение восстановлено');
   broadcastConnectionStatus(true);
+  // При восстановлении соединения проверяем обновления
+  checkForUpdates();
 });
 
 self.addEventListener('offline', () => {
@@ -124,6 +195,21 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request).catch(() => {
         return new Response(JSON.stringify({ error: 'no-internet' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
+    return;
+  }
+  
+  // Google Sheets запросы — только сеть (не кешируем)
+  if (url.hostname.includes('script.google.com')) {
+    event.respondWith(
+      fetch(event.request).catch(error => {
+        console.warn('[SW] Google Sheets запрос не удался:', error);
+        // Возвращаем ошибку, но не кешируем
+        return new Response(JSON.stringify({ error: 'offline', queued: true }), {
           status: 503,
           headers: { 'Content-Type': 'application/json' }
         });
@@ -152,7 +238,10 @@ self.addEventListener('fetch', event => {
   if (event.request.url.includes('/css/') || 
       event.request.url.includes('/js/') ||
       isPathRequest(event.request.url, '/') ||
-      isPathRequest(event.request.url, '/index.html')) {
+      isPathRequest(event.request.url, '/index.html') ||
+      isPathRequest(event.request.url, '/consultation.html') ||
+      isPathRequest(event.request.url, '/developer.html') ||
+      isPathRequest(event.request.url, '/ratings.html')) {
     
     event.respondWith(
       caches.match(event.request)
@@ -172,11 +261,22 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Иконки и изображения
-  if (event.request.url.includes('/icons/')) {
+  // Иконки и изображения — кеш с fallback на плейсхолдер
+  if (event.request.url.includes('/icons/') || 
+      event.request.url.includes('/images/') ||
+      event.request.url.includes('.png') ||
+      event.request.url.includes('.jpg') ||
+      event.request.url.includes('.svg')) {
+    
     event.respondWith(
       caches.match(event.request)
-        .then(response => response || fetch(event.request))
+        .then(response => {
+          if (response) return response;
+          return fetch(event.request).catch(() => {
+            // Возвращаем прозрачный пиксель если нет иконки
+            return new Response(null, { status: 204 });
+          });
+        })
     );
     return;
   }
@@ -201,30 +301,60 @@ self.addEventListener('fetch', event => {
 
 // Обработка сообщений от клиента
 self.addEventListener('message', event => {
-  if (event.data === 'skipWaiting') {
+  const { data } = event;
+  
+  if (!data) return;
+  
+  // Пропуск ожидания и активация новой версии
+  if (data === 'skipWaiting') {
+    console.log('[SW] Получен запрос на активацию');
     self.skipWaiting();
+    broadcastNewVersionAvailable();
   }
   
   // Обработка запроса на проверку обновлений
-  if (event.data === 'checkUpdate') {
-    self.skipWaiting();
-    // Уведомляем всех клиентов о необходимости обновления
-    self.clients.matchAll().then(clients => {
-      clients.forEach(client => {
-        client.postMessage({ type: 'updateAvailable' });
-      });
-    });
+  if (data === 'checkUpdate' || data?.type === 'checkUpdate') {
+    console.log('[SW] Запрос на проверку обновлений');
+    checkForUpdates();
   }
   
   // Запрос текущего статуса соединения
-  if (event.data === 'getConnectionStatus') {
+  if (data === 'getConnectionStatus' || data?.type === 'getConnectionStatus') {
     self.clients.matchAll().then(clients => {
       clients.forEach(client => {
         client.postMessage({
           type: 'CONNECTION_STATUS',
-          isOnline: navigator.onLine
+          isOnline: navigator.onLine,
+          timestamp: Date.now()
         });
       });
     });
   }
+  
+  // Запрос версии Service Worker
+  if (data === 'getVersion' || data?.type === 'getVersion') {
+    event.source.postMessage({
+      type: 'SW_VERSION',
+      version: CACHE_VERSION,
+      timestamp: Date.now()
+    });
+  }
+});
+
+// При получении push-уведомлений (если понадобится)
+self.addEventListener('push', event => {
+  const options = {
+    body: event.data?.text() || 'Новое обновление доступно',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-72.png',
+    vibrate: [100, 50, 100],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: 1
+    }
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification('Тренажёр агента', options)
+  );
 });

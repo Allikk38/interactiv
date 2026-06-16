@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Тренажёр агента недвижимости</title>
     
+    <!-- CSP (Content Security Policy) для защиты от XSS -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://api-maps.yandex.ru https://cdnjs.cloudflare.com https://script.google.com;
+        style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+        img-src 'self' data: blob: https://*.yandex.ru https://*.yandex.net;
+        connect-src 'self' https://script.google.com https://api-maps.yandex.ru;
+        font-src 'self' https://cdnjs.cloudflare.com;
+        frame-src 'self' https://yandex.ru;
+    ">
+    
     <!-- PWA Meta -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e86de">
@@ -41,6 +52,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <!-- API Яндекс.Карт -->
+    <!-- ⚠️ ВАЖНО: API-ключ ограничен по HTTP Referer доменом allikk38.github.io -->
+    <!-- Настройка в кабинете разработчика Яндекс: allikk38.github.io -->
     <script src="https://api-maps.yandex.ru/2.1/?apikey=7d7f69f2-30f1-4a3c-93bd-b7b99354b7c5&lang=ru_RU"></script>
 </head>
 <body>
@@ -279,16 +292,24 @@
         </div>
     </div>
 
-    <!-- СКРИПТЫ -->
-    <script src="js/config.js"></script>
-    <script src="js/store.js"></script>
+    <!-- ===== КОНСТАНТЫ ===== -->
+    <script src="js/constants.js"></script>
     
-    <!-- УТИЛИТЫ -->
+    <!-- ===== УТИЛИТЫ ===== -->
     <script src="js/utils/escape.js"></script>
     <script src="js/utils/toast.js"></script>
     <script src="js/utils/logger.js"></script>
     <script src="js/utils/analytics.js"></script>
+    <script src="js/utils/offline-queue.js"></script>
     
+    <!-- ===== ОСНОВНЫЕ МОДУЛИ ===== -->
+    <script src="js/config.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/user.js"></script>
+    <script src="js/badges.js"></script>
+    <script src="js/progress.js"></script>
+    
+    <!-- ===== ШАБЛОНЫ ===== -->
     <script src="js/templates/ui-templates.js"></script>
     <script src="js/templates/quiz-templates.js"></script>
     <script src="js/templates/map-templates.js"></script>
@@ -296,29 +317,37 @@
     <script src="js/templates/interactive-templates.js"></script>
     <script src="js/templates/triple-templates.js"></script>
     
+    <!-- ===== ЛОГИКА ===== -->
     <script src="js/dragdrop.js"></script>
-    <script src="js/badges.js"></script>
-    <script src="js/user.js"></script>
-    <script src="js/progress.js"></script>
     <script src="js/brief.js"></script>
     <script src="js/interactive-lesson1.js"></script>
     <script src="js/client-journey.js"></script>
     <script src="js/drawer.js"></script>
     <script src="js/ui.js"></script>
+    
+    <!-- ===== КАРТА ===== -->
     <script src="js/map/map-core.js"></script>
     <script src="js/map/map-utils.js"></script>
     <script src="js/map/map-ui.js"></script>
     <script src="js/map/map-step.js"></script>
+    
+    <!-- ===== ИНТЕРАКТИВНЫЕ ШАГИ ===== -->
     <script src="js/quiz.js"></script>
     <script src="js/timer-quiz.js"></script>
     <script src="js/decision-chain.js"></script>
     <script src="js/triple-match-drag.js"></script>
-    <script src="js/interactive.js"></script>    
-
+    <script src="js/interactive.js"></script>
+    
+    <!-- ===== РЕЕСТР ШАГОВ ===== -->
     <script src="js/stepRegistry.js"></script>
     <script src="js/stepRegistry-init.js"></script>
     
+    <!-- ===== ГЛАВНЫЙ ФАЙЛ ===== -->
     <script src="js/app.js"></script>
+    
+    <!-- ===== ОНБОРДИНГ ===== -->
+    <script src="js/onboarding.js"></script>
+    
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -332,6 +361,5 @@
             });
         }
     </script>
-    <script src="js/onboarding.js"></script>
 </body>
 </html>

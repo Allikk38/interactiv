@@ -3,7 +3,6 @@ const User = {
     STORAGE_KEY: 'realty_trainer_user',
     XP_KEY: 'realty_trainer_xp',
     STREAK_KEY: 'realty_trainer_streak',
-    LEVEL_MULTIPLIER: 100,
 
     get() {
         try {
@@ -49,8 +48,9 @@ const User = {
         const newXP = currentXP + amount;
         this.setXP(newXP);
         
-        const oldLevel = this.getLevel(currentXP);
-        const newLevel = this.getLevel(newXP);
+        const levelMultiplier = (typeof XP_CONFIG !== 'undefined') ? XP_CONFIG.LEVEL_MULTIPLIER : 100;
+        const oldLevel = this.getLevel(currentXP, levelMultiplier);
+        const newLevel = this.getLevel(newXP, levelMultiplier);
         
         this.updateStreak();
         
@@ -62,22 +62,24 @@ const User = {
         };
     },
 
-    getLevel(xp = null) {
+    getLevel(xp = null, levelMultiplier = null) {
+        const multiplier = levelMultiplier || (typeof XP_CONFIG !== 'undefined' ? XP_CONFIG.LEVEL_MULTIPLIER : 100);
         const currentXP = xp !== null ? xp : (this.getXP() || 0);
-        return Math.floor(currentXP / this.LEVEL_MULTIPLIER) + 1;
+        return Math.floor(currentXP / multiplier) + 1;
     },
 
     getXPProgress() {
         const currentXP = this.getXP() || 0;
-        const level = this.getLevel(currentXP);
-        const xpInLevel = currentXP % this.LEVEL_MULTIPLIER;
-        const percentToNext = (xpInLevel / this.LEVEL_MULTIPLIER) * 100;
+        const levelMultiplier = (typeof XP_CONFIG !== 'undefined') ? XP_CONFIG.LEVEL_MULTIPLIER : 100;
+        const level = this.getLevel(currentXP, levelMultiplier);
+        const xpInLevel = currentXP % levelMultiplier;
+        const percentToNext = (xpInLevel / levelMultiplier) * 100;
         
         return {
             currentXP,
             level,
             xpInLevel,
-            xpNeededForNext: this.LEVEL_MULTIPLIER - xpInLevel,
+            xpNeededForNext: levelMultiplier - xpInLevel,
             percentToNext: Math.min(100, Math.max(0, percentToNext))
         };
     },
@@ -265,25 +267,33 @@ const User = {
 
     // ===== РАСЧЁТ XP =====
     calculateScenarioXP(totalCorrect, totalItems, durationSec) {
-        let xp = totalCorrect * 10;
+        const baseXP = (typeof XP_CONFIG !== 'undefined') ? XP_CONFIG.CORRECT_ANSWER_BASE_XP : 10;
+        const perfectBonus = (typeof XP_CONFIG !== 'undefined') ? XP_CONFIG.PERFECT_SCENARIO_BONUS_XP : 50;
+        const speedBonusFast = (typeof XP_CONFIG !== 'undefined') ? XP_CONFIG.SPEED_BONUS_XP_FAST : 25;
+        const speedBonusNormal = (typeof XP_CONFIG !== 'undefined') ? XP_CONFIG.SPEED_BONUS_XP_NORMAL : 10;
+        const maxXP = (typeof XP_CONFIG !== 'undefined') ? XP_CONFIG.MAX_XP_PER_SCENARIO : 500;
+        const avgTimeThresholdFast = (typeof TIMERS !== 'undefined') ? 30 : 30;
+        const avgTimeThresholdNormal = (typeof TIMERS !== 'undefined') ? 60 : 60;
+        
+        let xp = totalCorrect * baseXP;
         
         if (totalCorrect === totalItems && totalItems > 0) {
-            xp += 50;
+            xp += perfectBonus;
         }
         
         if (durationSec && totalItems > 0) {
             const avgTimePerQuestion = durationSec / totalItems;
-            if (avgTimePerQuestion < 30) {
-                xp += 25;
-            } else if (avgTimePerQuestion < 60) {
-                xp += 10;
+            if (avgTimePerQuestion < avgTimeThresholdFast) {
+                xp += speedBonusFast;
+            } else if (avgTimePerQuestion < avgTimeThresholdNormal) {
+                xp += speedBonusNormal;
             }
         }
         
-        return Math.min(xp, 500);
+        return Math.min(xp, maxXP);
     },
 
-    // ===== ОТПРАВКА РЕЗУЛЬТАТОВ =====
+    // ===== ОТПРАВКА РЕЗУЛЬТАТОВ (С ИСПОЛЬЗОВАНИЕМ ОЧЕРЕДИ) =====
     sendResult(scenarioName, stepStats, totalCorrect, totalItems, durationSec) {
         const user = this.get();
         if (!user) return;
@@ -296,24 +306,32 @@ const User = {
             this.clearScenarioProgress(scenarioId);
         }
         
-        fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'save_result',
-                user_name: user.name,
-                scenario_name: scenarioName,
-                total_correct: totalCorrect,
-                total_items: totalItems,
-                percent: totalItems > 0 ? Math.round((totalCorrect / totalItems) * 100) : 0,
-                duration_sec: durationSec || 0,
-                xp_earned: xpEarned,
-                total_xp_after: this.getXP(),
-                steps_detail: JSON.stringify(stepStats),
-                timestamp: new Date().toISOString(),
-            }),
-        }).catch(err => logError('Ошибка отправки результата:', err));
+        const payload = {
+            action: 'save_result',
+            user_name: user.name,
+            scenario_name: scenarioName,
+            total_correct: totalCorrect,
+            total_items: totalItems,
+            percent: totalItems > 0 ? Math.round((totalCorrect / totalItems) * 100) : 0,
+            duration_sec: durationSec || 0,
+            xp_earned: xpEarned,
+            total_xp_after: this.getXP(),
+            steps_detail: JSON.stringify(stepStats),
+            timestamp: new Date().toISOString(),
+        };
+        
+        // Используем очередь офлайн-запросов, если доступна
+        if (typeof OfflineQueue !== 'undefined' && OfflineQueue.add) {
+            OfflineQueue.add(payload, GOOGLE_SCRIPT_URL, 'POST');
+        } else {
+            // fallback на обычный fetch
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            }).catch(err => logError('Ошибка отправки результата:', err));
+        }
         
         return {
             xpEarned,
