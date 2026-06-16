@@ -1,7 +1,6 @@
 // ============================================================
 // УПРАВЛЕНИЕ СЦЕНАРИЯМИ
-// Версия: 1.0
-// Отвечает за: запуск, выполнение, завершение сценариев
+// Версия: 1.1 — ИСПРАВЛЕНА РАБОТА С ПРЕМИУМ-ХЕДЕРОМ
 // ============================================================
 
 (function() {
@@ -35,9 +34,34 @@
             startStepTimer();
         }
 
-        document.getElementById('scenario-screen').classList.add('hidden');
-        document.getElementById('header-info').innerHTML =
-            (scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : '') + ' ' + scenario.name;
+        // Скрываем экран выбора сценариев
+        var scenarioScreen = document.getElementById('scenario-screen');
+        if (scenarioScreen) scenarioScreen.classList.add('hidden');
+
+        // Обновляем информацию в хедере (поддерживаем оба варианта)
+        var headerInfo = document.getElementById('header-info');
+        if (headerInfo) {
+            headerInfo.innerHTML = (scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : '') + ' ' + scenario.name;
+            headerInfo.style.display = 'block';
+        }
+
+        // Для премиум-хедера обновляем заголовок
+        var premiumLogo = document.querySelector('.premium-header__logo-text');
+        if (premiumLogo) {
+            var originalText = premiumLogo.innerHTML;
+            // Сохраняем оригинальный текст в data-атрибуте, если ещё не сохранён
+            if (!premiumLogo.dataset.original) {
+                premiumLogo.dataset.original = originalText;
+            }
+            premiumLogo.innerHTML = (scenario.icon ? '<i class="fas ' + scenario.icon + '" style="margin-right:6px;"></i>' : '') + 
+                '<span style="font-weight:400;font-size:0.9rem;">' + escapeHtml(scenario.name) + '</span>';
+        }
+
+        // Обновляем хлебные крошки
+        var breadcrumb = document.getElementById('breadcrumb');
+        var breadcrumbCurrent = document.getElementById('breadcrumb-current');
+        if (breadcrumb) breadcrumb.style.display = 'flex';
+        if (breadcrumbCurrent) breadcrumbCurrent.textContent = scenario.name;
 
         if (window.ProgressBar) {
             ProgressBar.init();
@@ -143,9 +167,28 @@
                     startStepTimer();
                 }
 
-                document.getElementById('scenario-screen').classList.add('hidden');
-                document.getElementById('header-info').innerHTML =
-                    (scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : '') + ' ' + scenario.name;
+                var scenarioScreen = document.getElementById('scenario-screen');
+                if (scenarioScreen) scenarioScreen.classList.add('hidden');
+
+                var headerInfo = document.getElementById('header-info');
+                if (headerInfo) {
+                    headerInfo.innerHTML = (scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : '') + ' ' + scenario.name;
+                    headerInfo.style.display = 'block';
+                }
+
+                var premiumLogo = document.querySelector('.premium-header__logo-text');
+                if (premiumLogo) {
+                    if (!premiumLogo.dataset.original) {
+                        premiumLogo.dataset.original = premiumLogo.innerHTML;
+                    }
+                    premiumLogo.innerHTML = (scenario.icon ? '<i class="fas ' + scenario.icon + '" style="margin-right:6px;"></i>' : '') + 
+                        '<span style="font-weight:400;font-size:0.9rem;">' + escapeHtml(scenario.name) + '</span>';
+                }
+
+                var breadcrumb = document.getElementById('breadcrumb');
+                var breadcrumbCurrent = document.getElementById('breadcrumb-current');
+                if (breadcrumb) breadcrumb.style.display = 'flex';
+                if (breadcrumbCurrent) breadcrumbCurrent.textContent = scenario.name;
 
                 if (window.ProgressBar) {
                     ProgressBar.init();
@@ -181,10 +224,15 @@
 
         var step = AppState.currentScenario.steps[AppState.currentStepIndex];
 
-        document.getElementById('map-screen').classList.add('hidden');
-        document.getElementById('quiz-screen').classList.add('hidden');
-        document.getElementById('client-journey-screen').classList.add('hidden');
-        document.getElementById('finish-screen').classList.add('hidden');
+        var mapScreen = document.getElementById('map-screen');
+        var quizScreen = document.getElementById('quiz-screen');
+        var clientJourneyScreen = document.getElementById('client-journey-screen');
+        var finishScreen = document.getElementById('finish-screen');
+
+        if (mapScreen) mapScreen.classList.add('hidden');
+        if (quizScreen) quizScreen.classList.add('hidden');
+        if (clientJourneyScreen) clientJourneyScreen.classList.add('hidden');
+        if (finishScreen) finishScreen.classList.add('hidden');
 
         if (step.type !== 'finish') {
             if (window.ProgressBar) {
@@ -219,11 +267,28 @@
     }
 
     function showFinish() {
-        document.getElementById('map-screen').classList.add('hidden');
-        document.getElementById('quiz-screen').classList.add('hidden');
-        document.getElementById('client-journey-screen').classList.add('hidden');
-        document.getElementById('finish-screen').classList.remove('hidden');
-        document.getElementById('header-info').innerHTML = AppState.currentScenario ? AppState.currentScenario.name : '';
+        var mapScreen = document.getElementById('map-screen');
+        var quizScreen = document.getElementById('quiz-screen');
+        var clientJourneyScreen = document.getElementById('client-journey-screen');
+        var finishScreen = document.getElementById('finish-screen');
+
+        if (mapScreen) mapScreen.classList.add('hidden');
+        if (quizScreen) quizScreen.classList.add('hidden');
+        if (clientJourneyScreen) clientJourneyScreen.classList.add('hidden');
+        if (finishScreen) finishScreen.classList.remove('hidden');
+
+        var headerInfo = document.getElementById('header-info');
+        if (headerInfo) headerInfo.innerHTML = AppState.currentScenario ? AppState.currentScenario.name : '';
+
+        // Восстанавливаем оригинальный заголовок в премиум-хедера
+        var premiumLogo = document.querySelector('.premium-header__logo-text');
+        if (premiumLogo && premiumLogo.dataset.original) {
+            premiumLogo.innerHTML = premiumLogo.dataset.original;
+        }
+
+        var breadcrumb = document.getElementById('breadcrumb');
+        if (breadcrumb) breadcrumb.style.display = 'none';
+
         if (window.ProgressBar) {
             ProgressBar.hide();
         }
@@ -320,15 +385,35 @@
         saveCurrentProgress();
         AppState.currentScenario = null;
         AppState.placedJks = new Map();
-        document.getElementById('map-screen').classList.add('hidden');
-        document.getElementById('quiz-screen').classList.add('hidden');
-        document.getElementById('client-journey-screen').classList.add('hidden');
-        document.getElementById('finish-screen').classList.add('hidden');
-        document.getElementById('scenario-screen').classList.remove('hidden');
-        document.getElementById('header-info').innerHTML = '';
+
+        var mapScreen = document.getElementById('map-screen');
+        var quizScreen = document.getElementById('quiz-screen');
+        var clientJourneyScreen = document.getElementById('client-journey-screen');
+        var finishScreen = document.getElementById('finish-screen');
+        var scenarioScreen = document.getElementById('scenario-screen');
+
+        if (mapScreen) mapScreen.classList.add('hidden');
+        if (quizScreen) quizScreen.classList.add('hidden');
+        if (clientJourneyScreen) clientJourneyScreen.classList.add('hidden');
+        if (finishScreen) finishScreen.classList.add('hidden');
+        if (scenarioScreen) scenarioScreen.classList.remove('hidden');
+
+        var headerInfo = document.getElementById('header-info');
+        if (headerInfo) headerInfo.innerHTML = '';
+
+        // Восстанавливаем оригинальный заголовок в премиум-хедера
+        var premiumLogo = document.querySelector('.premium-header__logo-text');
+        if (premiumLogo && premiumLogo.dataset.original) {
+            premiumLogo.innerHTML = premiumLogo.dataset.original;
+        }
+
+        var breadcrumb = document.getElementById('breadcrumb');
+        if (breadcrumb) breadcrumb.style.display = 'none';
+
         if (window.ProgressBar) {
             ProgressBar.hide();
         }
+
         if (typeof renderScenarios === 'function') {
             renderScenarios();
         }
@@ -358,6 +443,6 @@
     window.showFinish = showFinish;
     window.updateHeaderAfterXP = updateHeaderAfterXP;
 
-    console.log('[AppScenario] Модуль загружен, версия: 1.0');
+    console.log('[AppScenario] Модуль загружен, версия: 1.1');
 
 })();
