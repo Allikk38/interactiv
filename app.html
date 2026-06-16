@@ -84,18 +84,18 @@
                     </div>
                 </div>
                 
-                <!-- КНОПКА ПЕРЕХОДА В РЕЙТИНГ (вместо Девелопера) -->
-                <a href="ratings.html" class="game-launch-btn" id="game-launch-btn" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
-                    <i class="fas fa-trophy"></i>
-                    <span>Рейтинг</span>
-                </a>
-                
                 <!-- ИМЯ ПОЛЬЗОВАТЕЛЯ (только имя, без XP и уровня) -->
                 <div class="user-name" id="user-name-btn" style="display: none;">
                     <div class="user-name__avatar" id="user-avatar"></div>
                     <span class="user-name__text" id="user-name-text"></span>
                     <i class="fas fa-chevron-down" style="font-size: 0.7rem; opacity: 0.6;"></i>
                 </div>
+                
+                <!-- КНОПКА ПЕРЕХОДА В РЕЙТИНГ -->
+                <a href="ratings.html" class="game-launch-btn" id="game-launch-btn" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                    <i class="fas fa-trophy"></i>
+                    <span>Рейтинг</span>
+                </a>
             </div>
         </header>
 
@@ -303,26 +303,23 @@
         </div>
     </div>
 
-    <!-- ===== КОНСТАНТЫ ===== -->
-    <script src="js/constants.js"></script>
-    
-    <!-- ===== УТИЛИТЫ ===== -->
+    <!-- ===== ЕДИНЫЙ ЗАГРУЗЧИК ===== -->
+    <script src="js/app-loader.js"></script>
+
+    <!-- ===== UTILS (ДОЛЖНЫ БЫТЬ ПЕРВЫМИ) ===== -->
     <script src="js/utils/escape.js"></script>
     <script src="js/utils/toast.js"></script>
     <script src="js/utils/logger.js"></script>
     <script src="js/utils/analytics.js"></script>
     <script src="js/utils/offline-queue.js"></script>
-    
+
     <!-- ===== ОСНОВНЫЕ МОДУЛИ ===== -->
+    <script src="js/constants.js"></script>
     <script src="js/config.js"></script>
     <script src="js/store.js"></script>
     <script src="js/user.js"></script>
     <script src="js/badges.js"></script>
     <script src="js/progress.js"></script>
-    
-    <!-- ===== МОДУЛИ СОГЛАСИЯ (НОВЫЕ) ===== -->
-    <script src="js/consent.js"></script>
-    <script src="js/consent-banner.js"></script>
     
     <!-- ===== ШАБЛОНЫ ===== -->
     <script src="js/templates/ui-templates.js"></script>
@@ -357,25 +354,22 @@
     <script src="js/stepRegistry.js"></script>
     <script src="js/stepRegistry-init.js"></script>
     
-    <!-- ===== ГЛАВНЫЙ ФАЙЛ ===== -->
+    <!-- ===== СОГЛАСИЕ ===== -->
+    <script src="js/consent.js"></script>
+    <script src="js/consent-banner.js"></script>
+    
+    <!-- ===== CORE МОДУЛИ ===== -->
+    <script src="js/core/app-analytics.js"></script>
+    <script src="js/core/app-offline.js"></script>
+    <script src="js/core/app-pwa.js"></script>
+    <script src="js/core/app-autosave.js"></script>
+    <script src="js/core/app-events.js"></script>
+    <script src="js/core/app-initializer.js"></script>
+    <script src="js/core/app-scenario.js"></script>
+    <script src="js/core/app-bootstrap.js"></script>
     <script src="js/app.js"></script>
     
     <!-- ===== ОНБОРДИНГ ===== -->
     <script src="js/onboarding.js"></script>
-    
-    <script>
-        // Service Worker регистрация
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(function(registration) {
-                        console.log('Service Worker зарегистрирован:', registration.scope);
-                    })
-                    .catch(function(error) {
-                        console.error('Ошибка регистрации Service Worker:', error);
-                    });
-            });
-        }
-    </script>
 </body>
 </html>

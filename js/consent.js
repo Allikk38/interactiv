@@ -1,6 +1,6 @@
 // ============================================================
 // МОДУЛЬ СОГЛАСИЯ НА ОБРАБОТКУ ПДн (152-ФЗ)
-// Версия: 2.3 — асинхронное получение IP через fetch
+// Версия: 2.6 — ИСПРАВЛЕНА РАБОТА НА ЛЕНДИНГЕ
 // Зависимости: User (для имени), OfflineQueue (опционально)
 // ============================================================
 
@@ -10,17 +10,14 @@
     // ===== ПРИВАТНЫЕ КОНСТАНТЫ =====
     var STORAGE_KEY = 'user_consent_given';
     var TIMESTAMP_KEY = 'consent_timestamp';
-    var CONSENT_VERSION = '2.3';
-    var BANNER_SELECTOR = '#consent-banner';
-    var ACCEPT_BTN_SELECTOR = '#consent-accept';
-    var DECLINE_BTN_SELECTOR = '#consent-decline';
+    var CONSENT_VERSION = '2.6';
 
     // ===== ПРИВАТНОЕ СОСТОЯНИЕ =====
     var _callbacks = {
         onAccepted: null,
         onDeclined: null
     };
-    var _isBannerShown = false;
+    var _isInitialized = false;
 
     // ===== ПРИВАТНЫЕ МЕТОДЫ =====
 
@@ -55,7 +52,6 @@
 
     /**
      * Получить IP-адрес АСИНХРОННО через fetch
-     * @param {Function} callback - функция, которая получит IP
      */
     function _getIPAsync(callback) {
         var services = [
@@ -134,7 +130,6 @@
                         return;
                     }
                 }
-                // Если IP не подходит — пробуем следующий сервис
                 tryNext();
             })
             .catch(function() {
@@ -147,7 +142,6 @@
 
     /**
      * Получить данные пользователя АСИНХРОННО
-     * @param {Function} callback - функция, которая получит данные
      */
     function _getUserDataAsync(callback) {
         var userName = 'Аноним';
@@ -210,41 +204,21 @@
     }
 
     /**
-     * Показать баннер согласия
-     */
-    function _showBanner() {
-        var banner = document.querySelector(BANNER_SELECTOR);
-        if (!banner || _isBannerShown) return;
-        banner.style.display = 'flex';
-        _isBannerShown = true;
-    }
-
-    /**
-     * Скрыть баннер согласия
-     */
-    function _hideBanner() {
-        var banner = document.querySelector(BANNER_SELECTOR);
-        if (!banner) return;
-        banner.style.display = 'none';
-        _isBannerShown = false;
-    }
-
-    /**
      * Обработчик кнопки "Согласен" (асинхронный)
      */
     function _handleAccept() {
         // Показываем индикатор загрузки на кнопке
-        var acceptBtn = document.querySelector(ACCEPT_BTN_SELECTOR);
+        var acceptBtn = document.getElementById('consent-accept');
         if (acceptBtn) {
             acceptBtn.disabled = true;
-            acceptBtn.textContent = '⏳ Подождите...';
+            acceptBtn.innerHTML = '⏳ Подождите...';
         }
 
         _getUserDataAsync(function(userData) {
             // Восстанавливаем кнопку
             if (acceptBtn) {
                 acceptBtn.disabled = false;
-                acceptBtn.innerHTML = '✅ Принимаю';
+                acceptBtn.innerHTML = '<i class="fas fa-check"></i> Принимаю';
             }
 
             try {
@@ -253,7 +227,11 @@
             } catch (_) {}
 
             _sendConsentToServer(userData);
-            _hideBanner();
+            
+            // Скрываем баннер через ConsentBanner
+            if (window.ConsentBanner && typeof window.ConsentBanner.hide === 'function') {
+                window.ConsentBanner.hide();
+            }
 
             if (typeof _callbacks.onAccepted === 'function') {
                 _callbacks.onAccepted();
@@ -272,7 +250,10 @@
             localStorage.removeItem(TIMESTAMP_KEY);
         } catch (_) {}
 
-        _hideBanner();
+        // Скрываем баннер через ConsentBanner
+        if (window.ConsentBanner && typeof window.ConsentBanner.hide === 'function') {
+            window.ConsentBanner.hide();
+        }
 
         if (typeof _callbacks.onDeclined === 'function') {
             _callbacks.onDeclined();
@@ -282,22 +263,31 @@
     }
 
     /**
-     * Навесить обработчики на кнопки баннера
+     * Навесить обработчики на кнопки баннера (через ConsentBanner)
      */
     function _bindEvents() {
-        var acceptBtn = document.querySelector(ACCEPT_BTN_SELECTOR);
-        var declineBtn = document.querySelector(DECLINE_BTN_SELECTOR);
+        // Проверяем, есть ли баннер в DOM
+        var acceptBtn = document.getElementById('consent-accept');
+        var declineBtn = document.getElementById('consent-decline');
 
         if (acceptBtn) {
             var newAccept = acceptBtn.cloneNode(true);
             acceptBtn.parentNode.replaceChild(newAccept, acceptBtn);
-            newAccept.addEventListener('click', _handleAccept);
+            newAccept.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                _handleAccept();
+            });
         }
 
         if (declineBtn) {
             var newDecline = declineBtn.cloneNode(true);
             declineBtn.parentNode.replaceChild(newDecline, declineBtn);
-            newDecline.addEventListener('click', _handleDecline);
+            newDecline.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                _handleDecline();
+            });
         }
     }
 
@@ -317,16 +307,27 @@
             _callbacks.onAccepted = onAccepted || null;
             _callbacks.onDeclined = onDeclined || null;
 
+            // Если согласие уже есть — сразу вызываем onAccepted
             if (this.hasConsent()) {
-                _hideBanner();
+                if (window.ConsentBanner && typeof window.ConsentBanner.hide === 'function') {
+                    window.ConsentBanner.hide();
+                }
                 if (typeof _callbacks.onAccepted === 'function') {
                     _callbacks.onAccepted();
                 }
                 return;
             }
 
-            _showBanner();
-            _bindEvents();
+            // Показываем баннер через ConsentBanner
+            if (window.ConsentBanner && typeof window.ConsentBanner.show === 'function') {
+                window.ConsentBanner.show();
+                // Перепривязываем события после показа
+                setTimeout(_bindEvents, 50);
+            } else {
+                // Fallback: если ConsentBanner не загружен
+                console.warn('[Consent] ConsentBanner не загружен, создаём баннер вручную');
+                _createFallbackBanner();
+            }
         },
 
         giveConsent: function() {
@@ -339,8 +340,11 @@
                 localStorage.removeItem(TIMESTAMP_KEY);
             } catch (_) {}
             console.log('[Consent] Согласие отозвано');
-            _showBanner();
-            _bindEvents();
+            
+            if (window.ConsentBanner && typeof window.ConsentBanner.show === 'function') {
+                window.ConsentBanner.show();
+                setTimeout(_bindEvents, 50);
+            }
         },
 
         getVersion: function() {
@@ -355,26 +359,59 @@
             }
         },
 
-        /**
-         * Асинхронно получить IP
-         * @param {Function} callback
-         */
         refreshIP: function(callback) {
             _getIPAsync(callback || function(ip) {
                 console.log('[Consent] Ваш IP:', ip);
             });
         },
 
-        /**
-         * Асинхронно получить данные пользователя
-         * @param {Function} callback
-         */
         getUserData: function(callback) {
             _getUserDataAsync(callback || function(data) {
                 console.log('[Consent] Данные пользователя:', data);
             });
         }
     };
+
+    /**
+     * Создание баннера вручную (fallback)
+     */
+    function _createFallbackBanner() {
+        if (document.getElementById('consent-banner')) return;
+        
+        var banner = document.createElement('div');
+        banner.id = 'consent-banner';
+        banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:20px 24px;z-index:9999;border-top:3px solid #f39c12;display:flex;flex-direction:column;align-items:center;gap:16px;font-family:sans-serif;box-shadow:0 -8px 32px rgba(0,0,0,0.4);max-height:90vh;overflow-y:auto;';
+        banner.innerHTML = `
+            <div style="max-width:900px;width:100%;text-align:center;">
+                <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px;flex-wrap:wrap;">
+                    <span style="font-size:1.5rem;">🛡️</span>
+                    <span style="font-weight:700;font-size:1.1rem;color:#f39c12;">Ваша конфиденциальность</span>
+                </div>
+                <p style="margin:0;font-size:0.9rem;line-height:1.5;color:rgba(255,255,255,0.85);max-width:700px;margin:0 auto;">
+                    Мы используем cookies и собираем технические данные
+                    (имя, IP-адрес, прогресс обучения) для работы тренажёра.
+                    <br>
+                    <a href="./privacy.html" target="_blank" style="color:#f39c12;text-decoration:underline;font-weight:500;">
+                        Подробнее в Политике конфиденциальности
+                    </a>
+                </p>
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+                <button id="consent-accept" style="min-width:140px;padding:12px 24px;background:linear-gradient(135deg,#f39c12,#e67e22);border:none;border-radius:32px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
+                    <i class="fas fa-check"></i> Принимаю
+                </button>
+                <button id="consent-decline" style="min-width:140px;padding:12px 24px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);border-radius:32px;color:#fff;font-weight:600;font-size:0.95rem;cursor:pointer;">
+                    <i class="fas fa-times"></i> Отказаться
+                </button>
+            </div>
+            <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);text-align:center;max-width:600px;">
+                Вы можете отозвать согласие в любой момент, очистив данные сайта в настройках браузера
+            </div>
+        `;
+        document.body.appendChild(banner);
+        _bindEvents();
+        console.log('[Consent] Баннер создан вручную (fallback)');
+    }
 
     window.Consent = publicAPI;
     console.log('[Consent] Модуль загружен, версия:', CONSENT_VERSION);

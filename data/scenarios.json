@@ -1111,5 +1111,22 @@
       "type": "finish"
     }
   ]
+},
+{
+  "id": "consultation-lesson",
+  "group": "Обучение",
+  "icon": "fa-comments",
+  "badge": "Мастер консультаций",
+  "name": "Урок: Консультация клиента",
+  "description": "Активное слушание и сбор данных для подборки",
+  "steps": [
+    {
+      "type": "consultation",
+      "title": "Консультация клиента"
+    },
+    {
+      "type": "finish"
+    }
+  ]
 }
 ]

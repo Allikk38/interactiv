@@ -1,15 +1,15 @@
 // ============================================================
 // МОДУЛЬ БАННЕРА СОГЛАСИЯ
-// Версия: 1.0
+// Версия: 1.5 — ИСПРАВЛЕН ПОКАЗ НА ЛЕНДИНГЕ
 // Зависимости: Consent (основной модуль)
-// Ответственность: только рендер и управление видимостью баннера
+// Ответственность: рендер и управление видимостью баннера
 // ============================================================
 
-const ConsentBanner = (function() {
+var ConsentBanner = (function() {
     'use strict';
 
     // ===== ПРИВАТНЫЕ КОНСТАНТЫ =====
-    const BANNER_HTML = `
+    var BANNER_HTML = `
         <div id="consent-banner" style="
             position: fixed;
             bottom: 0;
@@ -26,6 +26,8 @@ const ConsentBanner = (function() {
             gap: 16px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             box-shadow: 0 -8px 32px rgba(0,0,0,0.4);
+            max-height: 90vh;
+            overflow-y: auto;
         ">
             <div style="max-width: 900px; width: 100%; text-align: center;">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap;">
@@ -78,7 +80,14 @@ const ConsentBanner = (function() {
     `;
 
     // ===== ПРИВАТНОЕ СОСТОЯНИЕ =====
-    let _isRendered = false;
+    var _isRendered = false;
+    var _callbacks = {
+        onAccept: null,
+        onDecline: null
+    };
+    var _isShown = false;
+    var _isProcessing = false;
+    var _isInitialized = false;
 
     // ===== ПРИВАТНЫЕ МЕТОДЫ =====
 
@@ -87,10 +96,13 @@ const ConsentBanner = (function() {
      */
     function _renderBanner() {
         if (_isRendered) return;
-        if (document.getElementById('consent-banner')) return;
+        if (document.getElementById('consent-banner')) {
+            _isRendered = true;
+            return;
+        }
 
-        // Вставляем баннер в начало body
-        document.body.insertAdjacentHTML('afterbegin', BANNER_HTML);
+        // Вставляем баннер в конец body (перед закрывающим тегом)
+        document.body.insertAdjacentHTML('beforeend', BANNER_HTML);
         _isRendered = true;
         console.log('[ConsentBanner] Баннер вставлен в DOM');
     }
@@ -99,49 +111,99 @@ const ConsentBanner = (function() {
      * Показать баннер
      */
     function _show() {
-        const banner = document.getElementById('consent-banner');
-        if (!banner) {
-            _renderBanner();
-            // Повторно ищем после рендера
-            const newBanner = document.getElementById('consent-banner');
-            if (newBanner) newBanner.style.display = 'flex';
+        // Проверяем, есть ли уже согласие
+        if (window.Consent && window.Consent.hasConsent()) {
+            console.log('[ConsentBanner] Согласие уже есть, баннер не показываем');
+            _hide();
             return;
         }
+
+        var banner = document.getElementById('consent-banner');
+        if (!banner) {
+            _renderBanner();
+            banner = document.getElementById('consent-banner');
+            if (!banner) return;
+        }
+        
+        // Убеждаемся, что баннер прижат к низу экрана
+        banner.style.position = 'fixed';
+        banner.style.bottom = '0';
+        banner.style.left = '0';
+        banner.style.right = '0';
         banner.style.display = 'flex';
+        banner.style.zIndex = '9999';
+        
+        _isShown = true;
+        console.log('[ConsentBanner] Баннер показан');
     }
 
     /**
      * Скрыть баннер
      */
     function _hide() {
-        const banner = document.getElementById('consent-banner');
+        var banner = document.getElementById('consent-banner');
         if (!banner) return;
         banner.style.display = 'none';
+        _isShown = false;
+        console.log('[ConsentBanner] Баннер скрыт');
     }
 
     /**
      * Навесить обработчики на кнопки
      */
-    function _bindEvents(onAccept, onDecline) {
-        const acceptBtn = document.getElementById('consent-accept');
-        const declineBtn = document.getElementById('consent-decline');
+    function _bindEvents() {
+        var acceptBtn = document.getElementById('consent-accept');
+        var declineBtn = document.getElementById('consent-decline');
 
         if (acceptBtn) {
             // Удаляем старые обработчики через замену
-            const newAccept = acceptBtn.cloneNode(true);
+            var newAccept = acceptBtn.cloneNode(true);
             acceptBtn.parentNode.replaceChild(newAccept, acceptBtn);
             newAccept.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (typeof onAccept === 'function') onAccept();
+                e.stopPropagation();
+                console.log('[ConsentBanner] Нажата кнопка "Принимаю"');
+                
+                // Предотвращаем повторные клики
+                if (_isProcessing) return;
+                _isProcessing = true;
+                
+                // Сразу скрываем баннер
+                _hide();
+                
+                if (typeof _callbacks.onAccept === 'function') {
+                    _callbacks.onAccept();
+                }
+                
+                // Сбрасываем флаг через секунду
+                setTimeout(function() {
+                    _isProcessing = false;
+                }, 1000);
             });
         }
 
         if (declineBtn) {
-            const newDecline = declineBtn.cloneNode(true);
+            var newDecline = declineBtn.cloneNode(true);
             declineBtn.parentNode.replaceChild(newDecline, declineBtn);
             newDecline.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (typeof onDecline === 'function') onDecline();
+                e.stopPropagation();
+                console.log('[ConsentBanner] Нажата кнопка "Отказаться"');
+                
+                // Предотвращаем повторные клики
+                if (_isProcessing) return;
+                _isProcessing = true;
+                
+                // Сразу скрываем баннер
+                _hide();
+                
+                if (typeof _callbacks.onDecline === 'function') {
+                    _callbacks.onDecline();
+                }
+                
+                setTimeout(function() {
+                    _isProcessing = false;
+                }, 1000);
             });
         }
     }
@@ -156,13 +218,26 @@ const ConsentBanner = (function() {
          * @param {Function} onDecline - колбэк при нажатии "Отказаться"
          */
         init: function(onAccept, onDecline) {
+            // Предотвращаем повторную инициализацию
+            if (_isInitialized) {
+                console.log('[ConsentBanner] Уже инициализирован');
+                return;
+            }
+            _isInitialized = true;
+
+            // Сохраняем колбэки
+            _callbacks.onAccept = onAccept || null;
+            _callbacks.onDecline = onDecline || null;
+
             // Рендерим баннер в DOM
             _renderBanner();
 
             // Проверяем, есть ли уже согласие
             if (window.Consent && window.Consent.hasConsent()) {
                 _hide();
-                if (typeof onAccept === 'function') onAccept();
+                if (typeof _callbacks.onAccept === 'function') {
+                    _callbacks.onAccept();
+                }
                 return;
             }
 
@@ -170,26 +245,20 @@ const ConsentBanner = (function() {
             _show();
 
             // Навешиваем обработчики
-            _bindEvents(
-                function() {
-                    _hide();
-                    if (window.Consent) {
-                        window.Consent.giveConsent();
-                    }
-                    if (typeof onAccept === 'function') onAccept();
-                },
-                function() {
-                    _hide();
-                    if (typeof onDecline === 'function') onDecline();
-                }
-            );
+            _bindEvents();
         },
 
         /**
-         * Показать баннер принудительно (например, после отзыва согласия)
+         * Показать баннер принудительно
          */
         show: function() {
+            // Проверяем, есть ли уже согласие
+            if (window.Consent && window.Consent.hasConsent()) {
+                _hide();
+                return;
+            }
             _show();
+            _bindEvents();
         },
 
         /**
@@ -203,8 +272,24 @@ const ConsentBanner = (function() {
          * Проверить, виден ли баннер
          */
         isVisible: function() {
-            const banner = document.getElementById('consent-banner');
-            return banner && banner.style.display === 'flex';
+            return _isShown;
+        },
+
+        /**
+         * Получить состояние рендера
+         */
+        isRendered: function() {
+            return _isRendered;
+        },
+
+        /**
+         * Сбросить состояние (для тестирования)
+         */
+        reset: function() {
+            _isInitialized = false;
+            _isRendered = false;
+            _isShown = false;
+            _isProcessing = false;
         }
     };
 
@@ -213,4 +298,4 @@ const ConsentBanner = (function() {
 // ===== ЭКСПОРТ В ГЛОБАЛЬНУЮ ОБЛАСТЬ =====
 window.ConsentBanner = ConsentBanner;
 
-console.log('[ConsentBanner] Модуль загружен');
+console.log('[ConsentBanner] Модуль загружен, версия 1.5');

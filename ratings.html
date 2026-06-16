@@ -503,7 +503,6 @@
                 justify-content: flex-end;
             }
             
-            /* На мобильных показываем меньше колонок */
             table {
                 min-width: 480px;
             }
@@ -668,19 +667,22 @@
         </div>
     </div>
     
+    <!-- ===== ЕДИНЫЙ ЗАГРУЗЧИК ===== -->
+    <script src="js/app-loader.js"></script>
+
+    <!-- ===== СПЕЦИФИЧНЫЕ ДЛЯ СТРАНИЦЫ МОДУЛИ ===== -->
     <script src="js/config.js"></script>
-    <script src="js/utils/toast.js"></script>
-    <script src="js/utils/logger.js"></script>
     <script src="js/user.js"></script>
     <script src="js/badges.js"></script>
-    
+
     <script>
         (function() {
             'use strict';
             
             let currentLeaderboard = [];
             let currentUserName = null;
-            
+            let isInitialized = false;
+
             // ===== ПОЛУЧЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ =====
             function getUserData() {
                 const user = User.get();
@@ -691,6 +693,17 @@
                 return null;
             }
             
+            // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
+            }
+
             // ===== ЗАГРУЗКА РЕЙТИНГОВ =====
             async function loadLeaderboard() {
                 const tableContent = document.getElementById('table-content');
@@ -714,7 +727,7 @@
                         tableContent.innerHTML = `
                             <div class="error-message">
                                 <i class="fas fa-exclamation-triangle"></i>
-                                <p>${data.error}</p>
+                                <p>${escapeHtml(data.error)}</p>
                             </div>
                         `;
                         showToast('❌', data.error, 'error');
@@ -728,7 +741,7 @@
                             <div class="empty-message">
                                 <i class="fas fa-chart-simple"></i>
                                 <p>Пока нет данных. Пройдите первый сценарий, чтобы попасть в рейтинг!</p>
-                                <a href="./" class="btn btn--primary">
+                                <a href="./app.html" class="btn btn--primary">
                                     <i class="fas fa-play"></i> Начать обучение
                                 </a>
                             </div>
@@ -866,27 +879,47 @@
                 document.getElementById('table-content').innerHTML = tableHTML;
             }
             
-            // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
-            function escapeHtml(str) {
-                if (!str) return '';
-                return str.replace(/[&<>]/g, function(m) {
-                    if (m === '&') return '&amp;';
-                    if (m === '<') return '&lt;';
-                    if (m === '>') return '&gt;';
-                    return m;
-                });
-            }
-            
             // ===== ОБНОВЛЕНИЕ ПО КНОПКЕ =====
             document.getElementById('refresh-btn')?.addEventListener('click', function(e) {
                 e.preventDefault();
                 loadLeaderboard();
             });
             
-            // ===== ЗАГРУЗКА ПРИ СТАРТЕ =====
-            document.addEventListener('DOMContentLoaded', function() {
+            // ===== ИНИЦИАЛИЗАЦИЯ =====
+            function initRatings() {
+                // Проверяем, что все зависимости загружены
+                if (typeof User === 'undefined' || typeof Badges === 'undefined') {
+                    console.warn('[Ratings] Ожидание загрузки модулей...');
+                    setTimeout(initRatings, 200);
+                    return;
+                }
+
+                if (isInitialized) return;
+                isInitialized = true;
+
+                console.log('[Ratings] Все модули загружены, загрузка рейтингов...');
                 loadLeaderboard();
-            });
+            }
+
+            // Проверяем, загружен ли AppLoader
+            if (typeof AppLoader !== 'undefined') {
+                AppLoader.load({
+                    debug: false,
+                    onComplete: function() {
+                        console.log('[Ratings] Общие модули загружены');
+                        setTimeout(initRatings, 100);
+                    },
+                    onError: function(error) {
+                        console.error('[Ratings] Ошибка загрузки общих модулей:', error);
+                        // Пробуем запустить без общих модулей
+                        setTimeout(initRatings, 300);
+                    }
+                });
+            } else {
+                // Fallback
+                console.warn('[Ratings] AppLoader не найден, запуск без него');
+                setTimeout(initRatings, 300);
+            }
             
         })();
     </script>

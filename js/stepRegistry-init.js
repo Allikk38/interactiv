@@ -2,9 +2,12 @@
 // Этот файл подключается после всех *-step.js файлов, но перед app.js
 
 (function initStepRegistry() {
+    'use strict';
+    
     // Убедимся, что StepRegistry существует
     if (typeof StepRegistry === 'undefined') {
-        logError('StepRegistry не найден!');
+        // Используем console.error вместо logError, так как logger может быть ещё не загружен
+        console.error('[StepRegistry] StepRegistry не найден!');
         return;
     }
     
@@ -61,19 +64,19 @@
     // Из timer-quiz.js
     if (typeof runTimerQuizStep === 'function') {
         StepRegistry.register('timer-quiz', runTimerQuizStep);
-        logInfo('StepRegistry: зарегистрирован тип шага "timer-quiz"');
+        console.log('[StepRegistry] Зарегистрирован тип шага "timer-quiz"');
     }
     
     // Из decision-chain.js
     if (typeof runDecisionChainStep === 'function') {
         StepRegistry.register('decision-chain', runDecisionChainStep);
-        logInfo('StepRegistry: зарегистрирован тип шага "decision-chain"');
+        console.log('[StepRegistry] Зарегистрирован тип шага "decision-chain"');
     }
     
-    // ИЗ triple-match-drag.js (НОВЫЙ ТИП ШАГА)
+    // Из triple-match-drag.js
     if (typeof runTripleMatchDragStep === 'function') {
         StepRegistry.register('triple-match-drag', runTripleMatchDragStep);
-        logInfo('StepRegistry: зарегистрирован тип шага "triple-match-drag"');
+        console.log('[StepRegistry] Зарегистрирован тип шага "triple-match-drag"');
     }
     
     // Из client-journey.js
@@ -81,8 +84,14 @@
         StepRegistry.register('client-journey', runClientJourneyStep);
     }
     
+    // Из consultation-main.js
+    if (typeof runConsultationStep === 'function') {
+        StepRegistry.register('consultation', runConsultationStep);
+    }
+    
     // Регистрируем finish как специальный тип (хотя он обрабатывается отдельно)
     // finish не требует обработчика, так как runStep сам его ловит
     
-    logInfo(`StepRegistry: зарегистрировано ${StepRegistry.getRegisteredTypes().length} типов шагов:`, StepRegistry.getRegisteredTypes());
+    var registeredTypes = StepRegistry.getRegisteredTypes ? StepRegistry.getRegisteredTypes() : [];
+    console.log('[StepRegistry] Зарегистрировано ' + registeredTypes.length + ' типов шагов:', registeredTypes);
 })();

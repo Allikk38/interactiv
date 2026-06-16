@@ -50,7 +50,6 @@
     ">
     
     <!-- Стили проекта -->
-    <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/landing.css">
     
     <!-- Font Awesome 6 -->
@@ -392,38 +391,35 @@
         </div>
     </footer>
     
-    <!-- ===== БАННЕР СОГЛАСИЯ (ИНТЕГРАЦИЯ С СУЩЕСТВУЮЩИМ МЕХАНИЗМОМ) ===== -->
+    <!-- ===== БАННЕР СОГЛАСИЯ ===== -->
     <div id="consent-banner-container"></div>
     
-    <!-- ===== СКРИПТЫ ===== -->
-    <!-- Базовые утилиты -->
-    <script src="js/utils/toast.js"></script>
-    <script src="js/utils/logger.js"></script>
-    
-    <!-- Модуль согласия -->
-    <script src="js/consent.js"></script>
-    <script src="js/consent-banner.js"></script>
+    <!-- ===== ЕДИНЫЙ ЗАГРУЗЧИК ===== -->
+    <script src="js/app-loader.js"></script>
     
     <script>
         (function() {
             'use strict';
             
-            // Инициализируем баннер согласия после загрузки DOM
+            // Инициализируем баннер согласия после загрузки общих модулей
             document.addEventListener('DOMContentLoaded', function() {
-                // Проверяем, загружен ли ConsentBanner
-                if (typeof ConsentBanner !== 'undefined') {
-                    console.log('[Landing] Инициализация баннера согласия');
-                    
-                    ConsentBanner.init(
-                        function() {
-                            console.log('[Landing] Согласие получено');
-                        },
-                        function() {
-                            console.log('[Landing] Отказ от согласия');
+                // Ждём загрузку AppLoader
+                if (typeof AppLoader !== 'undefined') {
+                    AppLoader.load({
+                        debug: false,
+                        onComplete: function() {
+                            if (typeof ConsentBanner !== 'undefined') {
+                                ConsentBanner.init(
+                                    function() {
+                                        console.log('[Landing] Согласие получено');
+                                    },
+                                    function() {
+                                        console.log('[Landing] Отказ от согласия');
+                                    }
+                                );
+                            }
                         }
-                    );
-                } else {
-                    console.warn('[Landing] ConsentBanner не загружен, пропускаем');
+                    });
                 }
             });
             

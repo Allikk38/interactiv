@@ -16,4 +16,7 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-// window.escapeHtml = escapeHtml;  // УДАЛЕНО — не нужно, функция и так глобальна
+// Явно экспортируем в глобальную область
+window.escapeHtml = escapeHtml;
+
+console.log('[escape] Модуль загружен');

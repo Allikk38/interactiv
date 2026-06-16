@@ -1,14 +1,14 @@
 /* ============================================================
    СТИЛИ ДЛЯ ГЛАВНОЙ СТРАНИЦЫ (LANDING PAGE)
-   Версия: 1.0
+   Версия: 1.1 — исправлены цвета и отображение
    Зависимости: Использует переменные из css/base.css
    ============================================================ */
 
 /* Сброс и базовые стили для страницы */
 .landing-page {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, sans-serif;
-    background-color: var(--color-bg);
-    color: var(--color-text);
+    background-color: #f5f6fa;
+    color: #2d3436;
     min-height: 100vh;
     line-height: 1.6;
 }
@@ -22,14 +22,14 @@
 
 /* ===== ШАПКА ===== */
 .landing-header {
-    padding: 20px 0;
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    padding: 16px 0;
+    background: #ffffff;
+    border-bottom: 1px solid #dfe6e9;
     position: sticky;
     top: 0;
     z-index: 100;
     backdrop-filter: blur(8px);
-    background-color: rgba(255, 255, 255, 0.92);
+    background-color: rgba(255, 255, 255, 0.95);
 }
 
 .landing-header__inner {
@@ -46,12 +46,12 @@
     gap: 10px;
     font-size: 1.3rem;
     font-weight: 700;
-    color: var(--color-text);
+    color: #2d3436;
     text-decoration: none;
 }
 
 .landing-header__logo i {
-    color: var(--color-primary);
+    color: #2e86de;
     font-size: 1.6rem;
 }
 
@@ -65,30 +65,30 @@
 
 .landing-nav__link {
     padding: 8px 16px;
-    border-radius: var(--radius-sm);
-    color: var(--color-text-light);
+    border-radius: 8px;
+    color: #636e72;
     text-decoration: none;
     font-weight: 500;
     font-size: 0.95rem;
-    transition: all var(--transition);
+    transition: all 0.2s ease;
 }
 
 .landing-nav__link:hover {
-    color: var(--color-primary);
-    background-color: var(--color-bg);
+    color: #2e86de;
+    background-color: #f5f6fa;
 }
 
 .landing-nav__link--primary {
-    background: var(--color-primary);
-    color: #fff;
+    background: #2e86de;
+    color: #ffffff !important;
     padding: 10px 24px;
     border-radius: 32px;
     font-weight: 600;
 }
 
 .landing-nav__link--primary:hover {
-    background: var(--color-primary-hover);
-    color: #fff;
+    background: #1b6dc1;
+    color: #ffffff !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(46, 134, 222, 0.3);
 }
@@ -97,7 +97,7 @@
 .landing-hero {
     padding: 80px 0 60px;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #fff;
+    color: #ffffff;
     position: relative;
     overflow: hidden;
 }
@@ -130,7 +130,7 @@
 .landing-hero__badge {
     display: inline-block;
     background: rgba(243, 156, 18, 0.2);
-    color: var(--color-warning);
+    color: #f39c12;
     padding: 4px 14px;
     border-radius: 40px;
     font-size: 0.75rem;
@@ -147,10 +147,11 @@
     line-height: 1.2;
     margin-bottom: 20px;
     letter-spacing: -0.5px;
+    color: #ffffff;
 }
 
 .landing-hero__title .highlight {
-    background: linear-gradient(135deg, var(--color-warning), #e67e22);
+    background: linear-gradient(135deg, #f39c12, #e67e22);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -176,27 +177,28 @@
     font-size: 1rem;
     font-weight: 600;
     text-decoration: none;
-    transition: all var(--transition);
+    transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    min-height: var(--tap-target-size);
+    min-height: 44px;
 }
 
 .landing-hero__btn--primary {
-    background: linear-gradient(135deg, var(--color-primary), #1b6dc1);
-    color: #fff;
+    background: linear-gradient(135deg, #2e86de, #1b6dc1);
+    color: #ffffff;
     box-shadow: 0 4px 16px rgba(46, 134, 222, 0.35);
 }
 
 .landing-hero__btn--primary:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(46, 134, 222, 0.45);
+    color: #ffffff;
 }
 
 .landing-hero__btn--secondary {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(4px);
 }
@@ -204,6 +206,7 @@
 .landing-hero__btn--secondary:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: translateY(-3px);
+    color: #ffffff;
 }
 
 /* Статистика в герое */
@@ -222,7 +225,7 @@
 .landing-hero__stat-number {
     font-size: 1.8rem;
     font-weight: 700;
-    color: var(--color-warning);
+    color: #f39c12;
     display: block;
     line-height: 1;
 }
@@ -242,7 +245,7 @@
 
 .landing-hero__mockup {
     background: rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius);
+    border-radius: 12px;
     padding: 24px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(4px);
@@ -261,7 +264,7 @@
     align-items: center;
     gap: 16px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius-sm);
+    border-radius: 8px;
     padding: 14px 18px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -299,7 +302,7 @@
 }
 
 .landing-hero__mockup-text strong {
-    color: #fff;
+    color: #ffffff;
 }
 
 .landing-hero__mockup-progress {
@@ -312,7 +315,7 @@
 
 .landing-hero__mockup-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--color-primary), var(--color-success));
+    background: linear-gradient(90deg, #2e86de, #27ae60);
     border-radius: 4px;
     width: 65%;
 }
@@ -323,7 +326,7 @@
 }
 
 .landing-section--alt {
-    background: var(--color-surface);
+    background: #ffffff;
 }
 
 .landing-section__title {
@@ -331,13 +334,18 @@
     font-weight: 700;
     text-align: center;
     margin-bottom: 12px;
-    color: var(--color-text);
+    color: #2d3436;
+}
+
+.landing-section__title i {
+    color: #2e86de;
+    margin-right: 8px;
 }
 
 .landing-section__subtitle {
     text-align: center;
     font-size: 1.1rem;
-    color: var(--color-text-light);
+    color: #636e72;
     max-width: 600px;
     margin: 0 auto 48px;
 }
@@ -349,18 +357,18 @@
 }
 
 .landing-benefit {
-    background: var(--color-surface);
-    border-radius: var(--radius);
+    background: #ffffff;
+    border-radius: 12px;
     padding: 32px 28px;
-    border: 1px solid var(--color-border);
-    transition: all var(--transition);
+    border: 1px solid #dfe6e9;
+    transition: all 0.2s ease;
     text-align: center;
 }
 
 .landing-benefit:hover {
     transform: translateY(-6px);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
-    border-color: var(--color-primary);
+    border-color: #2e86de;
 }
 
 .landing-benefit__icon {
@@ -373,12 +381,12 @@
     font-size: 1.2rem;
     font-weight: 700;
     margin-bottom: 8px;
-    color: var(--color-text);
+    color: #2d3436;
 }
 
 .landing-benefit__desc {
     font-size: 0.95rem;
-    color: var(--color-text-light);
+    color: #636e72;
     line-height: 1.6;
 }
 
@@ -391,12 +399,12 @@
 }
 
 .landing-step {
-    background: var(--color-surface);
-    border-radius: var(--radius);
+    background: #ffffff;
+    border-radius: 12px;
     padding: 32px 24px;
-    border: 1px solid var(--color-border);
+    border: 1px solid #dfe6e9;
     position: relative;
-    transition: all var(--transition);
+    transition: all 0.2s ease;
     text-align: center;
 }
 
@@ -408,8 +416,8 @@
 .landing-step__number {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, var(--color-primary), #1b6dc1);
-    color: #fff;
+    background: linear-gradient(135deg, #2e86de, #1b6dc1);
+    color: #ffffff;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -423,12 +431,12 @@
     font-size: 1.1rem;
     font-weight: 700;
     margin-bottom: 8px;
-    color: var(--color-text);
+    color: #2d3436;
 }
 
 .landing-step__desc {
     font-size: 0.9rem;
-    color: var(--color-text-light);
+    color: #636e72;
     line-height: 1.6;
 }
 
@@ -440,18 +448,18 @@
 }
 
 .landing-feature {
-    background: var(--color-surface);
-    border-radius: var(--radius);
+    background: #ffffff;
+    border-radius: 12px;
     padding: 24px 20px;
-    border: 1px solid var(--color-border);
+    border: 1px solid #dfe6e9;
     display: flex;
     gap: 16px;
     align-items: flex-start;
-    transition: all var(--transition);
+    transition: all 0.2s ease;
 }
 
 .landing-feature:hover {
-    border-color: var(--color-primary);
+    border-color: #2e86de;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -470,19 +478,19 @@
     font-weight: 600;
     font-size: 1rem;
     margin-bottom: 4px;
-    color: var(--color-text);
+    color: #2d3436;
 }
 
 .landing-feature__desc {
     font-size: 0.85rem;
-    color: var(--color-text-light);
+    color: #636e72;
     line-height: 1.5;
 }
 
 /* ===== СЕКЦИЯ CTA (ПРИЗЫВ К ДЕЙСТВИЮ) ===== */
 .landing-cta {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #fff;
+    color: #ffffff;
     padding: 80px 0;
     text-align: center;
 }
@@ -491,6 +499,7 @@
     font-size: 2.2rem;
     font-weight: 700;
     margin-bottom: 16px;
+    color: #ffffff;
 }
 
 .landing-cta__subtitle {
@@ -509,21 +518,22 @@
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    background: linear-gradient(135deg, var(--color-warning), #e67e22);
-    color: #fff;
-    transition: all var(--transition);
-    min-height: var(--tap-target-size);
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: #ffffff;
+    transition: all 0.2s ease;
+    min-height: 44px;
 }
 
 .landing-cta__btn:hover {
     transform: translateY(-4px) scale(1.02);
     box-shadow: 0 8px 32px rgba(243, 156, 18, 0.4);
+    color: #ffffff;
 }
 
 /* ===== ПОДВАЛ ===== */
 .landing-footer {
-    background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
+    background: #ffffff;
+    border-top: 1px solid #dfe6e9;
     padding: 40px 0 24px;
 }
 
@@ -537,7 +547,7 @@
 
 .landing-footer__copy {
     font-size: 0.85rem;
-    color: var(--color-text-light);
+    color: #636e72;
 }
 
 .landing-footer__links {
@@ -547,14 +557,49 @@
 }
 
 .landing-footer__link {
-    color: var(--color-text-light);
+    color: #636e72;
     text-decoration: none;
     font-size: 0.85rem;
-    transition: color var(--transition);
+    transition: color 0.2s ease;
 }
 
 .landing-footer__link:hover {
-    color: var(--color-primary);
+    color: #2e86de;
+}
+
+/* ===== БАННЕР СОГЛАСИЯ (поверх стилей лендинга) ===== */
+#consent-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+    color: #ffffff !important;
+    padding: 20px 24px !important;
+    z-index: 9999 !important;
+    border-top: 3px solid #f39c12 !important;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.4) !important;
+}
+
+#consent-banner a {
+    color: #f39c12 !important;
+}
+
+#consent-banner .btn--primary {
+    background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+#consent-banner .btn--secondary {
+    background: rgba(255,255,255,0.1) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,255,255,0.25) !important;
 }
 
 /* ===== АДАПТИВ ===== */
@@ -794,11 +839,21 @@
         font-size: 0.8rem;
         padding: 6px 14px;
     }
+
+    #consent-banner {
+        padding: 16px !important;
+    }
+    
+    #consent-banner .btn {
+        padding: 10px 16px !important;
+        font-size: 0.85rem !important;
+        min-width: 120px !important;
+    }
 }
 
 /* ===== УЛУЧШЕНИЯ ДЛЯ ДОСТУПНОСТИ ===== */
 .landing-page *:focus-visible {
-    outline: 3px solid var(--color-primary);
+    outline: 3px solid #2e86de;
     outline-offset: 2px;
 }
 
