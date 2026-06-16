@@ -6,13 +6,14 @@
     <title>Тренажёр агента недвижимости</title>
     
     <!-- CSP (Content Security Policy) для защиты от XSS -->
+    <!-- ИСПРАВЛЕНО: добавлены yastatic.net, fonts.googleapis.com и script.googleusercontent.com -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self' 'unsafe-inline' https://api-maps.yandex.ru https://cdnjs.cloudflare.com https://script.google.com;
-        style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
-        img-src 'self' data: blob: https://*.yandex.ru https://*.yandex.net;
-        connect-src 'self' https://script.google.com https://api-maps.yandex.ru;
-        font-src 'self' https://cdnjs.cloudflare.com;
+        script-src 'self' 'unsafe-inline' https://api-maps.yandex.ru https://cdnjs.cloudflare.com https://script.google.com https://yastatic.net https://script.googleusercontent.com;
+        style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+        img-src 'self' data: blob: https://*.yandex.ru https://*.yandex.net https://yastatic.net;
+        connect-src 'self' https://script.google.com https://api-maps.yandex.ru https://yastatic.net https://script.googleusercontent.com;
+        font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:;
         frame-src 'self' https://yandex.ru;
     ">
     
@@ -48,13 +49,16 @@
     <link rel="stylesheet" href="css/drawer.css">
     <link rel="stylesheet" href="css/onboarding.css">
 
-    <!-- Font Awesome 6 -->
+    <!-- ===== FONTAWESOME — ЗАГРУЖАЕМ СРАЗУ (БЕЗ ТРЕКЕРОВ) ===== -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <!-- API Яндекс.Карт -->
-    <!-- ⚠️ ВАЖНО: API-ключ ограничен по HTTP Referer доменом allikk38.github.io -->
-    <!-- Настройка в кабинете разработчика Яндекс: allikk38.github.io -->
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=7d7f69f2-30f1-4a3c-93bd-b7b99354b7c5&lang=ru_RU"></script>
+
+    <!-- Если CDN не загрузился — показываем иконки текстом -->
+    <noscript>
+        <style>
+            .fa, .fas, .far, .fab { display: none; }
+            [class*="fa-"]::before { content: "●"; margin-right: 4px; }
+        </style>
+    </noscript>
 </head>
 <body>
     <div class="container">
@@ -309,6 +313,10 @@
     <script src="js/badges.js"></script>
     <script src="js/progress.js"></script>
     
+    <!-- ===== МОДУЛИ СОГЛАСИЯ (НОВЫЕ) ===== -->
+    <script src="js/consent.js"></script>
+    <script src="js/consent-banner.js"></script>
+    
     <!-- ===== ШАБЛОНЫ ===== -->
     <script src="js/templates/ui-templates.js"></script>
     <script src="js/templates/quiz-templates.js"></script>
@@ -349,13 +357,14 @@
     <script src="js/onboarding.js"></script>
     
     <script>
+        // Service Worker регистрация
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
+            window.addEventListener('load', function() {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
+                    .then(function(registration) {
                         console.log('Service Worker зарегистрирован:', registration.scope);
                     })
-                    .catch(error => {
+                    .catch(function(error) {
                         console.error('Ошибка регистрации Service Worker:', error);
                     });
             });

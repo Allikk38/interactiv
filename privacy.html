@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Политика конфиденциальности — Тренажёр агента недвижимости</title>
+    
+    <!-- CSP — минимальный, только необходимые ресурсы -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+        font-src 'self' https://cdnjs.cloudflare.com;
+    ">
+    
+    <!-- Базовые стили -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* Дополнительные стили для страницы политики */
+        .privacy-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px 60px;
+        }
+        
+        .privacy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--color-border, #dfe6e9);
+        }
+        
+        .privacy-header h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--color-text, #2d3436);
+        }
+        
+        .privacy-header h1 i {
+            color: var(--color-primary, #2e86de);
+        }
+        
+        .back-btn {
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .privacy-content {
+            background: var(--color-surface, #ffffff);
+            border-radius: var(--radius, 12px);
+            padding: 32px 36px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .privacy-content h2 {
+            font-size: 1.3rem;
+            margin-top: 32px;
+            margin-bottom: 12px;
+            color: var(--color-text, #2d3436);
+        }
+        
+        .privacy-content h2:first-of-type {
+            margin-top: 0;
+        }
+        
+        .privacy-content p {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--color-text-light, #636e72);
+            margin-bottom: 16px;
+        }
+        
+        .privacy-content ul {
+            margin: 12px 0 20px 24px;
+            list-style: none;
+        }
+        
+        .privacy-content ul li {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--color-text-light, #636e72);
+            padding: 4px 0;
+            position: relative;
+            padding-left: 24px;
+        }
+        
+        .privacy-content ul li::before {
+            content: "•";
+            position: absolute;
+            left: 4px;
+            color: var(--color-primary, #2e86de);
+            font-weight: 700;
+        }
+        
+        .privacy-content .highlight-box {
+            background: var(--color-bg, #f5f6fa);
+            border-left: 4px solid var(--color-primary, #2e86de);
+            padding: 16px 20px;
+            border-radius: 0 var(--radius-sm, 8px) var(--radius-sm, 8px) 0;
+            margin: 16px 0 24px;
+        }
+        
+        .privacy-content .highlight-box strong {
+            color: var(--color-text, #2d3436);
+        }
+        
+        .privacy-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--color-border, #dfe6e9);
+            font-size: 0.8rem;
+            color: var(--color-text-light, #636e72);
+            text-align: center;
+        }
+        
+        .privacy-footer a {
+            color: var(--color-primary, #2e86de);
+            text-decoration: none;
+        }
+        
+        .privacy-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .last-updated {
+            font-style: italic;
+            color: var(--color-text-light, #636e72);
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .privacy-container {
+                padding: 20px 16px 40px;
+            }
+            
+            .privacy-content {
+                padding: 20px 16px;
+            }
+            
+            .privacy-header h1 {
+                font-size: 1.3rem;
+            }
+            
+            .privacy-content h2 {
+                font-size: 1.1rem;
+            }
+            
+            .privacy-content p,
+            .privacy-content ul li {
+                font-size: 0.85rem;
+            }
+        }
+        
+        @media print {
+            .privacy-header .back-btn {
+                display: none;
+            }
+            .privacy-container {
+                padding: 20px;
+            }
+            .privacy-content {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="header__title"><i class="fas fa-building"></i> Тренажёр агента недвижимости</h1>
+            <div class="header__info"></div>
+        </header>
+        
+        <main class="main">
+            <div class="privacy-container">
+                <div class="privacy-header">
+                    <h1>
+                        <i class="fas fa-shield-alt"></i>
+                        Политика конфиденциальности
+                    </h1>
+                    <a href="./" class="btn btn--secondary back-btn">
+                        <i class="fas fa-arrow-left"></i> На главную
+                    </a>
+                </div>
+                
+                <div class="privacy-content">
+                    <p style="font-size: 1.05rem; color: var(--color-text, #2d3436);">
+                        <strong>Дата вступления в силу:</strong> <span id="effective-date">1 июня 2026 г.</span>
+                    </p>
+                    
+                    <p>
+                        Мы уважаем вашу конфиденциальность и стремимся защищать ваши персональные данные. 
+                        Эта Политика конфиденциальности объясняет, какие данные мы собираем, как мы их используем 
+                        и какие у вас есть права в соответствии с Федеральным законом № 152-ФЗ 
+                        «О персональных данных».
+                    </p>
+                    
+                    <h2>1. Какие данные мы собираем</h2>
+                    <p>В процессе использования тренажёра мы собираем следующие персональные данные:</p>
+                    <ul>
+                        <li><strong>Имя пользователя</strong> — указывается вами добровольно при первом входе</li>
+                        <li><strong>IP-адрес</strong> — технически необходимая информация, передаваемая вашим браузером</li>
+                        <li><strong>User-Agent</strong> — информация о вашем браузере и устройстве</li>
+                        <li><strong>Прогресс обучения</strong> — данные о пройденных сценариях, правильных ответах, набранных баллах</li>
+                        <li><strong>История действий</strong> — клики по карте, ответы на вопросы, выборы в интерактивных сценариях</li>
+                    </ul>
+                    
+                    <div class="highlight-box">
+                        <strong>⚠️ Важно:</strong> Мы НЕ собираем паспортные данные, номера телефонов, адреса электронной почты,
+                        данные банковских карт или любую другую информацию, которая прямо идентифицирует вас как физическое лицо
+                        за пределами тренажёра.
+                    </div>
+                    
+                    <h2>2. Цели обработки данных</h2>
+                    <p>Ваши персональные данные обрабатываются исключительно для следующих целей:</p>
+                    <ul>
+                        <li>Предоставление доступа к тренажёру и его функциям</li>
+                        <li>Сохранение прогресса обучения между сессиями</li>
+                        <li>Формирование статистики и рейтингов агентов</li>
+                        <li>Улучшение качества контента и пользовательского опыта</li>
+                        <li>Восстановление прерванных сценариев обучения</li>
+                    </ul>
+                    
+                    <h2>3. Правовые основания обработки</h2>
+                    <p>
+                        Обработка ваших персональных данных осуществляется на основании:
+                    </p>
+                    <ul>
+                        <li>
+                            <strong>Вашего согласия</strong> (п. 1 ч. 1 ст. 6 152-ФЗ) — вы даёте согласие при нажатии 
+                            кнопки «Принимаю» в баннере согласия
+                        </li>
+                        <li>
+                            <strong>Исполнения договора</strong> (п. 5 ч. 1 ст. 6 152-ФЗ) — использование тренажёра 
+                            является договором оказания услуг
+                        </li>
+                    </ul>
+                    
+                    <h2>4. Срок хранения данных</h2>
+                    <p>
+                        Ваши персональные данные хранятся в течение всего периода использования тренажёра. 
+                        После прекращения использования данные могут быть удалены по вашему запросу.
+                    </p>
+                    <p>
+                        Логи согласий (записи о том, что вы дали согласие) хранятся в течение <strong>3 лет</strong> 
+                        с момента последнего действия в соответствии с требованиями законодательства.
+                    </p>
+                    
+                    <h2>5. Как мы защищаем ваши данные</h2>
+                    <p>Мы принимаем следующие меры для защиты ваших персональных данных:</p>
+                    <ul>
+                        <li>Все данные хранятся в защищённом облачном хранилище с ограниченным доступом</li>
+                        <li>Доступ к данным имеют только авторизованные лица</li>
+                        <li>Передача данных осуществляется по защищённому протоколу HTTPS</li>
+                        <li>Мы не передаём ваши данные третьим лицам</li>
+                    </ul>
+                    
+                    <h2>6. Ваши права</h2>
+                    <p>В соответствии с 152-ФЗ вы имеете право:</p>
+                    <ul>
+                        <li>Отозвать своё согласие на обработку данных в любой момент</li>
+                        <li>Получить информацию о том, какие ваши данные обрабатываются</li>
+                        <li>Требовать уточнения, блокирования или уничтожения ваших данных</li>
+                        <li>Обжаловать действия оператора в Роскомнадзоре</li>
+                    </ul>
+                    
+                    <div class="highlight-box">
+                        <strong>Как отозвать согласие:</strong><br>
+                        Очистите данные сайта в настройках вашего браузера (LocalStorage и Cookies).
+                        После этого баннер согласия появится снова при следующем входе.
+                    </div>
+                    
+                    <h2>7. Использование сторонних сервисов</h2>
+                    <p>
+                        Для работы тренажёра используются следующие сторонние сервисы:
+                    </p>
+                    <ul>
+                        <li>
+                            <strong>Google Sheets</strong> (компания Google LLC) — для хранения статистики и логов согласий. 
+                            Данные передаются в обезличенном виде.
+                        </li>
+                        <li>
+                            <strong>Яндекс.Карты</strong> (компания ООО «Яндекс») — для отображения карты новостроек. 
+                            Загружаются только после получения вашего согласия.
+                        </li>
+                        <li>
+                            <strong>Font Awesome</strong> (компания Fonticons, Inc.) — для отображения иконок. 
+                            Не передаёт персональные данные.
+                        </li>
+                    </ul>
+                    
+                    <h2>8. Контактная информация</h2>
+                    <p>
+                        По всем вопросам, связанным с обработкой персональных данных, вы можете обратиться:
+                    </p>
+                    <ul>
+                        <li><strong>По email:</strong> <a href="mailto:privacy@yourdomain.com">privacy@yourdomain.com</a></li>
+                        <li><strong>Через форму обратной связи:</strong> <a href="./">Главная страница тренажёра</a></li>
+                    </ul>
+                    
+                    <h2>9. Изменения в политике</h2>
+                    <p>
+                        Мы оставляем за собой право вносить изменения в настоящую Политику конфиденциальности. 
+                        Все изменения публикуются на этой странице с обновлённой датой вступления в силу.
+                    </p>
+                    
+                    <div class="last-updated">
+                        Последнее обновление: <span id="update-date">1 июня 2026 г.</span>
+                    </div>
+                </div>
+                
+                <div class="privacy-footer">
+                    <p>
+                        <i class="fas fa-lock"></i>
+                        Тренажёр агента недвижимости работает в соответствии с 152-ФЗ
+                        <br>
+                        <a href="./">Вернуться на главную</a>
+                    </p>
+                </div>
+            </div>
+        </main>
+        
+        <div class="toast hidden" id="toast">
+            <span class="toast__icon" id="toast-icon"></span>
+            <span class="toast__message" id="toast-message"></span>
+        </div>
+    </div>
+    
+    <!-- Только базовые скрипты для тостов -->
+    <script src="js/utils/toast.js"></script>
+    
+    <script>
+        // Устанавливаем текущую дату
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('ru-RU', options);
+            
+            const effectiveDate = document.getElementById('effective-date');
+            const updateDate = document.getElementById('update-date');
+            
+            if (effectiveDate) effectiveDate.textContent = dateStr;
+            if (updateDate) updateDate.textContent = dateStr;
+        });
+    </script>
+</body>
+</html>
