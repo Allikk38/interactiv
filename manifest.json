@@ -2,7 +2,7 @@
   "name": "Тренажёр агента недвижимости",
   "short_name": "Агент Недв",
   "description": "Интерактивное обучение для риелторов: карта новостроек, тесты, кейсы клиентов",
-  "start_url": "./index.html",
+  "start_url": "./app.html",
   "scope": "./",
   "display": "standalone",
   "theme_color": "#2e86de",
@@ -82,7 +82,7 @@
       "name": "Продолжить обучение",
       "short_name": "Обучение",
       "description": "Продолжить последний активный сценарий",
-      "url": "./index.html?action=continue",
+      "url": "./app.html?action=continue",
       "icons": [
         {
           "src": "icons/icon-96.png",

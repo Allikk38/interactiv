@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Тренажёр агента недвижимости</title>
+    
+    <!-- CSP (Content Security Policy) для защиты от XSS -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://api-maps.yandex.ru https://cdnjs.cloudflare.com https://script.google.com https://yastatic.net https://script.googleusercontent.com;
+        style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+        img-src 'self' data: blob: https://*.yandex.ru https://*.yandex.net https://yastatic.net;
+        connect-src 'self' https://script.google.com https://api-maps.yandex.ru https://yastatic.net https://script.googleusercontent.com;
+        font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:;
+        frame-src 'self' https://yandex.ru;
+    ">
+    
+    <!-- PWA Meta -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2e86de">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Агент Недв">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Агент Недв">
+    
+    <!-- iOS иконки -->
+    <link rel="apple-touch-icon" sizes="57x57" href="icons/icon-57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="icons/icon-60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="icons/icon-72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="icons/icon-76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="icons/icon-114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+    
+    <!-- Android иконки -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+    
+    <!-- Стили -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/map.css">
+    <link rel="stylesheet" href="css/steps.css">
+    <link rel="stylesheet" href="css/drawer.css">
+    <link rel="stylesheet" href="css/onboarding.css">
+
+    <!-- ===== FONTAWESOME — ЗАГРУЖАЕМ СРАЗУ (БЕЗ ТРЕКЕРОВ) ===== -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Если CDN не загрузился — показываем иконки текстом -->
+    <noscript>
+        <style>
+            .fa, .fas, .far, .fab { display: none; }
+            [class*="fa-"]::before { content: "●"; margin-right: 4px; }
+        </style>
+    </noscript>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="header__title"><i class="fas fa-building"></i> Тренажёр агента недвижимости</h1>
+            
+            <div class="header__info" id="header-info" style="display: none;"></div>
+            
+            <div class="header-right">
+                <!-- ССЫЛКА НА ГЛАВНУЮ СТРАНИЦУ (ЛЕНДИНГ) -->
+                <a href="./" class="btn btn--secondary btn--small" style="margin-right: 8px;" title="О проекте">
+                    <i class="fas fa-info-circle"></i>
+                    <span>О проекте</span>
+                </a>
+                
+                <!-- XP КАРТОЧКА (только XP и уровень, без дублирования имени) -->
+                <div class="xp-card" id="xp-card" style="display: none;">
+                    <div class="xp-card__stats">
+                        <span class="xp-card__level" id="user-level">Уровень 1</span>
+                        <span class="xp-card__xp" id="user-xp">0 XP</span>
+                    </div>
+                    <div class="level-progress" id="level-progress">
+                        <div class="level-progress__fill" id="level-progress-fill"></div>
+                    </div>
+                </div>
+                
+                <!-- КНОПКА ПЕРЕХОДА В РЕЙТИНГ (вместо Девелопера) -->
+                <a href="ratings.html" class="game-launch-btn" id="game-launch-btn" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                    <i class="fas fa-trophy"></i>
+                    <span>Рейтинг</span>
+                </a>
+                
+                <!-- ИМЯ ПОЛЬЗОВАТЕЛЯ (только имя, без XP и уровня) -->
+                <div class="user-name" id="user-name-btn" style="display: none;">
+                    <div class="user-name__avatar" id="user-avatar"></div>
+                    <span class="user-name__text" id="user-name-text"></span>
+                    <i class="fas fa-chevron-down" style="font-size: 0.7rem; opacity: 0.6;"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Хлебные крошки -->
+        <div class="breadcrumb" id="breadcrumb" style="display: none;">
+            <a href="./" class="breadcrumb__item" id="breadcrumb-home">
+                <i class="fas fa-home"></i> Главная
+            </a>
+            <span class="breadcrumb__separator">/</span>
+            <span class="breadcrumb__item breadcrumb__item--active" id="breadcrumb-current"></span>
+        </div>
+
+        <main class="main">
+            <!-- Экран выбора сценария -->
+            <section class="screen" id="scenario-screen">
+                
+                <!-- Дашборд агента -->
+                <div class="agent-dashboard" id="agent-dashboard" style="display: none;">
+                    <div class="agent-dashboard__row">
+                        <div class="agent-avatar">
+                            <div class="agent-avatar__circle" id="dashboard-avatar">👤</div>
+                            <div class="agent-avatar__info">
+                                <h2 id="dashboard-name">Агент</h2>
+                                <p><i class="fas fa-calendar-alt"></i> <span id="dashboard-joined">Только что</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="agent-stats">
+                            <div class="agent-stats__level">УРОВЕНЬ</div>
+                            <div class="agent-stats__value" id="dashboard-level">1</div>
+                            <div class="agent-stats__progress">
+                                <div class="agent-stats__progress-fill" id="dashboard-progress-fill"></div>
+                            </div>
+                            <div class="agent-stats__next" id="dashboard-next">До следующего уровня: 100 XP</div>
+                        </div>
+                        
+                        <div class="agent-streak" id="dashboard-streak" style="display: none;">
+                            <div class="agent-streak__icon">🔥</div>
+                            <div>
+                                <div class="agent-streak__count" id="streak-count">0</div>
+                                <div class="agent-streak__label">дней подряд</div>
+                            </div>
+                        </div>
+                        
+                        <div class="ring-progress" id="ring-progress">
+                            <canvas id="ring-canvas" width="80" height="80"></canvas>
+                            <div class="ring-progress__value" id="ring-value">0%</div>
+                            <div class="ring-progress__label">общий прогресс</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Быстрая статистика -->
+                <div class="quick-stats" id="quick-stats" style="display: none;">
+                    <div class="quick-stat">
+                        <div class="quick-stat__icon">📋</div>
+                        <div class="quick-stat__value" id="quick-scenarios">0/<span id="quick-total">0</span></div>
+                        <div class="quick-stat__label">пройдено сценариев</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat__icon">⚡</div>
+                        <div class="quick-stat__value" id="quick-xp">0</div>
+                        <div class="quick-stat__label">всего XP</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat__icon">🏅</div>
+                        <div class="quick-stat__value" id="quick-badges">0</div>
+                        <div class="quick-stat__label">бейджей</div>
+                    </div>
+                </div>
+                
+                <!-- Категории (горизонтальный скролл) -->
+                <div class="categories-scroll">
+                    <div class="categories-list" id="categories-list">
+                        <button class="category-chip category-chip--active" data-category="all">
+                            <i class="fas fa-th-large"></i> Все
+                            <span class="category-chip__count" id="cat-all-count">0</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Сетка сценариев -->
+                <div class="scenarios-grid" id="scenarios-grid"></div>
+                
+                <!-- Блок рекомендаций -->
+                <div class="recommendations" id="recommendations" style="display: none;">
+                    <div class="recommendations__title">
+                        <i class="fas fa-lightbulb"></i> Вам может быть интересно
+                    </div>
+                    <div class="recommendations__grid" id="recommendations-grid"></div>
+                </div>
+                
+                <!-- Герой-блок "Продолжить обучение" -->
+                <div class="continue-learning" id="continue-learning" style="display: none;">
+                    <div class="continue-learning__greeting" id="continue-greeting">👋 Добро пожаловать!</div>
+                    <div class="continue-learning__sub" id="continue-sub">Продолжите с того места, где остановились</div>
+                    <div class="continue-learning__card" id="continue-card">
+                        <div class="continue-learning__info">
+                            <h4 id="continue-title">Загрузка...</h4>
+                            <p id="continue-desc"></p>
+                        </div>
+                        <div class="continue-learning__progress">
+                            <div class="continue-learning__progress-bar">
+                                <div class="continue-learning__progress-fill" id="continue-progress-fill"></div>
+                            </div>
+                            <div class="continue-learning__progress-text" id="continue-progress-text">0% завершено</div>
+                        </div>
+                        <button class="continue-learning__btn" id="continue-btn">Продолжить →</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Экран карты -->
+            <section class="screen hidden" id="map-screen">
+                <div class="step-header">
+                    <button class="btn btn--small btn--secondary" id="back-to-scenarios-btn"><i class="fas fa-arrow-left"></i> К сценариям</button>
+                    <h2 class="step-title" id="map-step-title"></h2>
+                    <div class="step-counter" id="map-step-counter"></div>
+                </div>
+                
+                <div class="main main--map">
+                    <!-- Левая панель со списком ЖК (для ПК) -->
+                    <div class="jk-drawer" id="jk-drawer">
+                        <div class="jk-drawer__header">
+                            <h3 class="jk-drawer__title"><i class="fas fa-list"></i> Жилые комплексы</h3>
+                            <button class="jk-drawer__close" id="drawer-close-btn"><i class="fas fa-times"></i></button>
+                        </div>
+                        <ul class="jk-drawer__list" id="jk-drawer-list"></ul>
+                        <div class="jk-drawer__actions">
+                            <button class="btn btn--secondary btn--small" id="hint-btn"><i class="fas fa-lightbulb"></i> Подсказка</button>
+                            <button class="btn btn--danger btn--small" id="reset-step-btn"><i class="fas fa-undo-alt"></i> Сбросить шаг</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Оверлей для мобильной панели -->
+                    <div class="drawer-overlay" id="drawer-overlay"></div>
+                    
+                    <!-- Плавающая кнопка для открытия списка на мобильных -->
+                    <button class="floating-list-btn" id="floating-list-btn">
+                        <i class="fas fa-building"></i>
+                    </button>
+                    
+                    <section class="map-section">
+                        <div class="map-container" id="map"></div>
+                        <div class="map-progress" id="map-progress" style="display: none;">
+                            <i class="fas fa-map-pin"></i> Расставлено: <span class="map-progress__count" id="map-progress-count">0</span> 
+                            из <span id="map-progress-total">0</span>
+                            <div class="map-progress__fill"></div>
+                        </div>
+                        <p class="map-hint"><i class="fas fa-map-marker-alt"></i> Нажмите на ЖК в списке, затем на карту, чтобы поставить метку</p>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Экран тестов и интерактивов -->
+            <section class="screen hidden" id="quiz-screen">
+                <div class="step-header">
+                    <button class="btn btn--small btn--secondary" id="quiz-back-btn"><i class="fas fa-arrow-left"></i> К сценариям</button>
+                    <h2 class="step-title" id="quiz-step-title"></h2>
+                    <div class="step-counter" id="quiz-step-counter"></div>
+                </div>
+                <div class="quiz-container" id="quiz-container"></div>
+                <div class="quiz-actions" style="text-align:center; padding:20px;">
+                    <button class="btn btn--primary" id="quiz-next-btn" disabled>Далее</button>
+                </div>
+            </section>
+
+            <!-- Экран сквозного сценария "Путь клиента" -->
+            <section class="screen hidden" id="client-journey-screen">
+                <div class="step-header">
+                    <button class="btn btn--small btn--secondary" id="journey-back-btn"><i class="fas fa-arrow-left"></i> К сценариям</button>
+                    <h2 class="step-title" id="journey-step-title"></h2>
+                    <div class="step-counter" id="journey-step-counter"></div>
+                </div>
+                <div class="journey-container" id="journey-container"></div>
+                <div class="journey-actions" style="text-align:center; padding:20px;">
+                    <button class="btn btn--primary hidden" id="journey-next-btn" disabled>Далее</button>
+                </div>
+            </section>
+
+            <!-- Экран финиша -->
+            <section class="screen hidden" id="finish-screen">
+                <div class="finish-content">
+                    <div class="finish__icon"><i class="fas fa-flag-checkered"></i></div>
+                    <h2 class="finish__title">Сценарий пройден</h2>
+                    <p class="finish__text" id="finish-text"></p>
+                    <div class="finish__stats" id="finish-stats"></div>
+                    <div class="finish__actions">
+                        <button class="btn btn--primary" id="finish-restart-btn"><i class="fas fa-redo-alt"></i> Пройти заново</button>
+                        <button class="btn btn--secondary" id="finish-scenarios-btn"><i class="fas fa-th-large"></i> К списку сценариев</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div class="toast hidden" id="toast">
+            <span class="toast__icon" id="toast-icon"></span>
+            <span class="toast__message" id="toast-message"></span>
+        </div>
+
+        <!-- Офлайн-индикатор -->
+        <div class="offline-indicator" id="offline-indicator">
+            <i class="fas fa-wifi"></i>
+            <span>Нет соединения с интернетом. Некоторые функции могут быть недоступны.</span>
+        </div>
+    </div>
+
+    <!-- ===== КОНСТАНТЫ ===== -->
+    <script src="js/constants.js"></script>
+    
+    <!-- ===== УТИЛИТЫ ===== -->
+    <script src="js/utils/escape.js"></script>
+    <script src="js/utils/toast.js"></script>
+    <script src="js/utils/logger.js"></script>
+    <script src="js/utils/analytics.js"></script>
+    <script src="js/utils/offline-queue.js"></script>
+    
+    <!-- ===== ОСНОВНЫЕ МОДУЛИ ===== -->
+    <script src="js/config.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/user.js"></script>
+    <script src="js/badges.js"></script>
+    <script src="js/progress.js"></script>
+    
+    <!-- ===== МОДУЛИ СОГЛАСИЯ (НОВЫЕ) ===== -->
+    <script src="js/consent.js"></script>
+    <script src="js/consent-banner.js"></script>
+    
+    <!-- ===== ШАБЛОНЫ ===== -->
+    <script src="js/templates/ui-templates.js"></script>
+    <script src="js/templates/quiz-templates.js"></script>
+    <script src="js/templates/map-templates.js"></script>
+    <script src="js/templates/client-journey-templates.js"></script>
+    <script src="js/templates/interactive-templates.js"></script>
+    <script src="js/templates/triple-templates.js"></script>
+    
+    <!-- ===== ЛОГИКА ===== -->
+    <script src="js/dragdrop.js"></script>
+    <script src="js/brief.js"></script>
+    <script src="js/interactive-lesson1.js"></script>
+    <script src="js/client-journey.js"></script>
+    <script src="js/drawer.js"></script>
+    <script src="js/ui.js"></script>
+    
+    <!-- ===== КАРТА ===== -->
+    <script src="js/map/map-core.js"></script>
+    <script src="js/map/map-utils.js"></script>
+    <script src="js/map/map-ui.js"></script>
+    <script src="js/map/map-step.js"></script>
+    
+    <!-- ===== ИНТЕРАКТИВНЫЕ ШАГИ ===== -->
+    <script src="js/quiz.js"></script>
+    <script src="js/timer-quiz.js"></script>
+    <script src="js/decision-chain.js"></script>
+    <script src="js/triple-match-drag.js"></script>
+    <script src="js/interactive.js"></script>
+    
+    <!-- ===== РЕЕСТР ШАГОВ ===== -->
+    <script src="js/stepRegistry.js"></script>
+    <script src="js/stepRegistry-init.js"></script>
+    
+    <!-- ===== ГЛАВНЫЙ ФАЙЛ ===== -->
+    <script src="js/app.js"></script>
+    
+    <!-- ===== ОНБОРДИНГ ===== -->
+    <script src="js/onboarding.js"></script>
+    
+    <script>
+        // Service Worker регистрация
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(function(registration) {
+                        console.log('Service Worker зарегистрирован:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.error('Ошибка регистрации Service Worker:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

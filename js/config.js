@@ -1,4 +1,4 @@
 // ===== КОНФИГУРАЦИЯ =====
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwXxs5m0dE-Yd-kvmm1nCUY29ujN9bUC6txoIbi0mQk6qeuxrBwvWv4dK8bQeiYOY-L/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHxrLqYze95Sws7gCvUEz8g4jzBVI3NdTDm_jLLZ-YWYD-ofjsD1iGC7S0UGf-wb2x/exec';
 const MAP_CENTER = [55.018, 82.92];
 const MAP_ZOOM = 12;

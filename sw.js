@@ -1,7 +1,7 @@
 // ===== SERVICE WORKER ДЛЯ PWA (С ОФЛАЙН-ИНДИКАЦИЕЙ И УВЕДОМЛЕНИЕМ ОБ ОБНОВЛЕНИИ) =====
 
 // Версия кеша (увеличивайте при каждом обновлении)
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const STATIC_CACHE = `realty-static-${CACHE_VERSION}`;
 const DATA_CACHE = `realty-data-${CACHE_VERSION}`;
 
@@ -9,10 +9,13 @@ const DATA_CACHE = `realty-data-${CACHE_VERSION}`;
 const urlsToCache = [
   './',
   './index.html',
+  './app.html',
   './consultation.html',
   './developer.html',
   './ratings.html',
+  './privacy.html',
   './css/base.css',
+  './css/landing.css',
   './css/map.css',
   './css/steps.css',
   './css/drawer.css',
@@ -55,6 +58,8 @@ const urlsToCache = [
   './js/templates/client-journey-templates.js',
   './js/templates/interactive-templates.js',
   './js/templates/triple-templates.js',
+  './js/consent.js',
+  './js/consent-banner.js',
   './manifest.json'
 ];
 
@@ -99,7 +104,6 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cache => {
-          // Удаляем все кеши, которые не относятся к текущей версии
           if (cache !== STATIC_CACHE && cache !== DATA_CACHE) {
             console.log('[SW] Удалён старый кеш:', cache);
             return caches.delete(cache);
@@ -108,7 +112,6 @@ self.addEventListener('activate', event => {
       );
     }).then(() => {
       console.log('[SW] Активация завершена, уведомляем клиентов');
-      // Уведомляем всех клиентов о новой версии
       return self.clients.matchAll();
     }).then(clients => {
       clients.forEach(client => {
@@ -161,7 +164,6 @@ function broadcastNewVersionAvailable() {
 // Функция для проверки обновлений (периодическая)
 function checkForUpdates() {
   console.log('[SW] Проверка обновлений...');
-  // Отправляем запрос на обновление Service Worker
   self.registration.update().catch(err => {
     console.error('[SW] Ошибка проверки обновлений:', err);
   });
@@ -176,7 +178,6 @@ setInterval(() => {
 self.addEventListener('online', () => {
   console.log('[SW] Соединение восстановлено');
   broadcastConnectionStatus(true);
-  // При восстановлении соединения проверяем обновления
   checkForUpdates();
 });
 
@@ -208,7 +209,6 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request).catch(error => {
         console.warn('[SW] Google Sheets запрос не удался:', error);
-        // Возвращаем ошибку, но не кешируем
         return new Response(JSON.stringify({ error: 'offline', queued: true }), {
           status: 503,
           headers: { 'Content-Type': 'application/json' }
@@ -239,9 +239,11 @@ self.addEventListener('fetch', event => {
       event.request.url.includes('/js/') ||
       isPathRequest(event.request.url, '/') ||
       isPathRequest(event.request.url, '/index.html') ||
+      isPathRequest(event.request.url, '/app.html') ||
       isPathRequest(event.request.url, '/consultation.html') ||
       isPathRequest(event.request.url, '/developer.html') ||
-      isPathRequest(event.request.url, '/ratings.html')) {
+      isPathRequest(event.request.url, '/ratings.html') ||
+      isPathRequest(event.request.url, '/privacy.html')) {
     
     event.respondWith(
       caches.match(event.request)
@@ -273,7 +275,6 @@ self.addEventListener('fetch', event => {
         .then(response => {
           if (response) return response;
           return fetch(event.request).catch(() => {
-            // Возвращаем прозрачный пиксель если нет иконки
             return new Response(null, { status: 204 });
           });
         })
@@ -305,20 +306,17 @@ self.addEventListener('message', event => {
   
   if (!data) return;
   
-  // Пропуск ожидания и активация новой версии
   if (data === 'skipWaiting') {
     console.log('[SW] Получен запрос на активацию');
     self.skipWaiting();
     broadcastNewVersionAvailable();
   }
   
-  // Обработка запроса на проверку обновлений
   if (data === 'checkUpdate' || data?.type === 'checkUpdate') {
     console.log('[SW] Запрос на проверку обновлений');
     checkForUpdates();
   }
   
-  // Запрос текущего статуса соединения
   if (data === 'getConnectionStatus' || data?.type === 'getConnectionStatus') {
     self.clients.matchAll().then(clients => {
       clients.forEach(client => {
@@ -331,7 +329,6 @@ self.addEventListener('message', event => {
     });
   }
   
-  // Запрос версии Service Worker
   if (data === 'getVersion' || data?.type === 'getVersion') {
     event.source.postMessage({
       type: 'SW_VERSION',

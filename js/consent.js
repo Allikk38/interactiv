@@ -1,6 +1,6 @@
 // ============================================================
 // МОДУЛЬ СОГЛАСИЯ НА ОБРАБОТКУ ПДн (152-ФЗ)
-// Версия: 2.2
+// Версия: 2.3 — асинхронное получение IP через fetch
 // Зависимости: User (для имени), OfflineQueue (опционально)
 // ============================================================
 
@@ -10,7 +10,7 @@
     // ===== ПРИВАТНЫЕ КОНСТАНТЫ =====
     var STORAGE_KEY = 'user_consent_given';
     var TIMESTAMP_KEY = 'consent_timestamp';
-    var CONSENT_VERSION = '2.2';
+    var CONSENT_VERSION = '2.3';
     var BANNER_SELECTOR = '#consent-banner';
     var ACCEPT_BTN_SELECTOR = '#consent-accept';
     var DECLINE_BTN_SELECTOR = '#consent-decline';
@@ -54,11 +54,10 @@
     }
 
     /**
-     * Получить IP-адрес через несколько сервисов с fallback
-     * @returns {string} IP-адрес или 'unknown'
+     * Получить IP-адрес АСИНХРОННО через fetch
+     * @param {Function} callback - функция, которая получит IP
      */
-    function _getIP() {
-        // Список сервисов для получения IP
+    function _getIPAsync(callback) {
         var services = [
             'https://api.ipify.org?format=json',
             'https://api.my-ip.io/ip.json',
@@ -67,75 +66,90 @@
             'https://icanhazip.com'
         ];
 
-        // Пробуем синхронно через XHR
-        for (var i = 0; i < services.length; i++) {
-            try {
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', services[i], false);
-                xhr.timeout = 3000;
-                xhr.send();
+        var index = 0;
 
-                if (xhr.status === 200 && xhr.responseText) {
-                    var ip = null;
-                    try {
-                        var data = JSON.parse(xhr.responseText);
-                        ip = data.ip || data.query || null;
-                    } catch (_) {
-                        ip = xhr.responseText.trim();
-                    }
+        function tryNext() {
+            if (index >= services.length) {
+                // Пробуем WebRTC как fallback
+                try {
+                    var pc = new RTCPeerConnection({ iceServers: [] });
+                    pc.createDataChannel('');
+                    pc.createOffer()
+                        .then(function(offer) {
+                            return pc.setLocalDescription(offer);
+                        })
+                        .catch(function() {});
 
-                    if (ip && ip !== 'unknown' && ip !== 'undefined' && ip !== 'null') {
-                        var ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
-                        if (ipPattern.test(ip) && !_isLocalIP(ip)) {
-                            return ip;
+                    var ipFromWebRTC = null;
+                    pc.onicecandidate = function(e) {
+                        if (e.candidate) {
+                            var match = /([0-9]{1,3}\.){3}[0-9]{1,3}/.exec(e.candidate.candidate);
+                            if (match) {
+                                var localIP = match[0];
+                                if (!_isLocalIP(localIP)) {
+                                    ipFromWebRTC = localIP;
+                                }
+                            }
                         }
+                    };
+
+                    setTimeout(function() {
+                        if (ipFromWebRTC) {
+                            callback(ipFromWebRTC);
+                        } else {
+                            callback('unknown');
+                        }
+                    }, 1500);
+                } catch (_) {
+                    callback('unknown');
+                }
+                return;
+            }
+
+            var url = services[index];
+            index++;
+
+            fetch(url, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-cache'
+            })
+            .then(function(response) {
+                if (!response.ok) throw new Error('Network error');
+                return response.text();
+            })
+            .then(function(text) {
+                var ip = null;
+                try {
+                    var data = JSON.parse(text);
+                    ip = data.ip || data.query || null;
+                } catch (_) {
+                    ip = text.trim();
+                }
+
+                if (ip && ip !== 'unknown' && ip !== 'undefined' && ip !== 'null') {
+                    var ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+                    if (ipPattern.test(ip) && !_isLocalIP(ip)) {
+                        callback(ip);
+                        return;
                     }
                 }
-            } catch (_) {
-                continue;
-            }
+                // Если IP не подходит — пробуем следующий сервис
+                tryNext();
+            })
+            .catch(function() {
+                tryNext();
+            });
         }
 
-        // Пробуем через WebRTC
-        try {
-            var pc = new RTCPeerConnection({ iceServers: [] });
-            pc.createDataChannel('');
-            pc.createOffer()
-                .then(function(offer) {
-                    return pc.setLocalDescription(offer);
-                })
-                .catch(function() {});
-
-            var ipFromWebRTC = null;
-            pc.onicecandidate = function(e) {
-                if (e.candidate) {
-                    var match = /([0-9]{1,3}\.){3}[0-9]{1,3}/.exec(e.candidate.candidate);
-                    if (match) {
-                        var localIP = match[0];
-                        if (!_isLocalIP(localIP)) {
-                            ipFromWebRTC = localIP;
-                        }
-                    }
-                }
-            };
-
-            var startTime = Date.now();
-            while (!ipFromWebRTC && (Date.now() - startTime) < 2000) {
-                // Ждём
-            }
-
-            if (ipFromWebRTC) {
-                return ipFromWebRTC;
-            }
-        } catch (_) {}
-
-        return 'unknown';
+        tryNext();
     }
 
     /**
-     * Получить данные пользователя
+     * Получить данные пользователя АСИНХРОННО
+     * @param {Function} callback - функция, которая получит данные
      */
-    function _getUserData() {
+    function _getUserDataAsync(callback) {
         var userName = 'Аноним';
         try {
             if (window.User && typeof window.User.get === 'function') {
@@ -146,24 +160,16 @@
             }
         } catch (_) {}
 
-        var ip = 'unknown';
-        // Пробуем до 5 раз с задержкой
-        for (var attempt = 0; attempt < 5; attempt++) {
-            ip = _getIP();
-            if (ip !== 'unknown') break;
-            // Небольшая задержка между попытками
-            var start = Date.now();
-            while (Date.now() - start < 200) {}
-        }
-
-        return {
-            name: userName,
-            agent: navigator.userAgent || 'unknown',
-            ip: ip,
-            screenWidth: window.screen ? window.screen.width : 'unknown',
-            language: navigator.language || 'unknown',
-            platform: navigator.platform || 'unknown'
-        };
+        _getIPAsync(function(ip) {
+            callback({
+                name: userName,
+                agent: navigator.userAgent || 'unknown',
+                ip: ip || 'unknown',
+                screenWidth: window.screen ? window.screen.width : 'unknown',
+                language: navigator.language || 'unknown',
+                platform: navigator.platform || 'unknown'
+            });
+        });
     }
 
     /**
@@ -182,6 +188,8 @@
             timestamp: new Date().toISOString(),
             consent_given: true
         };
+
+        console.log('[Consent] Отправка согласия:', payload);
 
         if (window.OfflineQueue && typeof window.OfflineQueue.add === 'function') {
             window.OfflineQueue.add(payload, window.GOOGLE_SCRIPT_URL, 'POST');
@@ -222,24 +230,37 @@
     }
 
     /**
-     * Обработчик кнопки "Согласен"
+     * Обработчик кнопки "Согласен" (асинхронный)
      */
     function _handleAccept() {
-        var userData = _getUserData();
-
-        try {
-            localStorage.setItem(STORAGE_KEY, 'true');
-            localStorage.setItem(TIMESTAMP_KEY, new Date().toISOString());
-        } catch (_) {}
-
-        _sendConsentToServer(userData);
-        _hideBanner();
-
-        if (typeof _callbacks.onAccepted === 'function') {
-            _callbacks.onAccepted();
+        // Показываем индикатор загрузки на кнопке
+        var acceptBtn = document.querySelector(ACCEPT_BTN_SELECTOR);
+        if (acceptBtn) {
+            acceptBtn.disabled = true;
+            acceptBtn.textContent = '⏳ Подождите...';
         }
 
-        console.log('[Consent] Согласие получено для:', userData.name, 'IP:', userData.ip);
+        _getUserDataAsync(function(userData) {
+            // Восстанавливаем кнопку
+            if (acceptBtn) {
+                acceptBtn.disabled = false;
+                acceptBtn.innerHTML = '✅ Принимаю';
+            }
+
+            try {
+                localStorage.setItem(STORAGE_KEY, 'true');
+                localStorage.setItem(TIMESTAMP_KEY, new Date().toISOString());
+            } catch (_) {}
+
+            _sendConsentToServer(userData);
+            _hideBanner();
+
+            if (typeof _callbacks.onAccepted === 'function') {
+                _callbacks.onAccepted();
+            }
+
+            console.log('[Consent] Согласие получено для:', userData.name, 'IP:', userData.ip);
+        });
     }
 
     /**
@@ -334,12 +355,24 @@
             }
         },
 
-        refreshIP: function() {
-            return _getIP();
+        /**
+         * Асинхронно получить IP
+         * @param {Function} callback
+         */
+        refreshIP: function(callback) {
+            _getIPAsync(callback || function(ip) {
+                console.log('[Consent] Ваш IP:', ip);
+            });
         },
 
-        getUserData: function() {
-            return _getUserData();
+        /**
+         * Асинхронно получить данные пользователя
+         * @param {Function} callback
+         */
+        getUserData: function(callback) {
+            _getUserDataAsync(callback || function(data) {
+                console.log('[Consent] Данные пользователя:', data);
+            });
         }
     };
 
