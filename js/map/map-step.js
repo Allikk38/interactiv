@@ -3,10 +3,28 @@
 // Ожидание загрузки Яндекс.Карт с таймаутом
 function waitForYmaps(timeoutMs = 10000) {
     return new Promise((resolve, reject) => {
+        // Проверяем, есть ли согласие
+        if (window.PrivacyManager && !window.PrivacyManager.isAnalyticsAllowed()) {
+            reject(new Error('Нет согласия на загрузку карт'));
+            return;
+        }
+
+        // Проверяем, не загружены ли уже
+        if (typeof ymaps !== 'undefined' && ymaps.Map) {
+            resolve();
+            return;
+        }
+
+        // Пробуем загрузить карты через нашу функцию
+        if (typeof window.loadYandexMaps === 'function') {
+            window.loadYandexMaps();
+        }
+
         const timeoutId = setTimeout(() => {
+            clearInterval(checkInterval);
             reject(new Error('Таймаут загрузки Яндекс.Карт'));
         }, timeoutMs);
-        
+
         const checkInterval = setInterval(() => {
             if (typeof ymaps !== 'undefined' && ymaps.Map) {
                 clearInterval(checkInterval);
@@ -66,20 +84,101 @@ function runMapStep(step) {
         mapContainer.innerHTML = renderMapLoadingIndicator();
     }
     
+    // ===== ОСНОВНАЯ ЛОГИКА ЗАГРУЗКИ КАРТЫ =====
+    
+    // Проверяем, есть ли согласие на аналитику
+    var hasConsent = false;
+    if (window.PrivacyManager) {
+        hasConsent = PrivacyManager.isAnalyticsAllowed();
+    } else {
+        // Fallback: проверяем localStorage
+        try {
+            var consentGiven = localStorage.getItem('user_consent_given');
+            var categories = localStorage.getItem('user_consent_categories');
+            if (consentGiven === 'true') {
+                if (categories) {
+                    try {
+                        var parsed = JSON.parse(categories);
+                        hasConsent = parsed.analytics !== false;
+                    } catch (_) {
+                        hasConsent = true;
+                    }
+                } else {
+                    hasConsent = true;
+                }
+            }
+        } catch (_) {}
+    }
+    
+    if (!hasConsent) {
+        // Нет согласия — показываем заглушку
+        if (mapContainer) {
+            mapContainer.innerHTML = `
+                <div style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100%;
+                    background: #f5f6fa;
+                    color: #636e72;
+                    padding: 40px;
+                    text-align: center;
+                ">
+                    <div style="font-size: 3rem; margin-bottom: 16px;">🔒</div>
+                    <h3 style="margin-bottom: 8px;">Карта недоступна</h3>
+                    <p style="max-width: 400px; font-size: 0.9rem;">
+                        Для отображения карты требуется ваше согласие на обработку данных.
+                        <br><br>
+                        <button onclick="location.reload()" style="
+                            padding: 10px 24px;
+                            background: #2e86de;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 0.9rem;
+                        ">
+                            <i class="fas fa-sync-alt"></i> Обновить страницу
+                        </button>
+                    </p>
+                </div>
+            `;
+        }
+        return;
+    }
+    
+    // Есть согласие — загружаем карту
     const startMap = () => {
-        initMap();
-        renderMarkers();
-        updateMapProgress();
+        try {
+            initMap();
+            renderMarkers();
+            updateMapProgress();
+        } catch (error) {
+            console.error('[MapStep] Ошибка инициализации карты:', error);
+            if (mapContainer) {
+                mapContainer.innerHTML = renderMapErrorIndicator();
+            }
+            showToast('❌', 'Ошибка загрузки карты. Попробуйте обновить страницу.', 'error');
+        }
     };
     
+    // Проверяем, загружены ли Яндекс.Карты
     if (typeof ymaps !== 'undefined' && ymaps.Map) {
+        // Карты уже загружены
         if (ymaps.ready) {
             ymaps.ready(startMap);
         } else {
             startMap();
         }
     } else {
-        waitForYmaps(10000)
+        // Пробуем загрузить карты через нашу функцию
+        if (typeof window.loadYandexMaps === 'function') {
+            window.loadYandexMaps();
+        }
+        
+        // Ждём загрузки с таймаутом
+        waitForYmaps(15000)
             .then(() => {
                 if (ymaps.ready) {
                     ymaps.ready(startMap);
@@ -89,11 +188,10 @@ function runMapStep(step) {
             })
             .catch((error) => {
                 logError('Ошибка загрузки карты:', error);
-                const mapContainer = document.getElementById('map');
                 if (mapContainer) {
                     mapContainer.innerHTML = renderMapErrorIndicator();
                 }
-                showToast('❌', 'Ошибка загрузки карты. Обновите страницу.', 'error');
+                showToast('❌', 'Не удалось загрузить карту. Проверьте соединение.', 'error');
             });
     }
 }

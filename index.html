@@ -46,11 +46,12 @@
         style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
         font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:;
         img-src 'self' data:;
-        script-src 'self' 'unsafe-inline';
+        script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
     ">
     
     <!-- Стили проекта -->
     <link rel="stylesheet" href="css/landing.css">
+    <link rel="stylesheet" href="css/landing-animations.css">
     
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -66,12 +67,368 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Дополнительные классы для анимаций */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .animate-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Для плавного появления статистики */
+        .stat-number {
+            display: inline-block;
+        }
+
+        /* ===== СТИЛИ ДЛЯ БАННЕРА СОГЛАСИЯ ===== */
+        .consent-banner {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 9999 !important;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4) !important;
+            border-top: 3px solid #f39c12 !important;
+            transform: translateY(100%) !important;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            display: block !important;
+            padding: 24px 32px 32px !important;
+            box-sizing: border-box !important;
+        }
+
+        .consent-banner--visible {
+            transform: translateY(0) !important;
+        }
+
+        #consent-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: blur(4px) !important;
+            -webkit-backdrop-filter: blur(4px) !important;
+            z-index: 9998 !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            transition: opacity 0.3s ease, visibility 0.3s ease !important;
+        }
+
+        #consent-overlay.consent-overlay--visible {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        .consent-banner__inner {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .consent-banner__header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .consent-banner__icon {
+            font-size: 1.8rem;
+        }
+
+        .consent-banner__title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #f39c12;
+        }
+
+        .consent-banner__body {
+            margin-bottom: 20px;
+        }
+
+        .consent-banner__text {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 16px;
+        }
+
+        .consent-banner__footer {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 8px;
+        }
+
+        .consent-banner__btn {
+            padding: 12px 24px;
+            min-height: 44px;
+            border: none;
+            border-radius: 32px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .consent-banner__btn:active {
+            transform: scale(0.96);
+        }
+
+        .consent-banner__btn--accept {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(243, 156, 18, 0.3);
+        }
+
+        .consent-banner__btn--accept:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(243, 156, 18, 0.4);
+        }
+
+        .consent-banner__btn--decline {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .consent-banner__btn--decline:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .consent-banner__btn--settings {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            min-width: auto;
+        }
+
+        .consent-banner__btn--settings:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .consent-banner__links {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .consent-banner__link {
+            color: #f39c12;
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s ease;
+        }
+
+        .consent-banner__link:hover {
+            color: #f1c40f;
+            text-decoration: underline;
+        }
+
+        .consent-banner__categories {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 16px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .consent-category {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .consent-category:last-child {
+            border-bottom: none;
+        }
+
+        .consent-category__header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .consent-category__icon {
+            font-size: 1.1rem;
+        }
+
+        .consent-category__name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .consent-category__status {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+
+        .consent-category__desc {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            padding-left: 34px;
+            line-height: 1.4;
+        }
+
+        .consent-toggle {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .consent-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .consent-toggle__slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            transition: background 0.3s ease;
+        }
+
+        .consent-toggle__slider::before {
+            content: '';
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .consent-toggle input:checked + .consent-toggle__slider {
+            background: #f39c12;
+        }
+
+        .consent-toggle input:checked + .consent-toggle__slider::before {
+            transform: translateX(20px);
+        }
+
+        .consent-category--necessary .consent-toggle {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .consent-category--necessary .consent-toggle input {
+            pointer-events: none;
+        }
+
+        /* ===== АДАПТИВ ===== */
+        @media (max-width: 768px) {
+            .consent-banner {
+                padding: 20px 16px 24px !important;
+            }
+            
+            .consent-banner__title {
+                font-size: 1rem;
+            }
+            
+            .consent-banner__text {
+                font-size: 0.85rem;
+            }
+            
+            .consent-banner__footer {
+                flex-direction: column-reverse;
+                gap: 8px;
+            }
+            
+            .consent-banner__btn {
+                width: 100%;
+                padding: 10px 16px;
+                font-size: 0.9rem;
+                min-height: 44px;
+            }
+            
+            .consent-banner__btn--settings {
+                order: 10;
+            }
+            
+            .consent-banner__categories {
+                padding: 12px;
+            }
+            
+            .consent-category__desc {
+                font-size: 0.75rem;
+                padding-left: 28px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .consent-banner {
+                padding: 16px 12px 20px !important;
+            }
+            
+            .consent-category__header {
+                flex-wrap: wrap;
+            }
+        }
+
+        /* Отключаем анимации для пользователей с vestibular disorders */
+        @media (prefers-reduced-motion: reduce) {
+            .consent-banner {
+                transform: translateY(0);
+                transition: none;
+            }
+            
+            .consent-toggle__slider {
+                transition: none;
+            }
+            
+            .consent-toggle__slider::before {
+                transition: none;
+            }
+            
+            #consent-overlay {
+                transition: none;
+            }
+        }
     </style>
 </head>
 <body class="landing-page">
     
     <!-- ===== ШАПКА ===== -->
-    <header class="landing-header" role="banner">
+    <header class="landing-header" role="banner" data-animate="header">
         <div class="landing-container landing-header__inner">
             <a href="./" class="landing-header__logo" aria-label="На главную">
                 <i class="fas fa-building" aria-hidden="true"></i>
@@ -79,10 +436,10 @@
             </a>
             
             <nav class="landing-nav" role="navigation" aria-label="Основная навигация">
-                <a href="#features" class="landing-nav__link">Возможности</a>
-                <a href="#how-it-works" class="landing-nav__link">Как это работает</a>
-                <a href="#for-whom" class="landing-nav__link">Для кого</a>
-                <a href="./app.html" class="landing-nav__link landing-nav__link--primary">
+                <a href="#features" class="landing-nav__link" data-nav="features">Возможности</a>
+                <a href="#how-it-works" class="landing-nav__link" data-nav="how-it-works">Как это работает</a>
+                <a href="#for-whom" class="landing-nav__link" data-nav="for-whom">Для кого</a>
+                <a href="./app.html" class="landing-nav__link landing-nav__link--primary" data-nav="app">
                     <i class="fas fa-arrow-right" aria-hidden="true"></i>
                     Перейти к тренажёру
                 </a>
@@ -91,54 +448,54 @@
     </header>
     
     <!-- ===== ГЕРОЙ-СЕКЦИЯ ===== -->
-    <section class="landing-hero" aria-labelledby="hero-title">
+    <section class="landing-hero" aria-labelledby="hero-title" data-section="hero">
         <div class="landing-container landing-hero__inner">
-            <div class="landing-hero__content">
-                <div class="landing-hero__badge">
+            <div class="landing-hero__content" data-animate="hero-content">
+                <div class="landing-hero__badge" data-animate="hero-badge">
                     <i class="fas fa-graduation-cap" aria-hidden="true"></i>
                     Интерактивное обучение
                 </div>
                 
-                <h1 id="hero-title" class="landing-hero__title">
+                <h1 id="hero-title" class="landing-hero__title" data-animate="hero-title">
                     Станьте экспертом по <span class="highlight">новостройкам</span> в игровой форме
                 </h1>
                 
-                <p class="landing-hero__subtitle">
+                <p class="landing-hero__subtitle" data-animate="hero-subtitle">
                     Интерактивный тренажёр для риелторов и агентов по недвижимости.
                     Карта ЖК, тесты, кейсы клиентов — всё в одном месте.
                 </p>
                 
-                <div class="landing-hero__actions">
-                    <a href="./app.html" class="landing-hero__btn landing-hero__btn--primary">
+                <div class="landing-hero__actions" data-animate="hero-actions">
+                    <a href="./app.html" class="landing-hero__btn landing-hero__btn--primary" data-btn="primary">
                         <i class="fas fa-play" aria-hidden="true"></i>
                         Начать обучение
                     </a>
-                    <a href="#how-it-works" class="landing-hero__btn landing-hero__btn--secondary">
+                    <a href="#how-it-works" class="landing-hero__btn landing-hero__btn--secondary" data-btn="secondary">
                         <i class="fas fa-info-circle" aria-hidden="true"></i>
                         Узнать подробнее
                     </a>
                 </div>
                 
-                <div class="landing-hero__stats" aria-label="Статистика">
-                    <div class="landing-hero__stat-item">
-                        <span class="landing-hero__stat-number">60+</span>
+                <div class="landing-hero__stats" aria-label="Статистика" data-animate="hero-stats">
+                    <div class="landing-hero__stat-item" data-stat="1">
+                        <span class="landing-hero__stat-number"><span class="stat-number" data-target="60">0</span>+</span>
                         <span class="landing-hero__stat-label">жилых комплексов</span>
                     </div>
-                    <div class="landing-hero__stat-item">
-                        <span class="landing-hero__stat-number">200+</span>
+                    <div class="landing-hero__stat-item" data-stat="2">
+                        <span class="landing-hero__stat-number"><span class="stat-number" data-target="200">0</span>+</span>
                         <span class="landing-hero__stat-label">вопросов для тренировки</span>
                     </div>
-                    <div class="landing-hero__stat-item">
-                        <span class="landing-hero__stat-number">10+</span>
+                    <div class="landing-hero__stat-item" data-stat="3">
+                        <span class="landing-hero__stat-number"><span class="stat-number" data-target="10">0</span>+</span>
                         <span class="landing-hero__stat-label">сценариев обучения</span>
                     </div>
                 </div>
             </div>
             
-            <div class="landing-hero__visual" aria-hidden="true">
+            <div class="landing-hero__visual" aria-hidden="true" data-animate="hero-mockup">
                 <div class="landing-hero__mockup">
                     <div class="landing-hero__mockup-content">
-                        <div class="landing-hero__mockup-row">
+                        <div class="landing-hero__mockup-row" data-mockup-item="1">
                             <span class="landing-hero__mockup-icon landing-hero__mockup-icon--map">
                                 <i class="fas fa-map-marked-alt"></i>
                             </span>
@@ -151,7 +508,7 @@
                             </div>
                         </div>
                         
-                        <div class="landing-hero__mockup-row">
+                        <div class="landing-hero__mockup-row" data-mockup-item="2">
                             <span class="landing-hero__mockup-icon landing-hero__mockup-icon--quiz">
                                 <i class="fas fa-question-circle"></i>
                             </span>
@@ -161,7 +518,7 @@
                             </div>
                         </div>
                         
-                        <div class="landing-hero__mockup-row">
+                        <div class="landing-hero__mockup-row" data-mockup-item="3">
                             <span class="landing-hero__mockup-icon landing-hero__mockup-icon--trophy">
                                 <i class="fas fa-trophy"></i>
                             </span>
@@ -177,18 +534,18 @@
     </section>
     
     <!-- ===== СЕКЦИЯ "ДЛЯ КОГО" ===== -->
-    <section class="landing-section" id="for-whom" aria-labelledby="for-whom-title">
+    <section class="landing-section" id="for-whom" aria-labelledby="for-whom-title" data-section="for-whom">
         <div class="landing-container">
-            <h2 id="for-whom-title" class="landing-section__title">
+            <h2 id="for-whom-title" class="landing-section__title" data-animate="section-title">
                 <i class="fas fa-users" aria-hidden="true"></i>
                 Для кого этот тренажёр
             </h2>
-            <p class="landing-section__subtitle">
+            <p class="landing-section__subtitle" data-animate="section-subtitle">
                 Инструмент создан для всех, кто хочет уверенно работать с новостройками
             </p>
             
-            <div class="landing-benefits">
-                <article class="landing-benefit">
+            <div class="landing-benefits" data-animate="benefits">
+                <article class="landing-benefit" data-benefit="1">
                     <span class="landing-benefit__icon" role="img" aria-hidden="true">🏢</span>
                     <h3 class="landing-benefit__title">Риелторы и агенты</h3>
                     <p class="landing-benefit__desc">
@@ -197,7 +554,7 @@
                     </p>
                 </article>
                 
-                <article class="landing-benefit">
+                <article class="landing-benefit" data-benefit="2">
                     <span class="landing-benefit__icon" role="img" aria-hidden="true">🎓</span>
                     <h3 class="landing-benefit__title">Новички в недвижимости</h3>
                     <p class="landing-benefit__desc">
@@ -206,7 +563,7 @@
                     </p>
                 </article>
                 
-                <article class="landing-benefit">
+                <article class="landing-benefit" data-benefit="3">
                     <span class="landing-benefit__icon" role="img" aria-hidden="true">📚</span>
                     <h3 class="landing-benefit__title">Студенты и стажёры</h3>
                     <p class="landing-benefit__desc">
@@ -219,69 +576,88 @@
     </section>
     
     <!-- ===== СЕКЦИЯ "КАК ЭТО РАБОТАЕТ" ===== -->
-    <section class="landing-section landing-section--alt" id="how-it-works" aria-labelledby="how-title">
+    <section class="landing-section landing-section--alt" id="how-it-works" aria-labelledby="how-title" data-section="how-it-works">
         <div class="landing-container">
-            <h2 id="how-title" class="landing-section__title">
+            <h2 id="how-title" class="landing-section__title" style="margin-bottom: 12px;" data-animate="section-title">
                 <i class="fas fa-cogs" aria-hidden="true"></i>
                 Как это работает
             </h2>
-            <p class="landing-section__subtitle">
+            <p class="landing-section__subtitle" style="margin-bottom: 0;" data-animate="section-subtitle">
                 Четыре простых шага к экспертизе в новостройках
             </p>
-            
-            <div class="landing-steps">
-                <div class="landing-step">
-                    <div class="landing-step__number" aria-hidden="true">1</div>
-                    <h3 class="landing-step__title">Введите своё имя</h3>
-                    <p class="landing-step__desc">
-                        При первом входе укажите имя — прогресс сохранится на вашем устройстве
-                        и будет синхронизироваться с рейтингом.
-                    </p>
+        </div>
+        
+        <div class="how-it-works-wrapper" data-animate="how-it-works">
+            <div class="how-it-works-sticky" id="howItWorksSticky">
+                <div class="how-it-works-track" id="howItWorksTrack">
+                    <!-- Шаг 1 -->
+                    <div class="how-it-works-step" data-step="0">
+                        <div class="how-it-works-step__number">01</div>
+                        <h3 class="how-it-works-step__title">Введите своё имя</h3>
+                        <p class="how-it-works-step__desc">
+                            При первом входе укажите имя — прогресс сохранится на вашем устройстве
+                            и будет синхронизироваться с рейтингом.
+                        </p>
+                        <span class="how-it-works-step__badge">Сохраняется локально</span>
+                    </div>
+                    
+                    <!-- Шаг 2 -->
+                    <div class="how-it-works-step" data-step="1">
+                        <div class="how-it-works-step__number">02</div>
+                        <h3 class="how-it-works-step__title">Выберите сценарий</h3>
+                        <p class="how-it-works-step__desc">
+                            Картография, обучение, практика с клиентами или быстрые игры —
+                            выбирайте то, что нужно именно вам.
+                        </p>
+                        <span class="how-it-works-step__badge">Картография • Обучение • Практика • Игры</span>
+                    </div>
+                    
+                    <!-- Шаг 3 -->
+                    <div class="how-it-works-step" data-step="2">
+                        <div class="how-it-works-step__number">03</div>
+                        <h3 class="how-it-works-step__title">Выполняйте задания</h3>
+                        <p class="how-it-works-step__desc">
+                            Расставляйте ЖК на карте, отвечайте на вопросы, проходите
+                            интерактивные сценарии и решайте кейсы клиентов.
+                        </p>
+                        <span class="how-it-works-step__badge">Интерактивное обучение</span>
+                    </div>
+                    
+                    <!-- Шаг 4 -->
+                    <div class="how-it-works-step" data-step="3">
+                        <div class="how-it-works-step__number">04</div>
+                        <h3 class="how-it-works-step__title">Получайте результаты</h3>
+                        <p class="how-it-works-step__desc">
+                            Зарабатывайте XP, получайте бейджи, повышайте уровень и
+                            соревнуйтесь с другими агентами в рейтинге.
+                        </p>
+                        <span class="how-it-works-step__badge">XP • Бейджи • Рейтинг</span>
+                    </div>
                 </div>
                 
-                <div class="landing-step">
-                    <div class="landing-step__number" aria-hidden="true">2</div>
-                    <h3 class="landing-step__title">Выберите сценарий</h3>
-                    <p class="landing-step__desc">
-                        Картография, обучение, практика с клиентами или быстрые игры —
-                        выбирайте то, что нужно именно вам.
-                    </p>
-                </div>
-                
-                <div class="landing-step">
-                    <div class="landing-step__number" aria-hidden="true">3</div>
-                    <h3 class="landing-step__title">Выполняйте задания</h3>
-                    <p class="landing-step__desc">
-                        Расставляйте ЖК на карте, отвечайте на вопросы, проходите
-                        интерактивные сценарии и решайте кейсы клиентов.
-                    </p>
-                </div>
-                
-                <div class="landing-step">
-                    <div class="landing-step__number" aria-hidden="true">4</div>
-                    <h3 class="landing-step__title">Получайте результаты</h3>
-                    <p class="landing-step__desc">
-                        Зарабатывайте XP, получайте бейджи, повышайте уровень и
-                        соревнуйтесь с другими агентами в рейтинге.
-                    </p>
+                <div class="how-it-works-progress" id="howItWorksProgress">
+                    <span class="how-it-works-progress__dot active" data-step="0"></span>
+                    <span class="how-it-works-progress__dot" data-step="1"></span>
+                    <span class="how-it-works-progress__dot" data-step="2"></span>
+                    <span class="how-it-works-progress__dot" data-step="3"></span>
                 </div>
             </div>
         </div>
     </section>
     
     <!-- ===== СЕКЦИЯ "ЧТО ВНУТРИ" ===== -->
-    <section class="landing-section" id="features" aria-labelledby="features-title">
+    <section class="landing-section" id="features" aria-labelledby="features-title" data-section="features">
         <div class="landing-container">
-            <h2 id="features-title" class="landing-section__title">
+            <h2 id="features-title" class="landing-section__title" data-animate="section-title">
                 <i class="fas fa-star" aria-hidden="true"></i>
                 Что вас ждёт внутри
             </h2>
-            <p class="landing-section__subtitle">
+            <p class="landing-section__subtitle" data-animate="section-subtitle">
                 Все инструменты для профессионального развития риелтора
             </p>
             
-            <div class="landing-features-grid">
-                <article class="landing-feature">
+            <div class="landing-features-grid" data-animate="features">
+                <article class="landing-feature" data-feature="1">
                     <span class="landing-feature__icon" role="img" aria-hidden="true">🗺️</span>
                     <div class="landing-feature__content">
                         <h3 class="landing-feature__title">Карта новостроек</h3>
@@ -292,7 +668,7 @@
                     </div>
                 </article>
                 
-                <article class="landing-feature">
+                <article class="landing-feature" data-feature="2">
                     <span class="landing-feature__icon" role="img" aria-hidden="true">🧠</span>
                     <div class="landing-feature__content">
                         <h3 class="landing-feature__title">Тесты и викторины</h3>
@@ -303,7 +679,7 @@
                     </div>
                 </article>
                 
-                <article class="landing-feature">
+                <article class="landing-feature" data-feature="3">
                     <span class="landing-feature__icon" role="img" aria-hidden="true">💬</span>
                     <div class="landing-feature__content">
                         <h3 class="landing-feature__title">Кейсы клиентов</h3>
@@ -314,7 +690,7 @@
                     </div>
                 </article>
                 
-                <article class="landing-feature">
+                <article class="landing-feature" data-feature="4">
                     <span class="landing-feature__icon" role="img" aria-hidden="true">🎮</span>
                     <div class="landing-feature__content">
                         <h3 class="landing-feature__title">Быстрые игры</h3>
@@ -325,7 +701,7 @@
                     </div>
                 </article>
                 
-                <article class="landing-feature">
+                <article class="landing-feature" data-feature="5">
                     <span class="landing-feature__icon" role="img" aria-hidden="true">📈</span>
                     <div class="landing-feature__content">
                         <h3 class="landing-feature__title">Система прогресса</h3>
@@ -336,7 +712,7 @@
                     </div>
                 </article>
                 
-                <article class="landing-feature">
+                <article class="landing-feature" data-feature="6">
                     <span class="landing-feature__icon" role="img" aria-hidden="true">📱</span>
                     <div class="landing-feature__content">
                         <h3 class="landing-feature__title">Работает везде</h3>
@@ -351,24 +727,26 @@
     </section>
     
     <!-- ===== CTA-СЕКЦИЯ ===== -->
-    <section class="landing-cta" aria-labelledby="cta-title">
-        <div class="landing-container">
-            <h2 id="cta-title" class="landing-cta__title">
-                Готовы стать экспертом по новостройкам?
-            </h2>
-            <p class="landing-cta__subtitle">
-                Начните обучение прямо сейчас — это бесплатно. Просто введите имя и
-                выберите первый сценарий.
-            </p>
-            <a href="./app.html" class="landing-cta__btn">
-                <i class="fas fa-rocket" aria-hidden="true"></i>
-                Начать обучение бесплатно
-            </a>
-        </div>
-    </section>
+    <div class="landing-cta-wrapper" id="ctaWrapper" data-section="cta">
+        <section class="landing-cta" aria-labelledby="cta-title">
+            <div class="landing-container">
+                <h2 id="cta-title" class="landing-cta__title" data-animate="cta-title">
+                    Готовы стать экспертом по новостройкам?
+                </h2>
+                <p class="landing-cta__subtitle" data-animate="cta-subtitle">
+                    Начните обучение прямо сейчас — это бесплатно. Просто введите имя и
+                    выберите первый сценарий.
+                </p>
+                <a href="./app.html" class="landing-cta__btn pulse-glow" id="ctaButton" data-animate="cta-button">
+                    <i class="fas fa-rocket" aria-hidden="true"></i>
+                    Начать обучение бесплатно
+                </a>
+            </div>
+        </section>
+    </div>
     
     <!-- ===== ПОДВАЛ ===== -->
-    <footer class="landing-footer" role="contentinfo">
+    <footer class="landing-footer" role="contentinfo" data-section="footer">
         <div class="landing-container landing-footer__inner">
             <div class="landing-footer__copy">
                 <i class="fas fa-building" aria-hidden="true"></i>
@@ -394,34 +772,49 @@
     <!-- ===== БАННЕР СОГЛАСИЯ ===== -->
     <div id="consent-banner-container"></div>
     
-    <!-- ===== ЕДИНЫЙ ЗАГРУЗЧИК ===== -->
+    <!-- ===== СКРИПТЫ (ПОРЯДОК ВАЖЕН) ===== -->
+    
+    <!-- 1. GSAP и ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    
+    <!-- 2. Единый загрузчик -->
     <script src="js/app-loader.js"></script>
+    
+    <!-- 3. Анимации лендинга (загружаем после GSAP) -->
+    <script src="js/landing-animations.js"></script>
+    
+    <!-- ===== 4. СОГЛАСИЕ И БАННЕР (по аналогии с app.html) ===== -->
+    <script src="js/privacy-manager.js"></script>
+    <script src="js/consent-banner.js"></script>
+    <script src="js/core/app-bootstrap.js"></script>
     
     <script>
         (function() {
             'use strict';
             
-            // Инициализируем баннер согласия после загрузки общих модулей
-            document.addEventListener('DOMContentLoaded', function() {
-                // Ждём загрузку AppLoader
-                if (typeof AppLoader !== 'undefined') {
-                    AppLoader.load({
-                        debug: false,
-                        onComplete: function() {
-                            if (typeof ConsentBanner !== 'undefined') {
-                                ConsentBanner.init(
-                                    function() {
-                                        console.log('[Landing] Согласие получено');
-                                    },
-                                    function() {
-                                        console.log('[Landing] Отказ от согласия');
-                                    }
-                                );
-                            }
+            // Запускаем приложение с управлением согласием (по аналогии с app.html)
+            function initLanding() {
+                console.log('[Landing] Запуск...');
+                
+                // Проверяем, что bootApp загружена
+                if (typeof bootApp === 'function') {
+                    console.log('[Landing] Вызов bootApp() для управления согласием...');
+                    bootApp();
+                } else {
+                    console.warn('[Landing] bootApp() не найдена, используется fallback-инициализация');
+                    // Fallback: показываем баннер напрямую
+                    if (typeof PrivacyManager !== 'undefined' && typeof ConsentBanner !== 'undefined') {
+                        if (!PrivacyManager.hasConsent()) {
+                            ConsentBanner.init(
+                                function() { console.log('[Landing] Согласие получено'); },
+                                function() { console.log('[Landing] Отказ от согласия'); }
+                            );
+                            ConsentBanner.show();
                         }
-                    });
+                    }
                 }
-            });
+            }
             
             // Плавный скролл для якорных ссылок
             document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
@@ -440,26 +833,42 @@
                 });
             });
             
-            // Анимация появления элементов при скролле
-            if ('IntersectionObserver' in window) {
-                const observer = new IntersectionObserver(function(entries) {
-                    entries.forEach(function(entry) {
-                        if (entry.isIntersecting) {
-                            entry.target.style.opacity = '1';
-                            entry.target.style.transform = 'translateY(0)';
-                        }
-                    });
-                }, {
-                    threshold: 0.1
-                });
-                
-                document.querySelectorAll('.landing-benefit, .landing-step, .landing-feature').forEach(function(el) {
-                    el.style.opacity = '0';
-                    el.style.transform = 'translateY(20px)';
-                    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-                    observer.observe(el);
+            // Эффект скролла для шапки
+            const header = document.querySelector('.landing-header');
+            if (header) {
+                window.addEventListener('scroll', function() {
+                    if (window.scrollY > 20) {
+                        header.classList.add('scrolled');
+                    } else {
+                        header.classList.remove('scrolled');
+                    }
                 });
             }
+            
+            // Запускаем инициализацию после загрузки DOM
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Ждём загрузку AppLoader
+                    if (typeof AppLoader !== 'undefined') {
+                        AppLoader.load({
+                            debug: false,
+                            onComplete: function() {
+                                console.log('[Landing] Общие модули загружены');
+                                setTimeout(initLanding, 100);
+                            },
+                            onError: function(error) {
+                                console.error('[Landing] Ошибка загрузки модулей:', error);
+                                setTimeout(initLanding, 300);
+                            }
+                        });
+                    } else {
+                        setTimeout(initLanding, 300);
+                    }
+                });
+            } else {
+                setTimeout(initLanding, 100);
+            }
+            
         })();
     </script>
     

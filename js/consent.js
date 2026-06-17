@@ -1,16 +1,20 @@
 // ============================================================
-// МОДУЛЬ СОГЛАСИЯ НА ОБРАБОТКУ ПДн (152-ФЗ)
-// Версия: 2.6 — ИСПРАВЛЕНА РАБОТА НА ЛЕНДИНГЕ
-// Зависимости: User (для имени), OfflineQueue (опционально)
+// МОДУЛЬ СОГЛАСИЯ (ОБНОВЛЁННЫЙ)
+// Версия: 3.0.0
+// 
+// Отвечает за:
+// - Обратную совместимость со старым кодом
+// - Делегирование всех операций PrivacyManager
+// - Отправку данных о согласии в Google Sheets
+// - Обработку ответов от баннера
 // ============================================================
 
 (function() {
     'use strict';
 
     // ===== ПРИВАТНЫЕ КОНСТАНТЫ =====
-    var STORAGE_KEY = 'user_consent_given';
-    var TIMESTAMP_KEY = 'consent_timestamp';
-    var CONSENT_VERSION = '2.6';
+    var GOOGLE_SCRIPT_URL = window.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzHxrLqYze95Sws7gCvUEz8g4jzBVI3NdTDm_jLLZ-YWYD-ofjsD1iGC7S0UGf-wb2x/exec';
+    var CONSENT_VERSION = '3.0.0';
 
     // ===== ПРИВАТНОЕ СОСТОЯНИЕ =====
     var _callbacks = {
@@ -18,6 +22,7 @@
         onDeclined: null
     };
     var _isInitialized = false;
+    var _isProcessing = false;
 
     // ===== ПРИВАТНЫЕ МЕТОДЫ =====
 
@@ -169,7 +174,7 @@
     /**
      * Отправить данные о согласии в Google Таблицу
      */
-    function _sendConsentToServer(userData) {
+    function _sendConsentToServer(userData, categories) {
         var payload = {
             action: 'save_consent',
             user_name: userData.name,
@@ -180,16 +185,21 @@
             language: userData.language,
             platform: userData.platform,
             timestamp: new Date().toISOString(),
-            consent_given: true
+            consent_given: true,
+            categories: categories || {
+                functional: true,
+                analytics: true,
+                marketing: true
+            }
         };
 
         console.log('[Consent] Отправка согласия:', payload);
 
         if (window.OfflineQueue && typeof window.OfflineQueue.add === 'function') {
-            window.OfflineQueue.add(payload, window.GOOGLE_SCRIPT_URL, 'POST');
+            window.OfflineQueue.add(payload, GOOGLE_SCRIPT_URL, 'POST');
         } else {
             try {
-                fetch(window.GOOGLE_SCRIPT_URL, {
+                fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
@@ -204,9 +214,12 @@
     }
 
     /**
-     * Обработчик кнопки "Согласен" (асинхронный)
+     * Обработчик кнопки "Согласен"
      */
     function _handleAccept() {
+        if (_isProcessing) return;
+        _isProcessing = true;
+
         // Показываем индикатор загрузки на кнопке
         var acceptBtn = document.getElementById('consent-accept');
         if (acceptBtn) {
@@ -221,23 +234,44 @@
                 acceptBtn.innerHTML = '<i class="fas fa-check"></i> Принимаю';
             }
 
-            try {
-                localStorage.setItem(STORAGE_KEY, 'true');
-                localStorage.setItem(TIMESTAMP_KEY, new Date().toISOString());
-            } catch (_) {}
+            // Используем PrivacyManager для сохранения согласия
+            if (window.PrivacyManager) {
+                var state = window.PrivacyManager.giveConsent({
+                    functional: true,
+                    analytics: true,
+                    marketing: true
+                });
 
-            _sendConsentToServer(userData);
-            
+                if (state) {
+                    console.log('[Consent] Согласие сохранено через PrivacyManager');
+                }
+            } else {
+                // Fallback на старую логику (для обратной совместимости)
+                try {
+                    localStorage.setItem('user_consent_given', 'true');
+                    localStorage.setItem('consent_timestamp', new Date().toISOString());
+                } catch (_) {}
+            }
+
+            // Отправляем данные на сервер
+            _sendConsentToServer(userData, {
+                functional: true,
+                analytics: true,
+                marketing: true
+            });
+
             // Скрываем баннер через ConsentBanner
             if (window.ConsentBanner && typeof window.ConsentBanner.hide === 'function') {
                 window.ConsentBanner.hide();
             }
 
+            // Уведомляем о принятии
             if (typeof _callbacks.onAccepted === 'function') {
                 _callbacks.onAccepted();
             }
 
             console.log('[Consent] Согласие получено для:', userData.name, 'IP:', userData.ip);
+            _isProcessing = false;
         });
     }
 
@@ -245,32 +279,45 @@
      * Обработчик кнопки "Отказаться"
      */
     function _handleDecline() {
-        try {
-            localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(TIMESTAMP_KEY);
-        } catch (_) {}
+        if (_isProcessing) return;
+        _isProcessing = true;
+
+        // Отзываем согласие через PrivacyManager
+        if (window.PrivacyManager) {
+            window.PrivacyManager.revokeConsent(null);
+            console.log('[Consent] Согласие отозвано через PrivacyManager');
+        } else {
+            // Fallback на старую логику
+            try {
+                localStorage.removeItem('user_consent_given');
+                localStorage.removeItem('consent_timestamp');
+                localStorage.removeItem('user_consent_categories');
+            } catch (_) {}
+        }
 
         // Скрываем баннер через ConsentBanner
         if (window.ConsentBanner && typeof window.ConsentBanner.hide === 'function') {
             window.ConsentBanner.hide();
         }
 
+        // Уведомляем об отказе
         if (typeof _callbacks.onDeclined === 'function') {
             _callbacks.onDeclined();
         }
 
         console.log('[Consent] Пользователь отказался от согласия');
+        _isProcessing = false;
     }
 
     /**
-     * Навесить обработчики на кнопки баннера (через ConsentBanner)
+     * Навесить обработчики на кнопки баннера
      */
     function _bindEvents() {
-        // Проверяем, есть ли баннер в DOM
         var acceptBtn = document.getElementById('consent-accept');
         var declineBtn = document.getElementById('consent-decline');
 
         if (acceptBtn) {
+            // Удаляем старые обработчики через замену
             var newAccept = acceptBtn.cloneNode(true);
             acceptBtn.parentNode.replaceChild(newAccept, acceptBtn);
             newAccept.addEventListener('click', function(e) {
@@ -291,93 +338,12 @@
         }
     }
 
-    // ===== ПУБЛИЧНЫЙ API =====
-
-    var publicAPI = {
-
-        hasConsent: function() {
-            try {
-                return localStorage.getItem(STORAGE_KEY) === 'true';
-            } catch (_) {
-                return false;
-            }
-        },
-
-        requestConsent: function(onAccepted, onDeclined) {
-            _callbacks.onAccepted = onAccepted || null;
-            _callbacks.onDeclined = onDeclined || null;
-
-            // Если согласие уже есть — сразу вызываем onAccepted
-            if (this.hasConsent()) {
-                if (window.ConsentBanner && typeof window.ConsentBanner.hide === 'function') {
-                    window.ConsentBanner.hide();
-                }
-                if (typeof _callbacks.onAccepted === 'function') {
-                    _callbacks.onAccepted();
-                }
-                return;
-            }
-
-            // Показываем баннер через ConsentBanner
-            if (window.ConsentBanner && typeof window.ConsentBanner.show === 'function') {
-                window.ConsentBanner.show();
-                // Перепривязываем события после показа
-                setTimeout(_bindEvents, 50);
-            } else {
-                // Fallback: если ConsentBanner не загружен
-                console.warn('[Consent] ConsentBanner не загружен, создаём баннер вручную');
-                _createFallbackBanner();
-            }
-        },
-
-        giveConsent: function() {
-            _handleAccept();
-        },
-
-        revokeConsent: function() {
-            try {
-                localStorage.removeItem(STORAGE_KEY);
-                localStorage.removeItem(TIMESTAMP_KEY);
-            } catch (_) {}
-            console.log('[Consent] Согласие отозвано');
-            
-            if (window.ConsentBanner && typeof window.ConsentBanner.show === 'function') {
-                window.ConsentBanner.show();
-                setTimeout(_bindEvents, 50);
-            }
-        },
-
-        getVersion: function() {
-            return CONSENT_VERSION;
-        },
-
-        getConsentTime: function() {
-            try {
-                return localStorage.getItem(TIMESTAMP_KEY) || null;
-            } catch (_) {
-                return null;
-            }
-        },
-
-        refreshIP: function(callback) {
-            _getIPAsync(callback || function(ip) {
-                console.log('[Consent] Ваш IP:', ip);
-            });
-        },
-
-        getUserData: function(callback) {
-            _getUserDataAsync(callback || function(data) {
-                console.log('[Consent] Данные пользователя:', data);
-            });
-        }
-    };
-
     /**
      * Создание баннера вручную (fallback)
      */
     function _createFallbackBanner() {
         if (document.getElementById('consent-banner')) return;
-        
+
         var banner = document.createElement('div');
         banner.id = 'consent-banner';
         banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:20px 24px;z-index:9999;border-top:3px solid #f39c12;display:flex;flex-direction:column;align-items:center;gap:16px;font-family:sans-serif;box-shadow:0 -8px 32px rgba(0,0,0,0.4);max-height:90vh;overflow-y:auto;';
@@ -413,7 +379,130 @@
         console.log('[Consent] Баннер создан вручную (fallback)');
     }
 
+    // ===== ПУБЛИЧНЫЙ API =====
+
+    var publicAPI = {
+
+        /**
+         * Проверяет, дано ли согласие
+         * @returns {boolean}
+         */
+        hasConsent: function() {
+            // Используем PrivacyManager, если доступен
+            if (window.PrivacyManager) {
+                return window.PrivacyManager.hasConsent();
+            }
+
+            // Fallback на старую логику
+            try {
+                return localStorage.getItem('user_consent_given') === 'true';
+            } catch (_) {
+                return false;
+            }
+        },
+
+        /**
+         * Запрашивает согласие у пользователя
+         * @param {Function} onAccepted - колбэк при принятии
+         * @param {Function} onDeclined - колбэк при отказе
+         */
+        requestConsent: function(onAccepted, onDeclined) {
+            _callbacks.onAccepted = onAccepted || null;
+            _callbacks.onDeclined = onDeclined || null;
+
+            // Если согласие уже есть — сразу вызываем onAccepted
+            if (this.hasConsent()) {
+                if (window.ConsentBanner && typeof window.ConsentBanner.hide === 'function') {
+                    window.ConsentBanner.hide();
+                }
+                if (typeof _callbacks.onAccepted === 'function') {
+                    _callbacks.onAccepted();
+                }
+                return;
+            }
+
+            // Показываем баннер через ConsentBanner
+            if (window.ConsentBanner && typeof window.ConsentBanner.show === 'function') {
+                window.ConsentBanner.show();
+                // Перепривязываем события после показа
+                setTimeout(_bindEvents, 50);
+            } else {
+                // Fallback: если ConsentBanner не загружен
+                console.warn('[Consent] ConsentBanner не загружен, создаём баннер вручную');
+                _createFallbackBanner();
+            }
+        },
+
+        /**
+         * Даёт согласие (программно)
+         */
+        giveConsent: function() {
+            _handleAccept();
+        },
+
+        /**
+         * Отзывает согласие (программно)
+         */
+        revokeConsent: function() {
+            _handleDecline();
+        },
+
+        /**
+         * Возвращает версию модуля
+         */
+        getVersion: function() {
+            return CONSENT_VERSION;
+        },
+
+        /**
+         * Возвращает время получения согласия
+         */
+        getConsentTime: function() {
+            if (window.PrivacyManager) {
+                return window.PrivacyManager.getConsentTime();
+            }
+
+            try {
+                return localStorage.getItem('consent_timestamp') || null;
+            } catch (_) {
+                return null;
+            }
+        },
+
+        /**
+         * Получает данные пользователя
+         */
+        getUserData: function(callback) {
+            _getUserDataAsync(callback || function(data) {
+                console.log('[Consent] Данные пользователя:', data);
+            });
+        },
+
+        /**
+         * Сбрасывает состояние (для тестирования)
+         */
+        reset: function() {
+            if (window.PrivacyManager) {
+                window.PrivacyManager.reset();
+            } else {
+                try {
+                    localStorage.removeItem('user_consent_given');
+                    localStorage.removeItem('consent_timestamp');
+                    localStorage.removeItem('user_consent_categories');
+                } catch (_) {}
+            }
+            _callbacks = {
+                onAccepted: null,
+                onDeclined: null
+            };
+            _isProcessing = false;
+            console.log('[Consent] Состояние сброшено');
+        }
+    };
+
+    // ===== ЭКСПОРТ =====
     window.Consent = publicAPI;
+
     console.log('[Consent] Модуль загружен, версия:', CONSENT_VERSION);
 
 })();

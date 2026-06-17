@@ -47,12 +47,11 @@
     <link rel="stylesheet" href="css/steps.css">
     <link rel="stylesheet" href="css/drawer.css">
     <link rel="stylesheet" href="css/onboarding.css">
-    <!-- Премиум-стили -->
     <link rel="stylesheet" href="css/premium.css">
+    
     <!-- ===== FONTAWESOME — ЗАГРУЖАЕМ СРАЗУ (БЕЗ ТРЕКЕРОВ) ===== -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    <!-- Если CDN не загрузился — показываем иконки текстом -->
     <noscript>
         <style>
             .fa, .fas, .far, .fab { display: none; }
@@ -304,62 +303,71 @@
         </div>
     </div>
 
-    <!-- ===== ЕДИНЫЙ ЗАГРУЗЧИК ===== -->
+    <!-- ============================================================ -->
+    <!-- ПОРЯДОК ЗАГРУЗКИ СКРИПТОВ (ОБНОВЛЁННЫЙ)                    -->
+    <!-- ============================================================ -->
+
+    <!-- 1. ЕДИНЫЙ ЗАГРУЗЧИК (самый первый) -->
     <script src="js/app-loader.js"></script>
 
-    <!-- ===== UTILS (ДОЛЖНЫ БЫТЬ ПЕРВЫМИ) ===== -->
+    <!-- 2. БАЗОВЫЕ UTILS (должны быть загружены как можно раньше) -->
     <script src="js/utils/escape.js"></script>
     <script src="js/utils/toast.js"></script>
     <script src="js/utils/logger.js"></script>
+
+    <!-- 3. PRIVACY MANAGER (критично — загружается до всего остального) -->
+    <script src="js/privacy-manager.js"></script>
+
+    <!-- 4. ОСТАЛЬНЫЕ UTILS (зависят от PrivacyManager) -->
     <script src="js/utils/analytics.js"></script>
     <script src="js/utils/offline-queue.js"></script>
 
-    <!-- ===== ОСНОВНЫЕ МОДУЛИ ===== -->
+    <!-- 5. ОСНОВНЫЕ МОДУЛИ (зависят от утилит) -->
     <script src="js/constants.js"></script>
     <script src="js/config.js"></script>
     <script src="js/store.js"></script>
     <script src="js/user.js"></script>
     <script src="js/badges.js"></script>
     <script src="js/progress.js"></script>
-    
-    <!-- ===== ШАБЛОНЫ ===== -->
+
+    <!-- 6. ШАБЛОНЫ -->
     <script src="js/templates/ui-templates.js"></script>
     <script src="js/templates/quiz-templates.js"></script>
     <script src="js/templates/map-templates.js"></script>
     <script src="js/templates/client-journey-templates.js"></script>
     <script src="js/templates/interactive-templates.js"></script>
     <script src="js/templates/triple-templates.js"></script>
-    
-    <!-- ===== ЛОГИКА ===== -->
+
+    <!-- 7. ЛОГИКА -->
     <script src="js/dragdrop.js"></script>
     <script src="js/brief.js"></script>
     <script src="js/interactive-lesson1.js"></script>
     <script src="js/client-journey.js"></script>
     <script src="js/drawer.js"></script>
     <script src="js/ui.js"></script>
-    
-    <!-- ===== КАРТА ===== -->
+
+    <!-- 8. КАРТА -->
     <script src="js/map/map-core.js"></script>
     <script src="js/map/map-utils.js"></script>
     <script src="js/map/map-ui.js"></script>
     <script src="js/map/map-step.js"></script>
-    
-    <!-- ===== ИНТЕРАКТИВНЫЕ ШАГИ ===== -->
+
+    <!-- 9. ИНТЕРАКТИВНЫЕ ШАГИ -->
     <script src="js/quiz.js"></script>
     <script src="js/timer-quiz.js"></script>
     <script src="js/decision-chain.js"></script>
     <script src="js/triple-match-drag.js"></script>
     <script src="js/interactive.js"></script>
-    
-    <!-- ===== РЕЕСТР ШАГОВ ===== -->
+
+    <!-- 10. РЕЕСТР ШАГОВ -->
     <script src="js/stepRegistry.js"></script>
     <script src="js/stepRegistry-init.js"></script>
-    
-    <!-- ===== СОГЛАСИЕ ===== -->
+
+    <!-- 11. СОГЛАСИЕ (теперь обёртка над PrivacyManager) -->
     <script src="js/consent.js"></script>
     <script src="js/consent-banner.js"></script>
-    
-    <!-- ===== CORE МОДУЛИ ===== -->
+
+    <!-- 12. CORE МОДУЛИ -->
     <script src="js/core/app-analytics.js"></script>
     <script src="js/core/app-offline.js"></script>
     <script src="js/core/app-pwa.js"></script>
@@ -368,11 +376,13 @@
     <script src="js/core/app-initializer.js"></script>
     <script src="js/core/app-scenario.js"></script>
     <script src="js/core/app-bootstrap.js"></script>
-    <script src="js/app.js"></script>
-    
-    <!-- ===== ОНБОРДИНГ ===== -->
+
+    <!-- 13. ОНБОРДИНГ И ПРЕМИУМ -->
     <script src="js/onboarding.js"></script>
-    <!-- Премиум-интерфейс -->
     <script src="js/premium-ui.js"></script>
+
+    <!-- 14. ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ (запускает bootApp) -->
+    <script src="js/app.js"></script>
+
 </body>
 </html>

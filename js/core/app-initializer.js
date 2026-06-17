@@ -1,255 +1,164 @@
 // ============================================================
-// ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
-// Версия: 1.0
-// Отвечает за: загрузку данных, инициализацию модулей
+// ВСПОМОГАТЕЛЬНЫЙ МОДУЛЬ ИНИЦИАЛИЗАЦИИ (ОБНОВЛЁННЫЙ)
+// Версия: 2.0.0
+// 
+// Отвечает за:
+// - Загрузку данных (вспомогательная функция)
+// - Загрузку Яндекс.Карт (вспомогательная функция)
+// - Вспомогательные функции для bootApp
+// 
+// ВНИМАНИЕ: Этот модуль больше НЕ содержит логики согласий.
+// Вся логика согласий теперь в PrivacyManager и app-bootstrap.js.
 // ============================================================
 
 (function() {
     'use strict';
 
-    /**
-     * Инициализация приложения после получения согласия
-     */
-    function initializeAppAfterConsent() {
-        console.log('[App] Инициализация после согласия');
+    // ===== КОНСТАНТЫ =====
+    var MAP_API_KEY = '7d7f69f2-30f1-4a3c-93bd-b7b99354b7c5';
+    var MAP_LOAD_TIMEOUT_MS = 10000;
 
-        // Загружаем Яндекс.Карты (если они нужны)
-        loadYandexMaps();
+    // ===== СОСТОЯНИЕ =====
+    var _isYandexMapsLoading = false;
+    var _yandexMapsLoaded = false;
+    var _pendingMapCallbacks = [];
 
-        // Загружаем FontAwesome (безопасно)
-        loadFontAwesome();
-
-        // Загружаем данные и запускаем приложение
-        loadData();
-    }
+    // ===== ПУБЛИЧНЫЕ ФУНКЦИИ =====
 
     /**
-     * Обработка отказа от согласия — упрощённый режим
-     */
-    function handleConsentDeclined() {
-        console.log('[App] Пользователь отказался от согласия — упрощённый режим');
-
-        // Показываем тост
-        if (typeof showToast === 'function') {
-            showToast(
-                '🔒',
-                'Вы отказались от обработки данных. Карта и некоторые функции недоступны.',
-                'warning'
-            );
-        }
-
-        // Загружаем только базовые данные (без карт)
-        loadDataWithoutMaps();
-    }
-
-    /**
-     * Загрузка данных без карт (упрощённый режим)
-     */
-    function loadDataWithoutMaps() {
-        // Показываем заглушку на карте
-        var mapContainer = document.getElementById('map');
-        if (mapContainer) {
-            mapContainer.innerHTML = `
-                <div style="
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    height: 100%;
-                    background: #f5f6fa;
-                    color: #636e72;
-                    padding: 40px;
-                    text-align: center;
-                ">
-                    <div style="font-size: 3rem; margin-bottom: 16px;">🔒</div>
-                    <h3 style="margin-bottom: 8px;">Карта недоступна</h3>
-                    <p style="max-width: 400px; font-size: 0.9rem;">
-                        Для отображения карты требуется ваше согласие на обработку данных.
-                        Вы можете изменить решение в настройках браузера.
-                    </p>
-                </div>
-            `;
-        }
-
-        // Загружаем остальные данные без карт
-        loadDataCore(false);
-    }
-
-    /**
-     * Ядро загрузки данных (общая логика)
-     * @param {boolean} withMaps - загружать ли карты
-     */
-    function loadDataCore(withMaps) {
-        // Инициализируем офлайн-индикатор
-        if (typeof initOfflineIndicator === 'function') {
-            initOfflineIndicator();
-        }
-
-        // Загружаем данные
-        fetchDataAndRender(withMaps);
-    }
-
-    /**
-     * Основная функция загрузки данных и рендеринга
-     */
-    function fetchDataAndRender(withMaps) {
-        var jksPromise = fetch('data/jks.json');
-        var questionsPromise = fetch('data/questions.json');
-        var scenariosPromise = fetch('data/scenarios.json');
-
-        Promise.all([jksPromise, questionsPromise, scenariosPromise])
-            .then(function(responses) {
-                var jksRes = responses[0];
-                var questionsRes = responses[1];
-                var scenariosRes = responses[2];
-
-                if (!jksRes.ok || !scenariosRes.ok) {
-                    throw new Error('Ошибка загрузки данных');
-                }
-
-                // Читаем все данные параллельно
-                var jksDataPromise = jksRes.json();
-                var scenariosDataPromise = scenariosRes.json();
-                var questionsDataPromise = questionsRes.ok ? questionsRes.json() : Promise.resolve([]);
-
-                return Promise.all([
-                    jksDataPromise,
-                    scenariosDataPromise,
-                    questionsDataPromise
-                ]);
-            })
-            .then(function(data) {
-                var jksData = data[0];
-                var scenariosData = data[1];
-                var questionsData = data[2] || [];
-
-                // Сохраняем в Store
-                if (window.StoreInstance) {
-                    StoreInstance.setAllJks(jksData);
-                    StoreInstance.setScenarios(scenariosData);
-                    StoreInstance.setAllQuestions(questionsData);
-                }
-
-                // Загружаем marketing-steps.json если нужно
-                return fetch('data/marketing-steps.json')
-                    .then(function(res) {
-                        if (res.ok) return res.json();
-                        return null;
-                    })
-                    .then(function(marketingData) {
-                        if (marketingData && window.StoreInstance) {
-                            StoreInstance.setMarketingData(marketingData);
-                        }
-                        return { 
-                            jksData: jksData, 
-                            scenariosData: scenariosData, 
-                            questionsData: questionsData, 
-                            marketingData: marketingData 
-                        };
-                    });
-            })
-            .then(function(result) {
-                // Проверяем пользователя
-                var user = User.get();
-                if (!user) {
-                    User.showNamePrompt(function() {
-                        renderScenarios();
-                        addUserChangeButton();
-                        updateHeaderXP();
-                        updateHeaderUser();
-                        checkForSavedProgress();
-                    });
-                } else {
-                    renderScenarios();
-                    addUserChangeButton();
-                    updateHeaderXP();
-                    updateHeaderUser();
-                    if (typeof showToast === 'function') {
-                        showToast('👋', 'С возвращением, ' + user.name + '!', 'success');
-                    }
-                    checkForSavedProgress();
-                }
-
-                // Инициализируем прогресс-бар
-                if (window.ProgressBar && window.ProgressBar.init) {
-                    // ProgressBar.init() — инициализация при необходимости
-                }
-
-                // Настраиваем Drawer
-                if (window.Drawer && window.Drawer.init) {
-                    window.Drawer.init();
-                }
-
-                // Настройка автосохранения
-                setupAutoSave();
-
-                // Инициализация аналитики
-                initAnalytics();
-
-                // Инициализация PWA обновлений
-                initPWAUpdates();
-
-                // Если карты нужны — загружаем
-                if (withMaps) {
-                    loadYandexMaps();
-                }
-
-                console.log('[App] Приложение инициализировано');
-            })
-            .catch(function(error) {
-                console.error('Ошибка загрузки данных:', error);
-                if (typeof showToast === 'function') {
-                    showToast('❌', 'Не удалось загрузить данные. Обновите страницу.', 'error');
-                }
-            });
-    }
-
-    /**
-     * Загрузить Яндекс.Карты (только после согласия)
+     * Загружает Яндекс.Карты (только если согласие дано)
+     * Вызывается из app-bootstrap.js после получения согласия
      */
     function loadYandexMaps() {
+        // Проверяем, есть ли согласие на аналитику (карты считаются аналитическим инструментом)
+        if (window.PrivacyManager && !window.PrivacyManager.isAnalyticsAllowed()) {
+            console.log('[AppInitializer] Яндекс.Карты не загружены: нет согласия на аналитику');
+            return;
+        }
+
         // Проверяем, не загружены ли уже
         if (typeof ymaps !== 'undefined' && ymaps.Map) {
-            console.log('[App] Яндекс.Карты уже загружены');
+            console.log('[AppInitializer] Яндекс.Карты уже загружены');
+            _yandexMapsLoaded = true;
+            _notifyMapCallbacks();
             return;
         }
 
         // Проверяем, есть ли уже скрипт
         var existingScript = document.querySelector('script[src*="api-maps.yandex.ru"]');
         if (existingScript) {
-            console.log('[App] Скрипт Яндекс.Карт уже добавлен');
+            console.log('[AppInitializer] Скрипт Яндекс.Карт уже добавлен');
+            // Ждём загрузки
+            if (typeof ymaps !== 'undefined' && ymaps.ready) {
+                ymaps.ready(function() {
+                    _yandexMapsLoaded = true;
+                    _notifyMapCallbacks();
+                });
+            }
             return;
         }
 
-        console.log('[App] Загрузка Яндекс.Карт...');
+        if (_isYandexMapsLoading) {
+            console.log('[AppInitializer] Яндекс.Карты уже загружаются');
+            return;
+        }
+
+        console.log('[AppInitializer] Загрузка Яндекс.Карт...');
+        _isYandexMapsLoading = true;
+
         var script = document.createElement('script');
-        script.src = 'https://api-maps.yandex.ru/2.1/?apikey=7d7f69f2-30f1-4a3c-93bd-b7b99354b7c5&lang=ru_RU';
+        script.src = 'https://api-maps.yandex.ru/2.1/?apikey=' + MAP_API_KEY + '&lang=ru_RU';
         script.async = true;
+
+        var timeoutId = setTimeout(function() {
+            _isYandexMapsLoading = false;
+            console.warn('[AppInitializer] Таймаут загрузки Яндекс.Карт');
+            _notifyMapCallbacks(new Error('Таймаут загрузки Яндекс.Карт'));
+        }, MAP_LOAD_TIMEOUT_MS);
+
         script.onload = function() {
-            console.log('[App] Яндекс.Карты загружены');
-            // Если карта уже должна быть показана — инициализируем
+            clearTimeout(timeoutId);
+            _isYandexMapsLoading = false;
+            _yandexMapsLoaded = true;
+            console.log('[AppInitializer] Яндекс.Карты загружены');
+            
+            // Инициализируем карту, если она должна быть показана
             if (window.StoreInstance && window.StoreInstance.getCurrentScenario()) {
-                // Переинициализируем карту, если нужно
                 var mapContainer = document.getElementById('map');
                 if (mapContainer && !mapContainer.querySelector('.ymaps-map')) {
-                    console.log('[App] Повторная инициализация карты');
+                    console.log('[AppInitializer] Повторная инициализация карты');
                     if (typeof initMap === 'function') {
                         initMap();
                     }
                 }
             }
+            
+            _notifyMapCallbacks();
         };
+
         script.onerror = function() {
-            console.warn('[App] Ошибка загрузки Яндекс.Карт');
+            clearTimeout(timeoutId);
+            _isYandexMapsLoading = false;
+            console.warn('[AppInitializer] Ошибка загрузки Яндекс.Карт');
             if (typeof showToast === 'function') {
                 showToast('⚠️', 'Не удалось загрузить карту. Проверьте соединение.', 'warning');
             }
+            _notifyMapCallbacks(new Error('Ошибка загрузки Яндекс.Карт'));
         };
+
         document.head.appendChild(script);
     }
 
     /**
-     * Загрузить FontAwesome (шрифты и иконки)
+     * Проверяет, загружены ли Яндекс.Карты
+     * @returns {boolean}
+     */
+    function isYandexMapsLoaded() {
+        return _yandexMapsLoaded || (typeof ymaps !== 'undefined' && ymaps.Map);
+    }
+
+    /**
+     * Выполняет колбэк после загрузки Яндекс.Карт
+     * @param {Function} callback - функция, которая будет вызвана после загрузки
+     */
+    function onYandexMapsReady(callback) {
+        if (typeof callback !== 'function') return;
+
+        if (isYandexMapsLoaded()) {
+            try {
+                callback();
+            } catch (error) {
+                console.error('[AppInitializer] Ошибка в колбэке карт:', error);
+            }
+            return;
+        }
+
+        _pendingMapCallbacks.push(callback);
+
+        // Если карты ещё не начали загружаться — запускаем загрузку
+        if (!_isYandexMapsLoading && !_yandexMapsLoaded) {
+            loadYandexMaps();
+        }
+    }
+
+    /**
+     * Уведомляет все ожидающие колбэки о загрузке карт
+     */
+    function _notifyMapCallbacks(error) {
+        var callbacks = _pendingMapCallbacks.slice();
+        _pendingMapCallbacks = [];
+
+        for (var i = 0; i < callbacks.length; i++) {
+            try {
+                callbacks[i](error);
+            } catch (err) {
+                console.error('[AppInitializer] Ошибка в колбэке карт:', err);
+            }
+        }
+    }
+
+    /**
+     * Загружает FontAwesome (шрифты и иконки)
      */
     function loadFontAwesome() {
         // Проверяем, загружен ли уже
@@ -264,22 +173,103 @@
         link.referrerPolicy = 'no-referrer';
         document.head.appendChild(link);
         
-        console.log('[App] FontAwesome загружен');
+        console.log('[AppInitializer] FontAwesome загружен');
     }
 
     /**
-     * Основная функция загрузки данных
+     * Проверяет, можно ли загружать Яндекс.Карты
+     * @returns {boolean}
      */
-    function loadData() {
-        loadDataCore(true);
+    function canLoadYandexMaps() {
+        // Проверяем через PrivacyManager
+        if (window.PrivacyManager) {
+            return window.PrivacyManager.isAnalyticsAllowed();
+        }
+
+        // Fallback: проверяем localStorage
+        try {
+            var consent = localStorage.getItem('user_consent_given');
+            return consent === 'true';
+        } catch (_) {
+            return false;
+        }
     }
 
-    // ===== ЭКСПОРТ В ГЛОБАЛЬНУЮ ОБЛАСТЬ =====
-    window.loadData = loadData;
+    /**
+     * Загружает данные (обёртка для обратной совместимости)
+     * @deprecated Используйте bootApp() из app-bootstrap.js
+     */
+    function loadData() {
+        console.warn('[AppInitializer] loadData() устарела. Используйте bootApp() из app-bootstrap.js');
+        
+        // Проверяем согласие
+        if (window.PrivacyManager && !window.PrivacyManager.hasConsent()) {
+            console.log('[AppInitializer] Нет согласия, загрузка данных отложена');
+            return;
+        }
+
+        // Загружаем данные
+        if (typeof fetchDataAndRender === 'function') {
+            fetchDataAndRender(true);
+        } else {
+            console.error('[AppInitializer] fetchDataAndRender не найдена');
+        }
+    }
+
+    /**
+     * Загружает данные без карт
+     * @deprecated Используйте bootApp() из app-bootstrap.js
+     */
+    function loadDataWithoutMaps() {
+        console.warn('[AppInitializer] loadDataWithoutMaps() устарела');
+        
+        if (typeof fetchDataAndRender === 'function') {
+            fetchDataAndRender(false);
+        }
+    }
+
+    /**
+     * Инициализация приложения после согласия
+     * @deprecated Используется только для обратной совместимости
+     */
+    function initializeAppAfterConsent() {
+        console.warn('[AppInitializer] initializeAppAfterConsent() устарела. Используйте bootApp()');
+        
+        // Просто делегируем в bootApp
+        if (typeof bootApp === 'function') {
+            bootApp();
+        }
+    }
+
+    /**
+     * Обработка отказа от согласия
+     * @deprecated Используется только для обратной совместимости
+     */
+    function handleConsentDeclined() {
+        console.warn('[AppInitializer] handleConsentDeclined() устарела');
+        
+        if (typeof showToast === 'function') {
+            showToast('🔒', 'Вы отказались от обработки данных. Карта и некоторые функции недоступны.', 'warning');
+        }
+        
+        if (typeof loadDataWithoutMaps === 'function') {
+            loadDataWithoutMaps();
+        }
+    }
+
+    // ===== ЭКСПОРТ =====
     window.loadYandexMaps = loadYandexMaps;
+    window.isYandexMapsLoaded = isYandexMapsLoaded;
+    window.onYandexMapsReady = onYandexMapsReady;
+    window.canLoadYandexMaps = canLoadYandexMaps;
+    window.loadFontAwesome = loadFontAwesome;
+    
+    // Устаревшие, но оставленные для обратной совместимости
+    window.loadData = loadData;
+    window.loadDataWithoutMaps = loadDataWithoutMaps;
     window.initializeAppAfterConsent = initializeAppAfterConsent;
     window.handleConsentDeclined = handleConsentDeclined;
 
-    console.log('[AppInitializer] Модуль загружен, версия: 1.0');
+    console.log('[AppInitializer] Модуль загружен, версия: 2.0.0');
 
 })();
