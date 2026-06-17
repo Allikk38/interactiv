@@ -1,0 +1,476 @@
+/* ============================================================
+   ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ АНИМАЦИЙ ЛЕНДИНГА
+   Версия: 2.0 — Премиум-обновление
+   ============================================================ */
+
+/* ============================================================
+   1. БАЗОВЫЕ АНИМАЦИИ
+   ============================================================ */
+
+/* Плавное появление при загрузке */
+@keyframes fadeInPage {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Пульсация для CTA-кнопки */
+@keyframes ctaPulse {
+    0%, 100% {
+        box-shadow: 0 8px 32px rgba(243, 156, 18, 0.25);
+    }
+    50% {
+        box-shadow: 0 8px 56px rgba(243, 156, 18, 0.40);
+    }
+}
+
+/* Движение фоновых градиентов (герой) */
+@keyframes heroGlow {
+    0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.6;
+    }
+    100% {
+        transform: translate(-30px, 30px) scale(1.1);
+        opacity: 1;
+    }
+}
+
+@keyframes heroGlow2 {
+    0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.4;
+    }
+    100% {
+        transform: translate(40px, -20px) scale(1.15);
+        opacity: 0.8;
+    }
+}
+
+/* ============================================================
+   2. АНИМАЦИИ ДЛЯ ЭЛЕМЕНТОВ ПРИ СКРОЛЛЕ
+   ============================================================ */
+
+/* Появление с эффектом "вылета" */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Появление с эффектом "масштабирования" */
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Появление с эффектом "перекоса" */
+@keyframes skewIn {
+    from {
+        opacity: 0;
+        transform: skewX(-8deg) translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: skewX(0) translateX(0);
+    }
+}
+
+/* Появление с эффектом "пружины" */
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(30px);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(1.05) translateY(-5px);
+    }
+    100% {
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ============================================================
+   3. АНИМАЦИИ ДЛЯ ФОНОВЫХ ЭЛЕМЕНТОВ
+   ============================================================ */
+
+/* Плавное движение фона */
+@keyframes backgroundMove {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Мерцание для акцентных элементов */
+@keyframes shimmer {
+    0% {
+        background-position: -200% center;
+    }
+    100% {
+        background-position: 200% center;
+    }
+}
+
+/* ============================================================
+   4. МИКРО-ВЗАИМОДЕЙСТВИЯ
+   ============================================================ */
+
+/* Плавное появление подсказки */
+@keyframes tooltipFade {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Индикатор загрузки (спиннер) */
+@keyframes spinnerRotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Пульсация для активных элементов */
+@keyframes pulseGlow {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+/* ============================================================
+   5. КЛАССЫ ДЛЯ ПРИМЕНЕНИЯ АНИМАЦИЙ
+   ============================================================ */
+
+/* Анимация при наведении на карточку */
+.landing-benefit,
+.landing-feature {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.4s ease,
+                border-color 0.3s ease;
+    will-change: transform, box-shadow;
+}
+
+.landing-benefit:hover,
+.landing-feature:hover {
+    transform: translateY(-6px) scale(1.01);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s ease;
+}
+
+/* Анимация иконок в карточках */
+.landing-benefit__icon,
+.landing-feature__icon {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+}
+
+.landing-benefit:hover .landing-benefit__icon,
+.landing-feature:hover .landing-feature__icon {
+    transform: scale(1.1) rotate(-4deg);
+}
+
+/* Анимация кнопок */
+.landing-hero__btn,
+.landing-cta__btn,
+.landing-nav__link--primary {
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform, box-shadow;
+}
+
+.landing-hero__btn:active,
+.landing-cta__btn:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease;
+}
+
+/* Анимация элементов мокапа */
+.landing-hero__mockup-row {
+    transition: all 0.3s ease;
+    will-change: transform, background;
+}
+
+.landing-hero__mockup-row:hover {
+    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Анимация прогресс-бара */
+.landing-hero__mockup-progress-fill {
+    transition: width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: width;
+}
+
+/* Анимация статистики */
+.landing-hero__stat-number {
+    transition: all 0.5s ease;
+    will-change: transform;
+}
+
+.landing-hero__stat-item:hover .landing-hero__stat-number {
+    transform: scale(1.1);
+    color: #ffd700;
+}
+
+/* ============================================================
+   6. АНИМАЦИИ ДЛЯ СОСТОЯНИЙ
+   ============================================================ */
+
+/* Состояние загрузки */
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* Состояние успеха */
+@keyframes successCheck {
+    0% {
+        transform: scale(0);
+    }
+    60% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.success-icon {
+    animation: successCheck 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ============================================================
+   7. АДАПТИВНЫЕ АНИМАЦИИ
+   ============================================================ */
+
+/* На мобильных устройствах уменьшаем сложность анимаций */
+@media (max-width: 768px) {
+    .landing-benefit:hover,
+    .landing-feature:hover {
+        transform: translateY(-4px) scale(1);
+    }
+
+    .landing-hero__mockup-row:hover {
+        transform: none;
+    }
+
+    .landing-benefit:hover .landing-benefit__icon,
+    .landing-feature:hover .landing-feature__icon {
+        transform: scale(1.05);
+    }
+
+    .landing-hero__stat-item:hover .landing-hero__stat-number {
+        transform: none;
+    }
+
+    @keyframes heroGlow {
+        0%, 100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.3;
+        }
+        50% {
+            transform: translate(-10px, 10px) scale(1.05);
+            opacity: 0.5;
+        }
+    }
+
+    @keyframes heroGlow2 {
+        0%, 100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.2;
+        }
+        50% {
+            transform: translate(10px, -10px) scale(1.05);
+            opacity: 0.4;
+        }
+    }
+}
+
+/* Очень маленькие экраны — отключаем сложные анимации */
+@media (max-width: 480px) {
+    .landing-benefit,
+    .landing-feature {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .landing-benefit:hover,
+    .landing-feature:hover {
+        transform: translateY(-2px);
+    }
+
+    .landing-hero__btn,
+    .landing-cta__btn {
+        transition: all 0.2s ease;
+    }
+
+    .landing-hero__mockup-progress-fill {
+        transition: width 0.8s ease;
+    }
+}
+
+/* ============================================================
+   8. PREFERS-REDUCED-MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .landing-benefit,
+    .landing-feature {
+        transition: none !important;
+    }
+
+    .landing-benefit:hover,
+    .landing-feature:hover {
+        transform: none !important;
+    }
+
+    .landing-hero__btn,
+    .landing-cta__btn {
+        transition: none !important;
+    }
+
+    .landing-hero__mockup-row:hover {
+        transform: none !important;
+    }
+
+    .landing-hero__stat-item:hover .landing-hero__stat-number {
+        transform: none !important;
+    }
+
+    .ctaPulse,
+    .pulse-glow {
+        animation: none !important;
+    }
+
+    @keyframes heroGlow {
+        0%, 100% {
+            transform: none;
+            opacity: 0.1;
+        }
+    }
+
+    @keyframes heroGlow2 {
+        0%, 100% {
+            transform: none;
+            opacity: 0.05;
+        }
+    }
+
+    .loading-shimmer {
+        animation: none !important;
+        background: #f0f0f0;
+    }
+
+    .success-icon {
+        animation: none !important;
+    }
+}
+
+/* ============================================================
+   9. ДОПОЛНИТЕЛЬНЫЕ УЛУЧШЕНИЯ
+   ============================================================ */
+
+/* Плавное появление для анимируемых элементов */
+.animate-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: opacity, transform;
+}
+
+.animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Задержки для каскадного появления */
+.animate-on-scroll.delay-1 { transition-delay: 0.1s; }
+.animate-on-scroll.delay-2 { transition-delay: 0.2s; }
+.animate-on-scroll.delay-3 { transition-delay: 0.3s; }
+.animate-on-scroll.delay-4 { transition-delay: 0.4s; }
+.animate-on-scroll.delay-5 { transition-delay: 0.5s; }
+.animate-on-scroll.delay-6 { transition-delay: 0.6s; }
+
+/* Hover-эффект для ссылок в футере */
+.landing-footer__link {
+    transition: color 0.3s ease,
+                transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: color, transform;
+}
+
+.landing-footer__link:hover {
+    transform: translateX(4px);
+}
+
+/* Анимация для иконок в футере */
+.landing-footer__link i {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+}
+
+.landing-footer__link:hover i {
+    transform: translateX(2px) scale(1.1);
+}
+
+/* Анимация для бейджа в герое */
+.landing-hero__badge {
+    transition: all 0.3s ease;
+    will-change: transform, background;
+}
+
+.landing-hero__badge:hover {
+    transform: scale(1.05);
+    background: rgba(91, 91, 255, 0.25);
+}
+
+/* Анимация для заголовков секций */
+.landing-section__title i {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+}
+
+.landing-section__title:hover i {
+    transform: rotate(-8deg) scale(1.1);
+}
