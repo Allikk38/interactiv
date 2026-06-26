@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * ЕДИНЫЙ МЕНЕДЖЕР КОНФИДЕНЦИАЛЬНОСТИ
- * Версия: 1.1.0
+ * Версия: 1.2.0
  * 
  * Отвечает за:
  * - Управление состоянием согласия пользователя
@@ -10,6 +10,7 @@
  * - Уведомление подписчиков об изменении статуса
  * - Централизованную проверку перед отправкой данных
  * - Формирование полного payload для сохранения согласия
+ * - АВТОМАТИЧЕСКУЮ ЗАГРУЗКУ СОСТОЯНИЯ ПРИ ЗАГРУЗКЕ МОДУЛЯ
  * ============================================================
  */
 
@@ -52,34 +53,26 @@
         try {
             const consentGiven = localStorage.getItem(STORAGE_KEY) === 'true';
             const timestamp = localStorage.getItem(TIMESTAMP_KEY) || null;
-            
-            // Загружаем категории, если они сохранены
+            const categoriesData = localStorage.getItem('user_consent_categories');
             let categories = null;
-            try {
-                const categoriesData = localStorage.getItem('user_consent_categories');
-                if (categoriesData) {
-                    categories = JSON.parse(categoriesData);
-                }
-            } catch (_) {}
-
+            if (categoriesData) {
+                categories = JSON.parse(categoriesData);
+            }
             _state.consentGiven = consentGiven;
             _state.timestamp = timestamp;
-            
             if (categories) {
                 _state.categories = {
                     ..._state.categories,
                     ...categories
                 };
-                // Убеждаемся, что necessary всегда true
                 _state.categories[CONSENT_CATEGORIES.NECESSARY] = true;
             }
-
-            console.log('[PrivacyManager] Состояние загружено:', {
-                consentGiven: _state.consentGiven,
-                categories: _state.categories,
-                timestamp: _state.timestamp
-            });
-
+            // ВАЖНО: если consentGiven === true, но categories не загружены — включить все категории
+            if (_state.consentGiven && !categories) {
+                _state.categories[CONSENT_CATEGORIES.FUNCTIONAL] = true;
+                _state.categories[CONSENT_CATEGORIES.ANALYTICS] = true;
+                _state.categories[CONSENT_CATEGORIES.MARKETING] = true;
+            }
             return true;
         } catch (error) {
             console.error('[PrivacyManager] Ошибка загрузки состояния:', error);
@@ -536,10 +529,54 @@
         }
     }
 
+    // ===== АВТОМАТИЧЕСКАЯ ЗАГРУЗКА СОСТОЯНИЯ =====
+    // Это гарантирует, что состояние загружено до того, как кто-то вызовет hasConsent()
+    (function autoInit() {
+        try {
+            const consentGiven = localStorage.getItem(STORAGE_KEY) === 'true';
+            const timestamp = localStorage.getItem(TIMESTAMP_KEY) || null;
+            const categoriesData = localStorage.getItem('user_consent_categories');
+            let categories = null;
+            
+            if (categoriesData) {
+                try {
+                    categories = JSON.parse(categoriesData);
+                } catch (_) {}
+            }
+            
+            _state.consentGiven = consentGiven;
+            _state.timestamp = timestamp;
+            _state.isInitialized = true;
+            
+            if (categories) {
+                _state.categories = {
+                    ..._state.categories,
+                    ...categories
+                };
+                _state.categories[CONSENT_CATEGORIES.NECESSARY] = true;
+            }
+            
+            // Если consentGiven === true, но categories не загружены — включаем все категории
+            if (_state.consentGiven && !categories) {
+                _state.categories[CONSENT_CATEGORIES.FUNCTIONAL] = true;
+                _state.categories[CONSENT_CATEGORIES.ANALYTICS] = true;
+                _state.categories[CONSENT_CATEGORIES.MARKETING] = true;
+            }
+            
+            console.log('[PrivacyManager] Автозагрузка состояния:', {
+                consentGiven: _state.consentGiven,
+                categories: _state.categories,
+                timestamp: _state.timestamp
+            });
+        } catch (error) {
+            console.error('[PrivacyManager] Ошибка автозагрузки:', error);
+        }
+    })();
+
     // ===== ЭКСПОРТ =====
     window.PrivacyManager = PrivacyManager;
     window.CONSENT_CATEGORIES = CONSENT_CATEGORIES;
 
-    console.log('[PrivacyManager] Модуль загружен, версия: 1.1.0');
+    console.log('[PrivacyManager] Модуль загружен, версия: 1.2.0');
 
 })();

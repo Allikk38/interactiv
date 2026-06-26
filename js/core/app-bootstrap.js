@@ -67,6 +67,7 @@
             return;
         }
 
+        // ===== ПРОВЕРКА: если согласие уже есть — сразу запускаем =====
         if (window.PrivacyManager.hasConsent()) {
             console.log('[AppBootstrap] Согласие уже есть, запуск приложения');
             initializeAppAfterConsent();

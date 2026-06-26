@@ -1,15 +1,11 @@
 // ============================================================
-// МОДУЛЬ БАННЕРА СОГЛАСИЯ (ОБНОВЛЁННЫЙ)
-// Версия: 2.3.0
+// МОДУЛЬ БАННЕРА СОГЛАСИЯ (ИСПРАВЛЕННЫЙ)
+// Версия: 2.4.0
 // 
-// Отвечает за:
-// - Рендеринг и управление баннером согласия
-// - Правильное позиционирование на экране
-// - Анимацию появления и скрытия
-// - Управление фокусом и доступностью
-// - Интеграцию с PrivacyManager
-// - ОТПРАВКУ ДАННЫХ В GOOGLE SHEETS через Consent.giveConsent()
-// - Передачу IP-адреса при отправке согласия
+// ИСПРАВЛЕНИЯ:
+// - Добавлено сохранение согласия в localStorage через PrivacyManager
+// - Добавлена проверка hasConsent() перед показом
+// - Исправлена последовательность: сначала сохранение, потом отправка
 // ============================================================
 
 (function() {
@@ -507,6 +503,12 @@
      * Показывает баннер с анимацией
      */
     function _showBanner() {
+        // ===== ПРОВЕРКА: если согласие уже есть — не показываем =====
+        if (window.PrivacyManager && window.PrivacyManager.hasConsent()) {
+            console.log('[ConsentBanner] Согласие уже есть, баннер не показываем');
+            return;
+        }
+
         if (!_bannerElement) {
             _createBanner();
         }
@@ -638,44 +640,59 @@
     }
 
     /**
-     * Обработчик кнопки "Принимаю всё" — ОТПРАВЛЯЕТ ДАННЫЕ В GOOGLE SHEETS
+     * Обработчик кнопки "Принимаю всё"
+     * 
+     * ПОРЯДОК ДЕЙСТВИЙ:
+     * 1. Сохраняем согласие в localStorage (PrivacyManager)
+     * 2. Отправляем на бэкенд (Consent.giveConsent)
+     * 3. Скрываем баннер
+     * 4. Вызываем колбэк
      */
     function _handleAccept() {
         if (_isProcessing) return;
         _isProcessing = true;
 
-        // Отключаем кнопку, чтобы избежать повторных кликов
         var acceptBtn = _bannerElement.querySelector('#consent-accept-btn');
         if (acceptBtn) {
             acceptBtn.disabled = true;
-            acceptBtn.innerHTML = '⏳ Отправка...';
+            acceptBtn.innerHTML = '⏳ Сохранение...';
         }
 
-        console.log('[ConsentBanner] _handleAccept: начало отправки согласия');
+        console.log('[ConsentBanner] _handleAccept: начало');
 
-        // Получаем настройки категорий
         var categories = _getCategorySettings();
 
-        // ===== ВАЖНО: используем Consent.giveConsent() для отправки в Google Sheets =====
+        // ===== ШАГ 1: СОХРАНЯЕМ В localStorage через PrivacyManager =====
+        if (window.PrivacyManager) {
+            console.log('[ConsentBanner] Сохранение согласия через PrivacyManager');
+            window.PrivacyManager.giveConsent(categories);
+        } else {
+            console.warn('[ConsentBanner] PrivacyManager не найден, сохраняем напрямую');
+            try {
+                localStorage.setItem('user_consent_given', 'true');
+                localStorage.setItem('consent_timestamp', new Date().toISOString());
+                localStorage.setItem('user_consent_categories', JSON.stringify(categories));
+            } catch (_) {}
+        }
+
+        // ===== ШАГ 2: ОТПРАВЛЯЕМ НА БЭКЕНД =====
         if (window.Consent && typeof window.Consent.giveConsent === 'function') {
-            console.log('[ConsentBanner] Вызов Consent.giveConsent() для отправки в Google Sheets');
+            console.log('[ConsentBanner] Отправка на бэкенд через Consent.giveConsent()');
             
-            // Передаём дополнительные данные (IP будет получен внутри giveConsent)
             window.Consent.giveConsent()
                 .then(function(result) {
                     console.log('[ConsentBanner] Consent.giveConsent завершён:', result);
                     
-                    // Скрываем баннер
+                    // ШАГ 3: Скрываем баннер
                     _hideBanner();
                     
-                    // Вызываем колбэк
+                    // ШАГ 4: Вызываем колбэк
                     if (typeof _callbacks.onAccept === 'function') {
                         _callbacks.onAccept(categories);
                     }
                     
                     _isProcessing = false;
                     
-                    // Восстанавливаем кнопку
                     if (acceptBtn) {
                         acceptBtn.disabled = false;
                         acceptBtn.innerHTML = '<i class="fas fa-check"></i> Принимаю всё';
@@ -684,17 +701,7 @@
                 .catch(function(err) {
                     console.error('[ConsentBanner] Ошибка в Consent.giveConsent():', err);
                     
-                    // Fallback: сохраняем согласие через PrivacyManager
-                    if (window.PrivacyManager) {
-                        window.PrivacyManager.giveConsent(categories);
-                    } else {
-                        try {
-                            localStorage.setItem('user_consent_given', 'true');
-                            localStorage.setItem('consent_timestamp', new Date().toISOString());
-                            localStorage.setItem('user_consent_categories', JSON.stringify(categories));
-                        } catch (_) {}
-                    }
-                    
+                    // Даже при ошибке отправки — согласие уже сохранено локально
                     _hideBanner();
                     
                     if (typeof _callbacks.onAccept === 'function') {
@@ -710,18 +717,8 @@
                 });
         } else {
             // Fallback: если Consent не загружен
-            console.warn('[ConsentBanner] window.Consent не найден, используем PrivacyManager напрямую');
+            console.warn('[ConsentBanner] window.Consent не найден, отправка пропущена');
             
-            if (window.PrivacyManager) {
-                window.PrivacyManager.giveConsent(categories);
-            } else {
-                try {
-                    localStorage.setItem('user_consent_given', 'true');
-                    localStorage.setItem('consent_timestamp', new Date().toISOString());
-                    localStorage.setItem('user_consent_categories', JSON.stringify(categories));
-                } catch (_) {}
-            }
-
             _hideBanner();
 
             if (typeof _callbacks.onAccept === 'function') {
@@ -789,8 +786,10 @@
 
         /**
          * Показывает баннер
+         * Проверяет, есть ли уже согласие
          */
         show: function() {
+            // ===== ПРОВЕРКА: если согласие уже есть — не показываем =====
             if (window.PrivacyManager && window.PrivacyManager.hasConsent()) {
                 console.log('[ConsentBanner] Согласие уже есть, баннер не показываем');
                 return;
@@ -845,6 +844,6 @@
     // ===== ЭКСПОРТ =====
     window.ConsentBanner = ConsentBanner;
 
-    console.log('[ConsentBanner] Модуль загружен, версия: 2.3.0');
+    console.log('[ConsentBanner] Модуль загружен, версия: 2.4.0');
 
 })();

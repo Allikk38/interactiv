@@ -13,18 +13,53 @@ const User = {
     },
 
     save(name) {
-        const user = { name, savedAt: new Date().toISOString() };
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-        
-        if (this.getXP() === null) {
-            this.setXP(0);
-        }
-        
-        if (this.getStreak() === null) {
-            this.updateStreak();
-        }
-        
-        return user;
+        // Сначала синхронизируемся с сервером
+        return this.syncWithServer(name).then((serverData) => {
+            const user = {
+                name: name,
+                savedAt: new Date().toISOString(),
+                id: serverData.id,
+                token: serverData.token,
+                isNew: serverData.isNew
+            };
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+            
+            if (this.getXP() === null) {
+                this.setXP(0);
+            }
+            
+            if (this.getStreak() === null) {
+                this.updateStreak();
+            }
+            
+            return user;
+        });
+    },
+
+    // ===== СИНХРОНИЗАЦИЯ С СЕРВЕРОМ (GET-запрос) =====
+    syncWithServer(name) {
+        return new Promise((resolve) => {
+            const url = typeof GOOGLE_SCRIPT_URL !== 'undefined' ? GOOGLE_SCRIPT_URL : 
+                        'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
+
+            // GET-запрос с параметрами в URL (обходит CORS)
+            const getUrl = url + '?action=getUser&user_name=' + encodeURIComponent(name);
+
+            fetch(getUrl, {
+                method: 'GET',
+                mode: 'no-cors'
+            }).catch(function(err) {
+                console.warn('[User] syncWithServer GET error:', err);
+            });
+
+            console.log('[User] syncWithServer: GET-запрос отправлен для:', name);
+            resolve({
+                id: Date.now(),
+                token: 'local_' + Date.now(),
+                isNew: true,
+                name: name
+            });
+        });
     },
 
     clear() {
@@ -394,9 +429,10 @@ const User = {
         saveBtn.addEventListener('click', () => {
             const name = input.value.trim();
             if (name.length >= 3) {
-                this.save(name);
-                overlay.remove();
-                if (callback) callback(name);
+                this.save(name).then(() => {
+                    overlay.remove();
+                    if (callback) callback(name);
+                });
             }
         });
 
