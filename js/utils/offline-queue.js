@@ -141,12 +141,19 @@ const OfflineQueue = {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
             
-            const response = await fetch(request.url, {
+            // Для GET-запросов нельзя использовать body
+            const options = {
                 method: request.method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(request.payload),
                 signal: controller.signal
-            });
+            };
+            
+            // Только POST-запросы могут иметь body
+            if (request.method === 'POST') {
+                options.body = JSON.stringify(request.payload);
+            }
+            
+            const response = await fetch(request.url, options);
             
             clearTimeout(timeoutId);
             

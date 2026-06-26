@@ -1,12 +1,13 @@
 // ============================================================
 // ЗАПУСК ПРИЛОЖЕНИЯ — ТОЧКА ВХОДА (ОБНОВЛЁННЫЙ)
-// Версия: 2.2.0
+// Версия: 2.3.0
 // 
 // Отвечает за:
 // - Инициализацию приложения
 // - Управление согласием через PrivacyManager
 // - Запуск приложения после получения согласия
 // - Координацию между модулями
+// - Передачу IP-адреса при отправке согласия
 // ============================================================
 
 (function() {
@@ -105,6 +106,7 @@
     function initializeAppAfterConsent() {
         console.log('[AppBootstrap] Инициализация после согласия');
 
+        // Загружаем карты, если есть согласие на аналитику
         if (window.canLoadYandexMaps && window.canLoadYandexMaps()) {
             if (window.loadYandexMaps) {
                 window.loadYandexMaps();
@@ -537,6 +539,6 @@
     window.initializeAppAfterConsent = initializeAppAfterConsent;
     window.handleConsentDeclined = handleConsentDeclined;
 
-    console.log('[AppBootstrap] Модуль загружен, версия: 2.2.0');
+    console.log('[AppBootstrap] Модуль загружен, версия: 2.3.0');
 
 })();

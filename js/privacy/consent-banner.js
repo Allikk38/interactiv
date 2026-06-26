@@ -1,6 +1,6 @@
 // ============================================================
 // МОДУЛЬ БАННЕРА СОГЛАСИЯ (ОБНОВЛЁННЫЙ)
-// Версия: 2.1.0
+// Версия: 2.3.0
 // 
 // Отвечает за:
 // - Рендеринг и управление баннером согласия
@@ -8,6 +8,8 @@
 // - Анимацию появления и скрытия
 // - Управление фокусом и доступностью
 // - Интеграцию с PrivacyManager
+// - ОТПРАВКУ ДАННЫХ В GOOGLE SHEETS через Consent.giveConsent()
+// - Передачу IP-адреса при отправке согласия
 // ============================================================
 
 (function() {
@@ -636,34 +638,103 @@
     }
 
     /**
-     * Обработчик кнопки "Принимаю всё"
+     * Обработчик кнопки "Принимаю всё" — ОТПРАВЛЯЕТ ДАННЫЕ В GOOGLE SHEETS
      */
     function _handleAccept() {
         if (_isProcessing) return;
         _isProcessing = true;
 
+        // Отключаем кнопку, чтобы избежать повторных кликов
+        var acceptBtn = _bannerElement.querySelector('#consent-accept-btn');
+        if (acceptBtn) {
+            acceptBtn.disabled = true;
+            acceptBtn.innerHTML = '⏳ Отправка...';
+        }
+
+        console.log('[ConsentBanner] _handleAccept: начало отправки согласия');
+
+        // Получаем настройки категорий
         var categories = _getCategorySettings();
 
-        console.log('[ConsentBanner] Принятие с настройками:', categories);
-
-        if (window.PrivacyManager) {
-            window.PrivacyManager.giveConsent(categories);
+        // ===== ВАЖНО: используем Consent.giveConsent() для отправки в Google Sheets =====
+        if (window.Consent && typeof window.Consent.giveConsent === 'function') {
+            console.log('[ConsentBanner] Вызов Consent.giveConsent() для отправки в Google Sheets');
+            
+            // Передаём дополнительные данные (IP будет получен внутри giveConsent)
+            window.Consent.giveConsent()
+                .then(function(result) {
+                    console.log('[ConsentBanner] Consent.giveConsent завершён:', result);
+                    
+                    // Скрываем баннер
+                    _hideBanner();
+                    
+                    // Вызываем колбэк
+                    if (typeof _callbacks.onAccept === 'function') {
+                        _callbacks.onAccept(categories);
+                    }
+                    
+                    _isProcessing = false;
+                    
+                    // Восстанавливаем кнопку
+                    if (acceptBtn) {
+                        acceptBtn.disabled = false;
+                        acceptBtn.innerHTML = '<i class="fas fa-check"></i> Принимаю всё';
+                    }
+                })
+                .catch(function(err) {
+                    console.error('[ConsentBanner] Ошибка в Consent.giveConsent():', err);
+                    
+                    // Fallback: сохраняем согласие через PrivacyManager
+                    if (window.PrivacyManager) {
+                        window.PrivacyManager.giveConsent(categories);
+                    } else {
+                        try {
+                            localStorage.setItem('user_consent_given', 'true');
+                            localStorage.setItem('consent_timestamp', new Date().toISOString());
+                            localStorage.setItem('user_consent_categories', JSON.stringify(categories));
+                        } catch (_) {}
+                    }
+                    
+                    _hideBanner();
+                    
+                    if (typeof _callbacks.onAccept === 'function') {
+                        _callbacks.onAccept(categories);
+                    }
+                    
+                    _isProcessing = false;
+                    
+                    if (acceptBtn) {
+                        acceptBtn.disabled = false;
+                        acceptBtn.innerHTML = '<i class="fas fa-check"></i> Принимаю всё';
+                    }
+                });
         } else {
-            try {
-                localStorage.setItem('user_consent_given', 'true');
-                localStorage.setItem('consent_timestamp', new Date().toISOString());
-                localStorage.setItem('user_consent_categories', JSON.stringify(categories));
-            } catch (_) {}
+            // Fallback: если Consent не загружен
+            console.warn('[ConsentBanner] window.Consent не найден, используем PrivacyManager напрямую');
+            
+            if (window.PrivacyManager) {
+                window.PrivacyManager.giveConsent(categories);
+            } else {
+                try {
+                    localStorage.setItem('user_consent_given', 'true');
+                    localStorage.setItem('consent_timestamp', new Date().toISOString());
+                    localStorage.setItem('user_consent_categories', JSON.stringify(categories));
+                } catch (_) {}
+            }
+
+            _hideBanner();
+
+            if (typeof _callbacks.onAccept === 'function') {
+                _callbacks.onAccept(categories);
+            }
+
+            _isProcessing = false;
+            
+            if (acceptBtn) {
+                acceptBtn.disabled = false;
+                acceptBtn.innerHTML = '<i class="fas fa-check"></i> Принимаю всё';
+            }
         }
-
-        _hideBanner();
-
-        if (typeof _callbacks.onAccept === 'function') {
-            _callbacks.onAccept(categories);
-        }
-
-        _isProcessing = false;
-        console.log('[ConsentBanner] Согласие принято');
     }
 
     /**
@@ -774,6 +845,6 @@
     // ===== ЭКСПОРТ =====
     window.ConsentBanner = ConsentBanner;
 
-    console.log('[ConsentBanner] Модуль загружен, версия: 2.1.0');
+    console.log('[ConsentBanner] Модуль загружен, версия: 2.3.0');
 
 })();

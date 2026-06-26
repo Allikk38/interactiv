@@ -1,7 +1,7 @@
-// ===== SERVICE WORKER ДЛЯ PWA (С ОФЛАЙН-ИНДИКАЦИЕЙ И УВЕДОМЛЕНИЕМ ОБ ОБНОВЛЕНИИ) =====
+// ===== SERVICE WORKER ДЛЯ PWA =====
+// Версия: v9 — ИСПРАВЛЕНА (удалён перехват Google Sheets)
 
-// Версия кеша (увеличивайте при каждом обновлении)
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 const STATIC_CACHE = `realty-static-${CACHE_VERSION}`;
 const DATA_CACHE = `realty-data-${CACHE_VERSION}`;
 
@@ -103,7 +103,7 @@ const dataUrls = [
   './data/locations.json'
 ];
 
-// Установка Service Worker — кешируем статику
+// Установка Service Worker
 self.addEventListener('install', event => {
   console.log('[SW] Установка...', CACHE_VERSION);
   event.waitUntil(
@@ -189,7 +189,7 @@ function broadcastNewVersionAvailable() {
   });
 }
 
-// Функция для проверки обновлений (периодическая)
+// Функция для проверки обновлений
 function checkForUpdates() {
   console.log('[SW] Проверка обновлений...');
   self.registration.update().catch(err => {
@@ -214,11 +214,18 @@ self.addEventListener('offline', () => {
   broadcastConnectionStatus(false);
 });
 
-// Перехват запросов — стратегия: сначала кеш, потом сеть
+// ===== ПЕРЕХВАТ ЗАПРОСОВ =====
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   
-  // API Яндекс.Карт — только сеть (требует соединения)
+  // ===== ВАЖНО: Google Sheets НЕ ПЕРЕХВАТЫВАЕМ =====
+  // Запросы к Google Sheets идут напрямую в сеть
+  if (url.hostname.includes('script.google.com')) {
+    // Просто пропускаем запрос через Service Worker без изменений
+    return;
+  }
+  
+  // API Яндекс.Карт — только сеть
   if (url.hostname.includes('api-maps.yandex.ru') || 
       url.hostname.includes('yandex')) {
     event.respondWith(
@@ -232,21 +239,7 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Google Sheets запросы — только сеть (не кешируем)
-  if (url.hostname.includes('script.google.com')) {
-    event.respondWith(
-      fetch(event.request).catch(error => {
-        console.warn('[SW] Google Sheets запрос не удался:', error);
-        return new Response(JSON.stringify({ error: 'offline', queued: true }), {
-          status: 503,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      })
-    );
-    return;
-  }
-  
-  // JSON данные — стратегия: сеть с обновлением кеша
+  // JSON данные — сеть с обновлением кеша
   if (event.request.url.includes('/data/')) {
     event.respondWith(
       fetch(event.request)
@@ -262,7 +255,7 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Статические файлы (CSS, JS, HTML) — стратегия: кеш, потом сеть
+  // Статические файлы (CSS, JS, HTML) — кеш, потом сеть
   if (event.request.url.includes('/css/') || 
       event.request.url.includes('/js/') ||
       isPathRequest(event.request.url, '/') ||
@@ -291,7 +284,7 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Иконки и изображения — кеш с fallback на плейсхолдер
+  // Иконки и изображения — кеш с fallback
   if (event.request.url.includes('/icons/') || 
       event.request.url.includes('/images/') ||
       event.request.url.includes('.png') ||
@@ -310,7 +303,7 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Навигация — fallback на index.html (кеширован)
+  // Навигация — fallback на index.html
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -366,7 +359,7 @@ self.addEventListener('message', event => {
   }
 });
 
-// При получении push-уведомлений (если понадобится)
+// Push-уведомления
 self.addEventListener('push', event => {
   const options = {
     body: event.data?.text() || 'Новое обновление доступно',

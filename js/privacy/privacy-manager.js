@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * ЕДИНЫЙ МЕНЕДЖЕР КОНФИДЕНЦИАЛЬНОСТИ
- * Версия: 1.0.0
+ * Версия: 1.1.0
  * 
  * Отвечает за:
  * - Управление состоянием согласия пользователя
@@ -9,6 +9,7 @@
  * - Отзыв согласия
  * - Уведомление подписчиков об изменении статуса
  * - Централизованную проверку перед отправкой данных
+ * - Формирование полного payload для сохранения согласия
  * ============================================================
  */
 
@@ -147,6 +148,55 @@
         
         // Проверяем конкретную категорию
         return _state.categories[category] === true;
+    }
+
+    /**
+     * Формирует полный payload для сохранения согласия
+     * @param {string} ip - IP-адрес пользователя
+     * @param {string} userAgent - User Agent браузера
+     * @param {Object} extraData - дополнительные данные (телефон, имя и т.д.)
+     * @returns {Object} payload для отправки
+     */
+    function _buildConsentPayload(ip, userAgent, extraData) {
+        const now = new Date();
+        const payload = {
+            action: 'save_consent',
+            consent_version: CONSENT_VERSION,
+            ip: ip || 'IP_NOT_AVAILABLE',
+            user_agent: userAgent || navigator.userAgent || 'unknown',
+            timestamp: now.toISOString(),
+            formatted_date: now.toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
+            consent_given: _state.consentGiven,
+            categories: { ..._state.categories },
+            // Данные пользователя (имя, телефон и т.д.)
+            user_name: extraData?.name || 'Аноним',
+            phone: extraData?.phone || '',
+            // Дополнительная информация об устройстве
+            screen_width: window.screen ? window.screen.width : 'unknown',
+            screen_height: window.screen ? window.screen.height : 'unknown',
+            language: navigator.language || 'unknown',
+            platform: navigator.platform || 'unknown',
+            cookie_enabled: navigator.cookieEnabled || false,
+            do_not_track: navigator.doNotTrack || 'unknown'
+        };
+
+        // Если есть имя пользователя из User модуля
+        try {
+            if (window.User && typeof window.User.get === 'function') {
+                const user = window.User.get();
+                if (user && user.name) {
+                    payload.user_name = user.name;
+                }
+            }
+        } catch (_) {}
+
+        return payload;
     }
 
     // ===== ПУБЛИЧНЫЙ API =====
@@ -425,6 +475,17 @@
         },
 
         /**
+         * Формирует полный payload для отправки согласия
+         * @param {string} ip - IP-адрес пользователя
+         * @param {string} userAgent - User Agent браузера
+         * @param {Object} extraData - дополнительные данные (телефон, имя и т.д.)
+         * @returns {Object} payload для отправки
+         */
+        getConsentPayload(ip, userAgent, extraData) {
+            return _buildConsentPayload(ip, userAgent, extraData);
+        },
+
+        /**
          * Сбрасывает состояние (для тестирования)
          */
         reset() {
@@ -479,6 +540,6 @@
     window.PrivacyManager = PrivacyManager;
     window.CONSENT_CATEGORIES = CONSENT_CATEGORIES;
 
-    console.log('[PrivacyManager] Модуль загружен, версия: 1.0.0');
+    console.log('[PrivacyManager] Модуль загружен, версия: 1.1.0');
 
 })();

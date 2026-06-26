@@ -45,9 +45,9 @@
         default-src 'self';
         style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
         font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:;
-        img-src 'self' data:;
-        script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://api.ipify.org https://api.my-ip.io https://ipapi.co https://ip-api.com https://icanhazip.com;
-        connect-src 'self' https://api.ipify.org https://api.my-ip.io https://ipapi.co https://ip-api.com https://icanhazip.com;
+        img-src 'self' data: https://script.google.com;
+        script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://api.ipify.org https://api.my-ip.io https://ipapi.co https://ip-api.com https://icanhazip.com https://script.google.com;
+        connect-src 'self' https://api.ipify.org https://api.my-ip.io https://ipapi.co https://ip-api.com https://icanhazip.com https://script.google.com;
     ">
     
     <!-- Стили проекта -->
@@ -789,6 +789,7 @@
     <!-- 5. СОГЛАСИЕ И БАННЕР -->
     <script src="js/privacy/privacy-manager.js"></script>
     <script src="js/privacy/consent-banner.js"></script>
+    <script src="js/privacy/consent.js"></script>
     <script src="js/core/app-bootstrap.js"></script>
     <script>
         (function() {

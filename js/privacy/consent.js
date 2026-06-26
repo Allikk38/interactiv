@@ -1,21 +1,14 @@
 // ============================================================
-// МОДУЛЬ СОГЛАСИЯ (ОБНОВЛЁННЫЙ)
-// Версия: 3.1.0
-// 
-// Отвечает за:
-// - Обратную совместимость со старым кодом
-// - Делегирование всех операций PrivacyManager
-// - Отправку данных о согласии в Google Sheets
-// - Обработку ответов от баннера
-// - Получение IP и User Agent через IPHelper
+// МОДУЛЬ СОГЛАСИЯ (ИСПРАВЛЕННЫЙ)
+// Версия: 4.0.0
 // ============================================================
 
 (function() {
     'use strict';
 
     // ===== ПРИВАТНЫЕ КОНСТАНТЫ =====
-    var GOOGLE_SCRIPT_URL = window.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzHxrLqYze95Sws7gCvUEz8g4jzBVI3NdTDm_jLLZ-YWYD-ofjsD1iGC7S0UGf-wb2x/exec';
-    var CONSENT_VERSION = '3.1.0';
+    var GOOGLE_SCRIPT_URL = window.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
+    var CONSENT_VERSION = '4.0.0';
     var IP_NOT_AVAILABLE = 'IP_NOT_AVAILABLE';
 
     // ===== ПРИВАТНОЕ СОСТОЯНИЕ =====
@@ -28,9 +21,6 @@
 
     // ===== ПРИВАТНЫЕ МЕТОДЫ =====
 
-    /**
-     * Проверяет, является ли IP локальным
-     */
     function _isLocalIP(ip) {
         if (!ip || typeof ip !== 'string') return true;
         return ip.startsWith('192.168.') ||
@@ -57,229 +47,248 @@
                ip === 'localhost';
     }
 
-    /**
-     * Получить IP-адрес через IPHelper или fallback-методами
-     */
-    function _getIPAsync(callback) {
-        // Если IPHelper загружен — используем его
-        if (window.IPHelper && typeof window.IPHelper.getIP === 'function') {
-            window.IPHelper.getIP()
-                .then(function(ip) {
-                    callback(ip);
-                })
-                .catch(function() {
-                    callback(IP_NOT_AVAILABLE);
-                });
-            return;
-        }
-
-        // Fallback: пробуем через старые методы (для обратной совместимости)
-        var services = [
-            'https://api.ipify.org?format=json',
-            'https://api.my-ip.io/ip.json',
-            'https://ipapi.co/json/',
-            'https://ip-api.com/json/',
-            'https://icanhazip.com'
-        ];
-
-        var index = 0;
-
-        function tryNext() {
-            if (index >= services.length) {
-                // Пробуем WebRTC как fallback
-                try {
-                    var pc = new RTCPeerConnection({ iceServers: [] });
-                    pc.createDataChannel('');
-                    pc.createOffer()
-                        .then(function(offer) {
-                            return pc.setLocalDescription(offer);
-                        })
-                        .catch(function() {});
-
-                    var ipFromWebRTC = null;
-                    pc.onicecandidate = function(e) {
-                        if (e.candidate) {
-                            var match = /([0-9]{1,3}\.){3}[0-9]{1,3}/.exec(e.candidate.candidate);
-                            if (match) {
-                                var localIP = match[0];
-                                if (!_isLocalIP(localIP)) {
-                                    ipFromWebRTC = localIP;
-                                }
-                            }
-                        }
-                    };
-
-                    setTimeout(function() {
-                        if (ipFromWebRTC) {
-                            callback(ipFromWebRTC);
-                        } else {
-                            callback(IP_NOT_AVAILABLE);
-                        }
-                    }, 1500);
-                } catch (_) {
-                    callback(IP_NOT_AVAILABLE);
-                }
+    function _getIPAsync() {
+        return new Promise(function(resolve) {
+            if (window.IPHelper && typeof window.IPHelper.getIP === 'function') {
+                window.IPHelper.getIP()
+                    .then(function(ip) {
+                        console.log('[Consent] IPHelper.getIP вернул:', ip);
+                        resolve(ip || IP_NOT_AVAILABLE);
+                    })
+                    .catch(function(err) {
+                        console.warn('[Consent] IPHelper.getIP ошибка:', err);
+                        resolve(IP_NOT_AVAILABLE);
+                    });
                 return;
             }
 
-            var url = services[index];
-            index++;
+            console.warn('[Consent] IPHelper не загружен, используем fallback');
 
-            fetch(url, {
-                method: 'GET',
-                headers: { 'Accept': 'application/json' },
-                cache: 'no-cache'
-            })
-            .then(function(response) {
-                if (!response.ok) throw new Error('Network error');
-                return response.text();
-            })
-            .then(function(text) {
-                var ip = null;
-                try {
-                    var data = JSON.parse(text);
-                    ip = data.ip || data.query || null;
-                } catch (_) {
-                    ip = text.trim();
-                }
+            var services = [
+                'https://api.ipify.org?format=json',
+                'https://api.my-ip.io/ip.json',
+                'https://ipapi.co/json/',
+                'https://ip-api.com/json/',
+                'https://icanhazip.com'
+            ];
 
-                if (ip && ip !== 'unknown' && ip !== 'undefined' && ip !== 'null') {
-                    var ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
-                    if (ipPattern.test(ip) && !_isLocalIP(ip)) {
-                        callback(ip);
-                        return;
+            var index = 0;
+            var timeoutMs = 5000;
+
+            function tryNext() {
+                if (index >= services.length) {
+                    try {
+                        var pc = new RTCPeerConnection({ iceServers: [] });
+                        pc.createDataChannel('');
+                        pc.createOffer()
+                            .then(function(offer) {
+                                return pc.setLocalDescription(offer);
+                            })
+                            .catch(function() {});
+
+                        var ipFromWebRTC = null;
+                        pc.onicecandidate = function(e) {
+                            if (e.candidate) {
+                                var match = /([0-9]{1,3}\.){3}[0-9]{1,3}/.exec(e.candidate.candidate);
+                                if (match) {
+                                    var localIP = match[0];
+                                    if (!_isLocalIP(localIP)) {
+                                        ipFromWebRTC = localIP;
+                                    }
+                                }
+                            }
+                        };
+
+                        setTimeout(function() {
+                            if (ipFromWebRTC) {
+                                resolve(ipFromWebRTC);
+                            } else {
+                                resolve(IP_NOT_AVAILABLE);
+                            }
+                        }, 1500);
+                    } catch (_) {
+                        resolve(IP_NOT_AVAILABLE);
                     }
+                    return;
                 }
-                tryNext();
-            })
-            .catch(function() {
-                tryNext();
-            });
-        }
 
-        tryNext();
-    }
+                var url = services[index];
+                index++;
 
-    /**
-     * Получить данные пользователя с IP и User Agent
-     */
-    function _getUserDataAsync(callback) {
-        var userName = 'Аноним';
-        try {
-            if (window.User && typeof window.User.get === 'function') {
-                var user = window.User.get();
-                if (user && user.name) {
-                    userName = user.name;
-                }
-            }
-        } catch (_) {}
+                var controller = new AbortController();
+                var timeoutId = setTimeout(function() {
+                    controller.abort();
+                }, timeoutMs);
 
-        var userAgent = navigator.userAgent || 'unknown';
-        var screenWidth = window.screen ? window.screen.width : 'unknown';
-        var screenHeight = window.screen ? window.screen.height : 'unknown';
-        var language = navigator.language || 'unknown';
-        var platform = navigator.platform || 'unknown';
-        var cookieEnabled = navigator.cookieEnabled || false;
-        var doNotTrack = navigator.doNotTrack || 'unknown';
+                fetch(url, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    cache: 'no-cache',
+                    signal: controller.signal
+                })
+                .then(function(response) {
+                    clearTimeout(timeoutId);
+                    if (!response.ok) throw new Error('Network error');
+                    return response.text();
+                })
+                .then(function(text) {
+                    var ip = null;
+                    try {
+                        var data = JSON.parse(text);
+                        ip = data.ip || data.query || null;
+                    } catch (_) {
+                        ip = text.trim();
+                    }
 
-        // Если IPHelper загружен — используем его для получения всех данных
-        if (window.IPHelper && typeof window.IPHelper.getAll === 'function') {
-            window.IPHelper.getAll()
-                .then(function(data) {
-                    callback({
-                        name: userName,
-                        agent: data.userAgent || userAgent,
-                        ip: data.ip || IP_NOT_AVAILABLE,
-                        screenWidth: data.screenWidth || screenWidth,
-                        screenHeight: data.screenHeight || screenHeight,
-                        language: data.language || language,
-                        platform: data.platform || platform,
-                        cookieEnabled: data.cookieEnabled !== undefined ? data.cookieEnabled : cookieEnabled,
-                        doNotTrack: data.doNotTrack || doNotTrack
-                    });
+                    if (ip && ip !== 'unknown' && ip !== 'undefined' && ip !== 'null') {
+                        var ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+                        if (ipPattern.test(ip) && !_isLocalIP(ip)) {
+                            console.log('[Consent] Получен IP через fallback:', ip);
+                            resolve(ip);
+                            return;
+                        }
+                    }
+                    tryNext();
                 })
                 .catch(function() {
-                    // Fallback на асинхронное получение IP
-                    _getIPAsync(function(ip) {
-                        callback({
+                    clearTimeout(timeoutId);
+                    tryNext();
+                });
+            }
+
+            tryNext();
+        });
+    }
+
+    function _getUserDataAsync() {
+        return new Promise(function(resolve) {
+            var userName = 'Аноним';
+            try {
+                if (window.User && typeof window.User.get === 'function') {
+                    var user = window.User.get();
+                    if (user && user.name) {
+                        userName = user.name;
+                    }
+                }
+            } catch (_) {}
+
+            var userAgent = navigator.userAgent || 'unknown';
+            var screenWidth = window.screen ? window.screen.width : 'unknown';
+            var screenHeight = window.screen ? window.screen.height : 'unknown';
+            var language = navigator.language || 'unknown';
+            var platform = navigator.platform || 'unknown';
+            var cookieEnabled = navigator.cookieEnabled || false;
+            var doNotTrack = navigator.doNotTrack || 'unknown';
+
+            if (window.IPHelper && typeof window.IPHelper.getAll === 'function') {
+                window.IPHelper.getAll()
+                    .then(function(data) {
+                        console.log('[Consent] IPHelper.getAll вернул данные:', data);
+                        resolve({
                             name: userName,
-                            agent: userAgent,
-                            ip: ip,
-                            screenWidth: screenWidth,
-                            screenHeight: screenHeight,
-                            language: language,
-                            platform: platform,
-                            cookieEnabled: cookieEnabled,
-                            doNotTrack: doNotTrack
+                            agent: data.userAgent || userAgent,
+                            ip: data.ip || IP_NOT_AVAILABLE,
+                            screenWidth: data.screenWidth || screenWidth,
+                            screenHeight: data.screenHeight || screenHeight,
+                            language: data.language || language,
+                            platform: data.platform || platform,
+                            cookieEnabled: data.cookieEnabled !== undefined ? data.cookieEnabled : cookieEnabled,
+                            doNotTrack: data.doNotTrack || doNotTrack
+                        });
+                    })
+                    .catch(function(err) {
+                        console.warn('[Consent] IPHelper.getAll ошибка:', err);
+                        _getIPAsync().then(function(ip) {
+                            resolve({
+                                name: userName,
+                                agent: userAgent,
+                                ip: ip,
+                                screenWidth: screenWidth,
+                                screenHeight: screenHeight,
+                                language: language,
+                                platform: platform,
+                                cookieEnabled: cookieEnabled,
+                                doNotTrack: doNotTrack
+                            });
                         });
                     });
-                });
-            return;
-        }
+                return;
+            }
 
-        // Fallback: асинхронное получение IP
-        _getIPAsync(function(ip) {
-            callback({
-                name: userName,
-                agent: userAgent,
-                ip: ip,
-                screenWidth: screenWidth,
-                screenHeight: screenHeight,
-                language: language,
-                platform: platform,
-                cookieEnabled: cookieEnabled,
-                doNotTrack: doNotTrack
+            _getIPAsync().then(function(ip) {
+                resolve({
+                    name: userName,
+                    agent: userAgent,
+                    ip: ip,
+                    screenWidth: screenWidth,
+                    screenHeight: screenHeight,
+                    language: language,
+                    platform: platform,
+                    cookieEnabled: cookieEnabled,
+                    doNotTrack: doNotTrack
+                });
             });
         });
     }
 
-    /**
-     * Отправить данные о согласии в Google Таблицу
-     */
+    // ===== ЕДИНСТВЕННЫЙ РАБОЧИЙ МЕТОД: fetch с mode: 'no-cors' =====
     function _sendConsentToServer(userData, categories) {
+        var now = new Date();
         var payload = {
             action: 'save_consent',
-            user_name: userData.name,
             consent_version: CONSENT_VERSION,
-            user_agent: userData.agent,
             ip: userData.ip || IP_NOT_AVAILABLE,
-            screen_width: userData.screenWidth,
-            screen_height: userData.screenHeight,
-            language: userData.language,
-            platform: userData.platform,
-            cookie_enabled: userData.cookieEnabled,
-            do_not_track: userData.doNotTrack,
-            timestamp: new Date().toISOString(),
+            user_agent: userData.agent || navigator.userAgent || 'unknown',
+            timestamp: now.toISOString(),
+            formatted_date: now.toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
             consent_given: true,
+            user_name: userData.name || 'Аноним',
             categories: categories || {
                 functional: true,
                 analytics: true,
                 marketing: true
-            }
+            },
+            screen_width: window.screen ? window.screen.width : 'unknown',
+            screen_height: window.screen ? window.screen.height : 'unknown',
+            language: navigator.language || 'unknown',
+            platform: navigator.platform || 'unknown',
+            cookie_enabled: navigator.cookieEnabled || false,
+            do_not_track: navigator.doNotTrack || 'unknown'
         };
 
         console.log('[Consent] Отправка согласия, IP:', payload.ip);
+        console.log('[Consent] Payload:', payload);
 
-        if (window.OfflineQueue && typeof window.OfflineQueue.add === 'function') {
-            window.OfflineQueue.add(payload, GOOGLE_SCRIPT_URL, 'POST');
-        } else {
-            try {
-                fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).catch(function(err) {
-                    console.warn('[Consent] Ошибка отправки согласия:', err);
-                });
-            } catch (err) {
-                console.warn('[Consent] Ошибка отправки согласия:', err);
-            }
-        }
+        // ===== ЕДИНСТВЕННЫЙ РАБОЧИЙ МЕТОД: fetch с mode: 'no-cors' =====
+        // no-cors позволяет обойти CORS, но ответ будет opaque (нечитаемый)
+        // Это нормально для fire-and-forget запросов
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(function(response) {
+            // При mode: 'no-cors' response.type === 'opaque'
+            // Статус всегда 0, но запрос доходит до сервера
+            console.log('[Consent] fetch no-cors отправлен, тип ответа:', response.type);
+            console.log('[Consent] ✅ Запрос отправлен (результат в Google Sheets)');
+        })
+        .catch(function(err) {
+            console.error('[Consent] fetch no-cors ошибка:', err);
+        });
     }
 
-    /**
-     * Обработчик кнопки "Согласен"
-     */
+    // ===== ОБРАБОТЧИКИ =====
+
     function _handleAccept() {
         if (_isProcessing) return;
         _isProcessing = true;
@@ -290,7 +299,15 @@
             acceptBtn.innerHTML = '⏳ Подождите...';
         }
 
-        _getUserDataAsync(function(userData) {
+        console.log('[Consent] Начало получения данных пользователя...');
+
+        _getUserDataAsync().then(function(userData) {
+            console.log('[Consent] Данные пользователя получены:', {
+                name: userData.name,
+                ip: userData.ip,
+                agent: userData.agent
+            });
+
             if (acceptBtn) {
                 acceptBtn.disabled = false;
                 acceptBtn.innerHTML = '<i class="fas fa-check"></i> Принимаю';
@@ -329,12 +346,16 @@
 
             console.log('[Consent] Согласие получено для:', userData.name, 'IP:', userData.ip);
             _isProcessing = false;
+        }).catch(function(err) {
+            console.error('[Consent] Ошибка получения данных пользователя:', err);
+            if (acceptBtn) {
+                acceptBtn.disabled = false;
+                acceptBtn.innerHTML = '<i class="fas fa-check"></i> Принимаю';
+            }
+            _isProcessing = false;
         });
     }
 
-    /**
-     * Обработчик кнопки "Отказаться"
-     */
     function _handleDecline() {
         if (_isProcessing) return;
         _isProcessing = true;
@@ -362,9 +383,6 @@
         _isProcessing = false;
     }
 
-    /**
-     * Навесить обработчики на кнопки баннера
-     */
     function _bindEvents() {
         var acceptBtn = document.getElementById('consent-accept');
         var declineBtn = document.getElementById('consent-decline');
@@ -390,9 +408,6 @@
         }
     }
 
-    /**
-     * Создание баннера вручную (fallback)
-     */
     function _createFallbackBanner() {
         if (document.getElementById('consent-banner')) return;
 
@@ -435,15 +450,10 @@
 
     var publicAPI = {
 
-        /**
-         * Проверяет, дано ли согласие
-         * @returns {boolean}
-         */
         hasConsent: function() {
             if (window.PrivacyManager) {
                 return window.PrivacyManager.hasConsent();
             }
-
             try {
                 return localStorage.getItem('user_consent_given') === 'true';
             } catch (_) {
@@ -451,11 +461,6 @@
             }
         },
 
-        /**
-         * Запрашивает согласие у пользователя
-         * @param {Function} onAccepted - колбэк при принятии
-         * @param {Function} onDeclined - колбэк при отказе
-         */
         requestConsent: function(onAccepted, onDeclined) {
             _callbacks.onAccepted = onAccepted || null;
             _callbacks.onDeclined = onDeclined || null;
@@ -479,35 +484,73 @@
             }
         },
 
-        /**
-         * Даёт согласие (программно)
-         */
-        giveConsent: function() {
-            _handleAccept();
+        giveConsent: function(extraData) {
+            return new Promise(function(resolve) {
+                console.log('[Consent] giveConsent вызван с extraData:', extraData);
+
+                _getUserDataAsync().then(function(userData) {
+                    if (extraData) {
+                        userData = { ...userData, ...extraData };
+                    }
+
+                    console.log('[Consent] Итоговые данные для отправки:', {
+                        name: userData.name,
+                        ip: userData.ip,
+                        agent: userData.agent
+                    });
+
+                    if (window.PrivacyManager) {
+                        var state = window.PrivacyManager.giveConsent({
+                            functional: true,
+                            analytics: true,
+                            marketing: true
+                        });
+
+                        if (state) {
+                            console.log('[Consent] Согласие сохранено через PrivacyManager');
+                        }
+                    } else {
+                        try {
+                            localStorage.setItem('user_consent_given', 'true');
+                            localStorage.setItem('consent_timestamp', new Date().toISOString());
+                        } catch (_) {}
+                    }
+
+                    _sendConsentToServer(userData, {
+                        functional: true,
+                        analytics: true,
+                        marketing: true
+                    });
+
+                    if (window.ConsentBanner && typeof window.ConsentBanner.hide === 'function') {
+                        window.ConsentBanner.hide();
+                    }
+
+                    if (typeof _callbacks.onAccepted === 'function') {
+                        _callbacks.onAccepted();
+                    }
+
+                    console.log('[Consent] Согласие отправлено, IP:', userData.ip);
+                    resolve({ success: true, ip: userData.ip });
+                }).catch(function(err) {
+                    console.error('[Consent] Ошибка в giveConsent:', err);
+                    resolve({ success: false, error: err.message });
+                });
+            });
         },
 
-        /**
-         * Отзывает согласие (программно)
-         */
         revokeConsent: function() {
             _handleDecline();
         },
 
-        /**
-         * Возвращает версию модуля
-         */
         getVersion: function() {
             return CONSENT_VERSION;
         },
 
-        /**
-         * Возвращает время получения согласия
-         */
         getConsentTime: function() {
             if (window.PrivacyManager) {
                 return window.PrivacyManager.getConsentTime();
             }
-
             try {
                 return localStorage.getItem('consent_timestamp') || null;
             } catch (_) {
@@ -515,18 +558,18 @@
             }
         },
 
-        /**
-         * Получает данные пользователя
-         */
         getUserData: function(callback) {
-            _getUserDataAsync(callback || function(data) {
-                console.log('[Consent] Данные пользователя:', data);
+            _getUserDataAsync().then(function(data) {
+                if (callback) callback(data);
+            }).catch(function() {
+                if (callback) callback({
+                    ip: IP_NOT_AVAILABLE,
+                    agent: navigator.userAgent || 'unknown',
+                    name: 'Аноним'
+                });
             });
         },
 
-        /**
-         * Сбрасывает состояние (для тестирования)
-         */
         reset: function() {
             if (window.PrivacyManager) {
                 window.PrivacyManager.reset();

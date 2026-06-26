@@ -1,6 +1,6 @@
 // ============================================================
 // IP HELPER — ПОЛУЧЕНИЕ ПУБЛИЧНОГО IP-АДРЕСА
-// Версия: 1.0.0
+// Версия: 1.1.0
 // ============================================================
 
 (function() {
@@ -52,14 +52,17 @@
      */
     function _fetchIP(url, timeoutMs) {
         return new Promise(function(resolve, reject) {
+            var controller = new AbortController();
             var timeoutId = setTimeout(function() {
+                controller.abort();
                 reject(new Error('Timeout'));
             }, timeoutMs);
 
             fetch(url, {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' },
-                cache: 'no-cache'
+                cache: 'no-cache',
+                signal: controller.signal
             })
             .then(function(response) {
                 clearTimeout(timeoutId);
@@ -204,6 +207,6 @@
     // ===== ЭКСПОРТ =====
     window.IPHelper = IPHelper;
 
-    console.log('[IPHelper] Модуль загружен, версия: 1.0.0');
+    console.log('[IPHelper] Модуль загружен, версия: 1.1.0');
 
 })();
