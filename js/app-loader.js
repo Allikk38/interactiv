@@ -1,13 +1,15 @@
 /**
  * ============================================================
  * ЕДИНЫЙ ЗАГРУЗЧИК МОДУЛЕЙ
- * Версия: 1.0.3
+ * Версия: 1.0.4 (ДОБАВЛЕН onReady)
  * 
  * Отвечает за:
  * - Загрузку общих зависимостей
  * - Управление порядком подключения
  * - Предотвращение дублирования
  * - Логирование процесса загрузки
+ * - Управление состоянием загрузки (isLoading, isReady)
+ * - Выполнение колбэков после полной загрузки (onReady)
  * ============================================================
  */
 
@@ -36,7 +38,9 @@
 
     // ===== СОСТОЯНИЕ =====
     let isLoaded = false;
+    let isLoading = false;          // НОВОЕ: флаг, что загрузка идёт
     let loadPromise = null;
+    let readyCallbacks = [];        // НОВОЕ: колбэки, ожидающие загрузки
 
     // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
 
@@ -134,6 +138,22 @@
         return results;
     }
 
+    /**
+     * Вызывает все отложенные колбэки
+     */
+    function _notifyReady() {
+        const callbacks = readyCallbacks.slice();
+        readyCallbacks = [];
+        
+        for (const cb of callbacks) {
+            try {
+                cb();
+            } catch (error) {
+                console.error('[AppLoader] Ошибка в onReady колбэке:', error);
+            }
+        }
+    }
+
     // ===== ПУБЛИЧНЫЙ API =====
 
     /**
@@ -161,6 +181,8 @@
             CONFIG.debug = options.debug;
         }
 
+        isLoading = true; // НОВОЕ: отмечаем начало загрузки
+
         var total = CONFIG.commonModules.length;
         var loaded = 0;
 
@@ -168,6 +190,7 @@
         loadPromise = loadModules(CONFIG.commonModules)
             .then(function(results) {
                 isLoaded = true;
+                isLoading = false; // НОВОЕ: загрузка завершена
                 
                 if (options && options.onComplete) {
                     options.onComplete(results);
@@ -178,6 +201,9 @@
                     if (results[i].success) successCount++;
                 }
                 console.log('[AppLoader] Загружено ' + successCount + '/' + total + ' модулей');
+                
+                // НОВОЕ: уведомляем все ожидающие колбэки
+                _notifyReady();
                 
                 return {
                     success: true,
@@ -190,6 +216,7 @@
                 // Сбрасываем состояние, чтобы можно было повторить попытку
                 loadPromise = null;
                 isLoaded = false;
+                isLoading = false;
 
                 if (options && options.onError) {
                     options.onError(error);
@@ -211,19 +238,63 @@
     }
 
     /**
+     * Проверяет, идёт ли загрузка
+     * @returns {boolean}
+     */
+    function isLoadingNow() {
+        return isLoading;
+    }
+
+    /**
+     * Выполняет колбэк после полной загрузки модулей
+     * @param {Function} callback - функция, которая будет вызвана после загрузки
+     */
+    function onReady(callback) {
+        if (typeof callback !== 'function') {
+            console.warn('[AppLoader] onReady: колбэк должен быть функцией');
+            return;
+        }
+
+        if (isLoaded) {
+            // Если уже загружено — выполняем сразу
+            try {
+                callback();
+            } catch (error) {
+                console.error('[AppLoader] Ошибка в onReady колбэке:', error);
+            }
+            return;
+        }
+
+        // Добавляем в очередь
+        readyCallbacks.push(callback);
+        
+        // Если загрузка ещё не началась — запускаем
+        if (!isLoading && !loadPromise) {
+            console.log('[AppLoader] Автозапуск загрузки из onReady');
+            loadCommonModules({ debug: CONFIG.debug }).catch(function() {
+                // Ошибка уже обработана внутри
+            });
+        }
+    }
+
+    /**
      * Сбрасывает состояние загрузчика (для тестирования)
      */
     function reset() {
         isLoaded = false;
+        isLoading = false;
         loadPromise = null;
+        readyCallbacks = [];
     }
 
     // ===== ЭКСПОРТ =====
     window.AppLoader = {
         load: loadCommonModules,
         isReady: isReady,
+        isLoading: isLoadingNow,
+        onReady: onReady,
         reset: reset,
-        version: '1.0.3'
+        version: '1.0.4'
     };
 
     // ===== АВТОЗАГРУЗКА =====
@@ -237,6 +308,6 @@
         }, 100);
     }
 
-    console.log('[AppLoader] Модуль загружен, версия 1.0.3');
+    console.log('[AppLoader] Модуль загружен, версия 1.0.4');
 
 })();
