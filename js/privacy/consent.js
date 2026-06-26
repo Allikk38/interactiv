@@ -1,12 +1,13 @@
 // ============================================================
 // МОДУЛЬ СОГЛАСИЯ (ОБНОВЛЁННЫЙ)
-// Версия: 3.0.0
+// Версия: 3.1.0
 // 
 // Отвечает за:
 // - Обратную совместимость со старым кодом
 // - Делегирование всех операций PrivacyManager
 // - Отправку данных о согласии в Google Sheets
 // - Обработку ответов от баннера
+// - Получение IP и User Agent через IPHelper
 // ============================================================
 
 (function() {
@@ -14,7 +15,8 @@
 
     // ===== ПРИВАТНЫЕ КОНСТАНТЫ =====
     var GOOGLE_SCRIPT_URL = window.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzHxrLqYze95Sws7gCvUEz8g4jzBVI3NdTDm_jLLZ-YWYD-ofjsD1iGC7S0UGf-wb2x/exec';
-    var CONSENT_VERSION = '3.0.0';
+    var CONSENT_VERSION = '3.1.0';
+    var IP_NOT_AVAILABLE = 'IP_NOT_AVAILABLE';
 
     // ===== ПРИВАТНОЕ СОСТОЯНИЕ =====
     var _callbacks = {
@@ -56,9 +58,22 @@
     }
 
     /**
-     * Получить IP-адрес АСИНХРОННО через fetch
+     * Получить IP-адрес через IPHelper или fallback-методами
      */
     function _getIPAsync(callback) {
+        // Если IPHelper загружен — используем его
+        if (window.IPHelper && typeof window.IPHelper.getIP === 'function') {
+            window.IPHelper.getIP()
+                .then(function(ip) {
+                    callback(ip);
+                })
+                .catch(function() {
+                    callback(IP_NOT_AVAILABLE);
+                });
+            return;
+        }
+
+        // Fallback: пробуем через старые методы (для обратной совместимости)
         var services = [
             'https://api.ipify.org?format=json',
             'https://api.my-ip.io/ip.json',
@@ -98,11 +113,11 @@
                         if (ipFromWebRTC) {
                             callback(ipFromWebRTC);
                         } else {
-                            callback('unknown');
+                            callback(IP_NOT_AVAILABLE);
                         }
                     }, 1500);
                 } catch (_) {
-                    callback('unknown');
+                    callback(IP_NOT_AVAILABLE);
                 }
                 return;
             }
@@ -146,7 +161,7 @@
     }
 
     /**
-     * Получить данные пользователя АСИНХРОННО
+     * Получить данные пользователя с IP и User Agent
      */
     function _getUserDataAsync(callback) {
         var userName = 'Аноним';
@@ -159,14 +174,61 @@
             }
         } catch (_) {}
 
+        var userAgent = navigator.userAgent || 'unknown';
+        var screenWidth = window.screen ? window.screen.width : 'unknown';
+        var screenHeight = window.screen ? window.screen.height : 'unknown';
+        var language = navigator.language || 'unknown';
+        var platform = navigator.platform || 'unknown';
+        var cookieEnabled = navigator.cookieEnabled || false;
+        var doNotTrack = navigator.doNotTrack || 'unknown';
+
+        // Если IPHelper загружен — используем его для получения всех данных
+        if (window.IPHelper && typeof window.IPHelper.getAll === 'function') {
+            window.IPHelper.getAll()
+                .then(function(data) {
+                    callback({
+                        name: userName,
+                        agent: data.userAgent || userAgent,
+                        ip: data.ip || IP_NOT_AVAILABLE,
+                        screenWidth: data.screenWidth || screenWidth,
+                        screenHeight: data.screenHeight || screenHeight,
+                        language: data.language || language,
+                        platform: data.platform || platform,
+                        cookieEnabled: data.cookieEnabled !== undefined ? data.cookieEnabled : cookieEnabled,
+                        doNotTrack: data.doNotTrack || doNotTrack
+                    });
+                })
+                .catch(function() {
+                    // Fallback на асинхронное получение IP
+                    _getIPAsync(function(ip) {
+                        callback({
+                            name: userName,
+                            agent: userAgent,
+                            ip: ip,
+                            screenWidth: screenWidth,
+                            screenHeight: screenHeight,
+                            language: language,
+                            platform: platform,
+                            cookieEnabled: cookieEnabled,
+                            doNotTrack: doNotTrack
+                        });
+                    });
+                });
+            return;
+        }
+
+        // Fallback: асинхронное получение IP
         _getIPAsync(function(ip) {
             callback({
                 name: userName,
-                agent: navigator.userAgent || 'unknown',
-                ip: ip || 'unknown',
-                screenWidth: window.screen ? window.screen.width : 'unknown',
-                language: navigator.language || 'unknown',
-                platform: navigator.platform || 'unknown'
+                agent: userAgent,
+                ip: ip,
+                screenWidth: screenWidth,
+                screenHeight: screenHeight,
+                language: language,
+                platform: platform,
+                cookieEnabled: cookieEnabled,
+                doNotTrack: doNotTrack
             });
         });
     }
@@ -180,10 +242,13 @@
             user_name: userData.name,
             consent_version: CONSENT_VERSION,
             user_agent: userData.agent,
-            ip: userData.ip,
+            ip: userData.ip || IP_NOT_AVAILABLE,
             screen_width: userData.screenWidth,
+            screen_height: userData.screenHeight,
             language: userData.language,
             platform: userData.platform,
+            cookie_enabled: userData.cookieEnabled,
+            do_not_track: userData.doNotTrack,
             timestamp: new Date().toISOString(),
             consent_given: true,
             categories: categories || {
@@ -193,7 +258,7 @@
             }
         };
 
-        console.log('[Consent] Отправка согласия:', payload);
+        console.log('[Consent] Отправка согласия, IP:', payload.ip);
 
         if (window.OfflineQueue && typeof window.OfflineQueue.add === 'function') {
             window.OfflineQueue.add(payload, GOOGLE_SCRIPT_URL, 'POST');
@@ -201,7 +266,6 @@
             try {
                 fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 }).catch(function(err) {
@@ -220,7 +284,6 @@
         if (_isProcessing) return;
         _isProcessing = true;
 
-        // Показываем индикатор загрузки на кнопке
         var acceptBtn = document.getElementById('consent-accept');
         if (acceptBtn) {
             acceptBtn.disabled = true;
@@ -228,13 +291,11 @@
         }
 
         _getUserDataAsync(function(userData) {
-            // Восстанавливаем кнопку
             if (acceptBtn) {
                 acceptBtn.disabled = false;
                 acceptBtn.innerHTML = '<i class="fas fa-check"></i> Принимаю';
             }
 
-            // Используем PrivacyManager для сохранения согласия
             if (window.PrivacyManager) {
                 var state = window.PrivacyManager.giveConsent({
                     functional: true,
@@ -246,26 +307,22 @@
                     console.log('[Consent] Согласие сохранено через PrivacyManager');
                 }
             } else {
-                // Fallback на старую логику (для обратной совместимости)
                 try {
                     localStorage.setItem('user_consent_given', 'true');
                     localStorage.setItem('consent_timestamp', new Date().toISOString());
                 } catch (_) {}
             }
 
-            // Отправляем данные на сервер
             _sendConsentToServer(userData, {
                 functional: true,
                 analytics: true,
                 marketing: true
             });
 
-            // Скрываем баннер через ConsentBanner
             if (window.ConsentBanner && typeof window.ConsentBanner.hide === 'function') {
                 window.ConsentBanner.hide();
             }
 
-            // Уведомляем о принятии
             if (typeof _callbacks.onAccepted === 'function') {
                 _callbacks.onAccepted();
             }
@@ -282,12 +339,10 @@
         if (_isProcessing) return;
         _isProcessing = true;
 
-        // Отзываем согласие через PrivacyManager
         if (window.PrivacyManager) {
             window.PrivacyManager.revokeConsent(null);
             console.log('[Consent] Согласие отозвано через PrivacyManager');
         } else {
-            // Fallback на старую логику
             try {
                 localStorage.removeItem('user_consent_given');
                 localStorage.removeItem('consent_timestamp');
@@ -295,12 +350,10 @@
             } catch (_) {}
         }
 
-        // Скрываем баннер через ConsentBanner
         if (window.ConsentBanner && typeof window.ConsentBanner.hide === 'function') {
             window.ConsentBanner.hide();
         }
 
-        // Уведомляем об отказе
         if (typeof _callbacks.onDeclined === 'function') {
             _callbacks.onDeclined();
         }
@@ -317,7 +370,6 @@
         var declineBtn = document.getElementById('consent-decline');
 
         if (acceptBtn) {
-            // Удаляем старые обработчики через замену
             var newAccept = acceptBtn.cloneNode(true);
             acceptBtn.parentNode.replaceChild(newAccept, acceptBtn);
             newAccept.addEventListener('click', function(e) {
@@ -388,12 +440,10 @@
          * @returns {boolean}
          */
         hasConsent: function() {
-            // Используем PrivacyManager, если доступен
             if (window.PrivacyManager) {
                 return window.PrivacyManager.hasConsent();
             }
 
-            // Fallback на старую логику
             try {
                 return localStorage.getItem('user_consent_given') === 'true';
             } catch (_) {
@@ -410,7 +460,6 @@
             _callbacks.onAccepted = onAccepted || null;
             _callbacks.onDeclined = onDeclined || null;
 
-            // Если согласие уже есть — сразу вызываем onAccepted
             if (this.hasConsent()) {
                 if (window.ConsentBanner && typeof window.ConsentBanner.hide === 'function') {
                     window.ConsentBanner.hide();
@@ -421,13 +470,10 @@
                 return;
             }
 
-            // Показываем баннер через ConsentBanner
             if (window.ConsentBanner && typeof window.ConsentBanner.show === 'function') {
                 window.ConsentBanner.show();
-                // Перепривязываем события после показа
                 setTimeout(_bindEvents, 50);
             } else {
-                // Fallback: если ConsentBanner не загружен
                 console.warn('[Consent] ConsentBanner не загружен, создаём баннер вручную');
                 _createFallbackBanner();
             }

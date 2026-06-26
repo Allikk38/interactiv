@@ -198,6 +198,9 @@
     <!-- ===== ЕДИНЫЙ ЗАГРУЗЧИК ===== -->
     <script src="js/app-loader.js"></script>
 
+    <!-- ===== IP HELPER ===== -->
+    <script src="js/utils/ip-helper.js"></script>
+
     <!-- ===== МОДУЛИ КОНСУЛЬТАЦИИ ===== -->
     <script src="js/consultation/consultation-core.js"></script>
     <script src="js/consultation/consultation-ui.js"></script>
@@ -207,9 +210,7 @@
         (function() {
             'use strict';
 
-            // Ждём загрузку общих модулей через AppLoader
             function initConsultation() {
-                // Проверяем, что все зависимости загружены
                 if (typeof ConsultationCore === 'undefined' || 
                     typeof ConsultationUI === 'undefined' || 
                     typeof ConsultationDialog === 'undefined') {
@@ -219,12 +220,8 @@
                 }
 
                 console.log('[Consultation] Все модули загружены, запуск...');
-                
-                // Основной скрипт consultation-main.js сам обрабатывает инициализацию
-                // Дополнительная логика, если нужна
             }
 
-            // Проверяем, загружен ли AppLoader
             if (typeof AppLoader !== 'undefined') {
                 AppLoader.load({
                     debug: false,
@@ -237,7 +234,6 @@
                     }
                 });
             } else {
-                // Fallback: если app-loader.js не загружен
                 console.warn('[Consultation] AppLoader не найден, запуск без него');
                 setTimeout(initConsultation, 300);
             }

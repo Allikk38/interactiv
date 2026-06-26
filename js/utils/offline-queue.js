@@ -12,7 +12,6 @@ const OfflineQueue = {
      * Инициализация очереди
      */
     init() {
-        // Загружаем настройки из констант, если они доступны
         if (typeof OFFLINE_QUEUE_CONFIG !== 'undefined') {
             this.storageKey = OFFLINE_QUEUE_CONFIG.STORAGE_KEY || this.storageKey;
             this.maxRetryCount = OFFLINE_QUEUE_CONFIG.MAX_RETRY_COUNT || this.maxRetryCount;
@@ -20,13 +19,11 @@ const OfflineQueue = {
             this.maxQueueSize = OFFLINE_QUEUE_CONFIG.MAX_QUEUE_SIZE || this.maxQueueSize;
         }
         
-        // Слушаем событие восстановления соединения
         window.addEventListener('online', () => {
             logInfo('[OfflineQueue] Соединение восстановлено, отправка накопленных запросов');
             this.processQueue();
         });
         
-        // При загрузке страницы пробуем отправить накопленные запросы
         if (navigator.onLine) {
             setTimeout(() => this.processQueue(), 3000);
         }
@@ -42,11 +39,10 @@ const OfflineQueue = {
      * @returns {boolean} - успешно ли добавлено
      */
     add(payload, url = GOOGLE_SCRIPT_URL, method = 'POST') {
-        // Проверяем размер очереди
         const queue = this.getQueue();
         if (queue.length >= this.maxQueueSize) {
             logWarn('[OfflineQueue] Очередь переполнена, старый запрос удалён');
-            queue.shift(); // Удаляем самый старый запрос
+            queue.shift();
         }
         
         const request = {
@@ -64,7 +60,6 @@ const OfflineQueue = {
         
         logInfo(`[OfflineQueue] Запрос добавлен в очередь (${queue.length} в очереди):`, request.action);
         
-        // Если есть интернет, пробуем отправить сразу
         if (navigator.onLine) {
             this.processQueue();
         } else {
@@ -78,7 +73,6 @@ const OfflineQueue = {
      * Обработать очередь (отправить все накопленные запросы)
      */
     async processQueue() {
-        // Если уже обрабатываем или нет интернета — выходим
         if (this.isProcessing) {
             logInfo('[OfflineQueue] Уже обрабатывается очередь');
             return;
@@ -97,7 +91,6 @@ const OfflineQueue = {
         this.isProcessing = true;
         logInfo(`[OfflineQueue] Начало обработки очереди (${queue.length} запросов)`);
         
-        // Создаём копию очереди для обработки
         const requestsToProcess = [...queue];
         const failedRequests = [];
         
@@ -105,23 +98,19 @@ const OfflineQueue = {
             const success = await this.sendRequest(request);
             
             if (success) {
-                // Удаляем успешно отправленный запрос из очереди
                 this.removeFromQueue(request.id);
                 logInfo(`[OfflineQueue] Запрос ${request.id} (${request.action}) отправлен успешно`);
             } else {
-                // Увеличиваем счётчик попыток
                 request.retryCount++;
                 failedRequests.push(request);
                 logWarn(`[OfflineQueue] Запрос ${request.id} не отправлен, попытка ${request.retryCount}/${this.maxRetryCount}`);
             }
         }
         
-        // Если есть неудавшиеся запросы с попытками меньше максимума — возвращаем их в очередь
         if (failedRequests.length > 0) {
             const currentQueue = this.getQueue();
             const remainingRequests = failedRequests.filter(r => r.retryCount < this.maxRetryCount);
             
-            // Очищаем очередь и добавляем только те, у которых есть ещё попытки
             this.clearQueue();
             for (const req of remainingRequests) {
                 this.addToQueueDirect(req);
@@ -136,7 +125,6 @@ const OfflineQueue = {
         
         this.isProcessing = false;
         
-        // Если в очереди ещё есть запросы, планируем повторную попытку
         const remainingQueue = this.getQueue();
         if (remainingQueue.length > 0) {
             setTimeout(() => this.processQueue(), this.retryDelayMs);
@@ -150,13 +138,11 @@ const OfflineQueue = {
      */
     async sendRequest(request) {
         try {
-            // Используем fetch с таймаутом
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
             
             const response = await fetch(request.url, {
                 method: request.method,
-                mode: 'no-cors',  // Оставляем no-cors для совместимости с Google Sheets
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(request.payload),
                 signal: controller.signal
@@ -164,14 +150,16 @@ const OfflineQueue = {
             
             clearTimeout(timeoutId);
             
-            // При режиме no-cors ответ всегда пустой, считаем успехом
-            // (Google Sheets получает данные, даже если мы не видим ответ)
-            return true;
+            if (response.ok) {
+                return true;
+            } else {
+                logWarn(`[OfflineQueue] Запрос ${request.id} вернул статус ${response.status}`);
+                return false;
+            }
             
         } catch (error) {
             logError(`[OfflineQueue] Ошибка отправки запроса ${request.id}:`, error);
             
-            // Если ошибка из-за отсутствия интернета — точно не отправлено
             if (error.name === 'AbortError') {
                 logWarn(`[OfflineQueue] Таймаут запроса ${request.id}`);
             }
@@ -259,12 +247,10 @@ const OfflineQueue = {
     }
 };
 
-// Автоматическая инициализация
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => OfflineQueue.init());
 } else {
     OfflineQueue.init();
 }
 
-// Экспорт в глобальную область
 window.OfflineQueue = OfflineQueue;

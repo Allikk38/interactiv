@@ -670,6 +670,9 @@
     <!-- ===== ЕДИНЫЙ ЗАГРУЗЧИК ===== -->
     <script src="js/app-loader.js"></script>
 
+    <!-- ===== IP HELPER ===== -->
+    <script src="js/utils/ip-helper.js"></script>
+
     <!-- ===== СПЕЦИФИЧНЫЕ ДЛЯ СТРАНИЦЫ МОДУЛИ ===== -->
     <script src="js/config.js"></script>
     <script src="js/features/user.js"></script>
@@ -682,7 +685,6 @@
             let currentUserName = null;
             let isInitialized = false;
 
-            // ===== ПОЛУЧЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ =====
             function getUserData() {
                 const user = User.get();
                 if (user) {
@@ -692,7 +694,6 @@
                 return null;
             }
             
-            // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
             function escapeHtml(str) {
                 if (!str) return '';
                 return str.replace(/[&<>]/g, function(m) {
@@ -703,12 +704,10 @@
                 });
             }
 
-            // ===== ЗАГРУЗКА РЕЙТИНГОВ =====
             async function loadLeaderboard() {
                 const tableContent = document.getElementById('table-content');
                 const refreshBtn = document.getElementById('refresh-btn');
                 
-                // Показываем спиннер на кнопке
                 refreshBtn.classList.add('refresh-btn--spinning');
                 
                 tableContent.innerHTML = `
@@ -750,17 +749,13 @@
                         return;
                     }
                     
-                    // Обновляем статистику
                     updateStats(currentLeaderboard);
                     document.getElementById('stats-cards').style.display = 'grid';
                     
-                    // Обновляем профиль пользователя
                     updateUserProfile(currentLeaderboard);
                     
-                    // Рендерим таблицу
                     renderLeaderboard(currentLeaderboard);
                     
-                    // Обновляем время
                     document.getElementById('update-time').textContent = new Date().toLocaleString();
                     
                     showToast('✅', 'Рейтинги обновлены', 'success');
@@ -782,7 +777,6 @@
                 refreshBtn.classList.remove('refresh-btn--spinning');
             }
             
-            // ===== ОБНОВЛЕНИЕ СТАТИСТИКИ =====
             function updateStats(leaderboard) {
                 const totalUsers = leaderboard.length;
                 const totalCompleted = leaderboard.reduce((sum, u) => sum + (u.scenariosCompleted || 0), 0);
@@ -795,7 +789,6 @@
                 document.getElementById('best-agent').textContent = escapeHtml(bestAgent);
             }
             
-            // ===== ОБНОВЛЕНИЕ ПРОФИЛЯ ПОЛЬЗОВАТЕЛЯ =====
             function updateUserProfile(leaderboard) {
                 const user = getUserData();
                 const profileEl = document.getElementById('user-rank-profile');
@@ -805,7 +798,6 @@
                     return;
                 }
                 
-                // Находим пользователя в рейтинге
                 const userEntry = leaderboard.find(u => u.name === user.name);
                 const position = userEntry ? leaderboard.indexOf(userEntry) + 1 : null;
                 const xpProgress = User.getXPProgress();
@@ -822,7 +814,6 @@
                 profileEl.classList.add('user-rank-profile--visible');
             }
             
-            // ===== РЕНДЕР ТАБЛИЦЫ =====
             function renderLeaderboard(leaderboard) {
                 const user = getUserData();
                 let tableHTML = `
@@ -878,15 +869,12 @@
                 document.getElementById('table-content').innerHTML = tableHTML;
             }
             
-            // ===== ОБНОВЛЕНИЕ ПО КНОПКЕ =====
             document.getElementById('refresh-btn')?.addEventListener('click', function(e) {
                 e.preventDefault();
                 loadLeaderboard();
             });
             
-            // ===== ИНИЦИАЛИЗАЦИЯ =====
             function initRatings() {
-                // Проверяем, что все зависимости загружены
                 if (typeof User === 'undefined' || typeof Badges === 'undefined') {
                     console.warn('[Ratings] Ожидание загрузки модулей...');
                     setTimeout(initRatings, 200);
@@ -900,7 +888,6 @@
                 loadLeaderboard();
             }
 
-            // Проверяем, загружен ли AppLoader
             if (typeof AppLoader !== 'undefined') {
                 AppLoader.load({
                     debug: false,
@@ -910,12 +897,10 @@
                     },
                     onError: function(error) {
                         console.error('[Ratings] Ошибка загрузки общих модулей:', error);
-                        // Пробуем запустить без общих модулей
                         setTimeout(initRatings, 300);
                     }
                 });
             } else {
-                // Fallback
                 console.warn('[Ratings] AppLoader не найден, запуск без него');
                 setTimeout(initRatings, 300);
             }

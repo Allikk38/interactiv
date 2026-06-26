@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * ЕДИНЫЙ ЗАГРУЗЧИК МОДУЛЕЙ
- * Версия: 1.0.1
+ * Версия: 1.0.3
  * 
  * Отвечает за:
  * - Загрузку общих зависимостей
@@ -21,8 +21,10 @@
             { src: 'js/utils/escape.js', required: true },
             { src: 'js/utils/toast.js', required: true },
             { src: 'js/utils/logger.js', required: true },
-            { src: 'js/consent.js', required: true },
-            { src: 'js/consent-banner.js', required: true }
+            { src: 'js/utils/ip-helper.js', required: true },
+            { src: 'js/privacy/privacy-manager.js', required: true },
+            { src: 'js/privacy/consent.js', required: true },
+            { src: 'js/privacy/consent-banner.js', required: true }
         ],
         // Задержка между загрузкой модулей (мс)
         delayBetweenModules: 50,
@@ -221,7 +223,7 @@
         load: loadCommonModules,
         isReady: isReady,
         reset: reset,
-        version: '1.0.1'
+        version: '1.0.3'
     };
 
     // ===== АВТОЗАГРУЗКА =====
@@ -235,6 +237,6 @@
         }, 100);
     }
 
-    console.log('[AppLoader] Модуль загружен, версия 1.0.1');
+    console.log('[AppLoader] Модуль загружен, версия 1.0.3');
 
 })();

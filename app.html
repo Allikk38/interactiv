@@ -8,10 +8,10 @@
     <!-- CSP (Content Security Policy) для защиты от XSS -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self' 'unsafe-inline' https://api-maps.yandex.ru https://cdnjs.cloudflare.com https://script.google.com https://yastatic.net https://script.googleusercontent.com;
+        script-src 'self' 'unsafe-inline' https://api-maps.yandex.ru https://cdnjs.cloudflare.com https://script.google.com https://yastatic.net https://script.googleusercontent.com https://api.ipify.org https://api.my-ip.io https://ipapi.co https://ip-api.com https://icanhazip.com;
         style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
         img-src 'self' data: blob: https://*.yandex.ru https://*.yandex.net https://yastatic.net;
-        connect-src 'self' https://script.google.com https://api-maps.yandex.ru https://yastatic.net https://script.googleusercontent.com;
+        connect-src 'self' https://script.google.com https://api-maps.yandex.ru https://yastatic.net https://script.googleusercontent.com https://api.ipify.org https://api.my-ip.io https://ipapi.co https://ip-api.com https://icanhazip.com;
         font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:;
         frame-src 'self' https://yandex.ru;
     ">
@@ -314,6 +314,7 @@
     <script src="js/utils/escape.js"></script>
     <script src="js/utils/toast.js"></script>
     <script src="js/utils/logger.js"></script>
+    <script src="js/utils/ip-helper.js"></script>
 
     <!-- 3. PRIVACY MANAGER (критично — загружается до всего остального) -->
     <script src="js/privacy/privacy-manager.js"></script>
@@ -338,13 +339,7 @@
     <script src="js/templates/interactive-templates.js"></script>
     <script src="js/templates/triple-templates.js"></script>
 
-    <!-- 7. ЛОГИКА -->
-    <script src="js/features/dragdrop.js"></script>
-    <script src="js/steps/brief.js"></script>
-    <script src="js/steps/interactive-lesson1.js"></script>
-    <script src="js/steps/client-journey.js"></script>
-    <script src="js/ui/drawer.js"></script>
-        <!-- UI МОДУЛИ (НОВЫЕ) -->
+    <!-- 7. UI МОДУЛИ (ЗАГРУЖАЕМ РАНЬШЕ, ЧТОБЫ ОНИ БЫЛИ ДОСТУПНЫ) -->
     <script src="js/ui/ui-helpers.js"></script>
     <script src="js/ui/ui-dashboard.js"></script>
     <script src="js/ui/ui-categories.js"></script>
@@ -354,28 +349,35 @@
     <script src="js/ui/ui-admin.js"></script>
     <script src="js/ui/ui.js"></script>
 
-    <!-- 8. КАРТА -->
+    <!-- 8. ЛОГИКА -->
+    <script src="js/features/dragdrop.js"></script>
+    <script src="js/steps/brief.js"></script>
+    <script src="js/steps/interactive-lesson1.js"></script>
+    <script src="js/steps/client-journey.js"></script>
+    <script src="js/ui/drawer.js"></script>
+
+    <!-- 9. КАРТА -->
     <script src="js/map/map-core.js"></script>
     <script src="js/map/map-utils.js"></script>
     <script src="js/map/map-ui.js"></script>
     <script src="js/map/map-step.js"></script>
 
-    <!-- 9. ИНТЕРАКТИВНЫЕ ШАГИ -->
+    <!-- 10. ИНТЕРАКТИВНЫЕ ШАГИ -->
     <script src="js/steps/quiz.js"></script>
     <script src="js/game/timer-quiz.js"></script>
     <script src="js/game/decision-chain.js"></script>
     <script src="js/game/triple-match-drag.js"></script>
     <script src="js/steps/interactive.js"></script>
 
-    <!-- 10. РЕЕСТР ШАГОВ -->
+    <!-- 11. РЕЕСТР ШАГОВ -->
     <script src="js/steps/stepRegistry.js"></script>
     <script src="js/steps/stepRegistry-init.js"></script>
 
-    <!-- 11. СОГЛАСИЕ (теперь обёртка над PrivacyManager) -->
+    <!-- 12. СОГЛАСИЕ (теперь обёртка над PrivacyManager) -->
     <script src="js/privacy/consent.js"></script>
     <script src="js/privacy/consent-banner.js"></script>
 
-    <!-- 12. CORE МОДУЛИ -->
+    <!-- 13. CORE МОДУЛИ -->
     <script src="js/core/app-analytics.js"></script>
     <script src="js/core/app-offline.js"></script>
     <script src="js/core/app-pwa.js"></script>
@@ -383,13 +385,13 @@
     <script src="js/core/app-events.js"></script>
     <script src="js/core/app-initializer.js"></script>
     <script src="js/core/app-scenario.js"></script>
-    <script src="js/core/app-bootstrap.js"></script>
 
-    <!-- 13. ОНБОРДИНГ И ПРЕМИУМ -->
+    <!-- 14. ОНБОРДИНГ И ПРЕМИУМ -->
     <script src="js/ui/onboarding.js"></script>
     <script src="js/ui/premium-ui.js"></script>
 
-    <!-- 14. ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ (запускает bootApp) -->
+    <!-- 15. ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ (запускает bootApp) -->
+    <script src="js/core/app-bootstrap.js"></script>
     <script src="js/app.js"></script>
 
 </body>

@@ -1,6 +1,6 @@
 // ============================================================
 // МОДУЛЬ БАННЕРА СОГЛАСИЯ (ОБНОВЛЁННЫЙ)
-// Версия: 2.0.1
+// Версия: 2.1.0
 // 
 // Отвечает за:
 // - Рендеринг и управление баннером согласия
@@ -464,7 +464,6 @@
 
     /**
      * Создаёт оверлей для баннера
-     * ИСПРАВЛЕНО: вставляем в корень документа (html)
      */
     function _createOverlay() {
         if (_overlayElement) return;
@@ -472,7 +471,6 @@
         _overlayElement = document.createElement('div');
         _overlayElement.id = OVERLAY_ID;
         
-        // Вставляем в корень документа (html), чтобы избежать проблем с transform на body
         if (document.documentElement) {
             document.documentElement.appendChild(_overlayElement);
         } else {
@@ -482,23 +480,17 @@
 
     /**
      * Создаёт баннер в DOM
-     * ИСПРАВЛЕНО: вставляем в корень документа (html)
      */
     function _createBanner() {
         if (_bannerElement) return;
 
-        // Вставляем стили
         injectBannerStyles();
-
-        // Создаём оверлей
         _createOverlay();
 
-        // Создаём баннер
         var tempDiv = document.createElement('div');
         tempDiv.innerHTML = getBannerHTML();
         _bannerElement = tempDiv.firstElementChild;
         
-        // Вставляем в корень документа (html), чтобы избежать проблем с transform на body
         if (document.documentElement) {
             document.documentElement.appendChild(_bannerElement);
         } else {
@@ -506,7 +498,7 @@
         }
 
         _isRendered = true;
-        console.log('[ConsentBanner] Баннер создан в DOM (в корне документа)');
+        console.log('[ConsentBanner] Баннер создан в DOM');
     }
 
     /**
@@ -517,19 +509,14 @@
             _createBanner();
         }
 
-        // Показываем оверлей
         if (_overlayElement) {
             _overlayElement.classList.add('consent-overlay--visible');
         }
 
-        // Показываем баннер
         _bannerElement.classList.add('consent-banner--visible');
         _isVisible = true;
 
-        // Устанавливаем фокус на баннер
         _bannerElement.focus();
-
-        // Блокируем скролл страницы
         document.body.style.overflow = 'hidden';
 
         console.log('[ConsentBanner] Баннер показан');
@@ -544,14 +531,12 @@
         _bannerElement.classList.remove('consent-banner--visible');
         _isVisible = false;
 
-        // Скрываем оверлей с задержкой
         if (_overlayElement) {
             setTimeout(function() {
                 _overlayElement.classList.remove('consent-overlay--visible');
             }, 300);
         }
 
-        // Разблокируем скролл
         document.body.style.overflow = '';
 
         console.log('[ConsentBanner] Баннер скрыт');
@@ -563,7 +548,6 @@
     function _bindEvents() {
         if (!_bannerElement) return;
 
-        // Кнопка "Принимаю всё"
         var acceptBtn = _bannerElement.querySelector('#consent-accept-btn');
         if (acceptBtn) {
             acceptBtn.addEventListener('click', function(e) {
@@ -572,7 +556,6 @@
             });
         }
 
-        // Кнопка "Отказаться"
         var declineBtn = _bannerElement.querySelector('#consent-decline-btn');
         if (declineBtn) {
             declineBtn.addEventListener('click', function(e) {
@@ -581,7 +564,6 @@
             });
         }
 
-        // Кнопка "Настроить" (показывает/скрывает категории)
         var settingsBtn = _bannerElement.querySelector('#consent-settings-btn');
         if (settingsBtn) {
             settingsBtn.addEventListener('click', function(e) {
@@ -590,23 +572,18 @@
             });
         }
 
-        // Закрытие по клику на оверлей
         if (_overlayElement) {
             _overlayElement.addEventListener('click', function(e) {
                 if (e.target === _overlayElement) {
-                    // Не закрываем по клику на оверлей — только через кнопки
                 }
             });
         }
 
-        // Закрытие по Escape
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && _isVisible) {
-                // Не закрываем по Escape — только через кнопки
             }
         });
 
-        // Сохраняем состояние toggle-ов при изменении
         var toggles = _bannerElement.querySelectorAll('.consent-toggle input');
         toggles.forEach(function(toggle) {
             toggle.addEventListener('change', function() {
@@ -669,11 +646,9 @@
 
         console.log('[ConsentBanner] Принятие с настройками:', categories);
 
-        // Сохраняем согласие через PrivacyManager
         if (window.PrivacyManager) {
             window.PrivacyManager.giveConsent(categories);
         } else {
-            // Fallback
             try {
                 localStorage.setItem('user_consent_given', 'true');
                 localStorage.setItem('consent_timestamp', new Date().toISOString());
@@ -681,10 +656,8 @@
             } catch (_) {}
         }
 
-        // Скрываем баннер
         _hideBanner();
 
-        // Вызываем колбэк
         if (typeof _callbacks.onAccept === 'function') {
             _callbacks.onAccept(categories);
         }
@@ -702,11 +675,9 @@
 
         console.log('[ConsentBanner] Отказ от согласия');
 
-        // Отзываем согласие через PrivacyManager
         if (window.PrivacyManager) {
             window.PrivacyManager.revokeConsent(null);
         } else {
-            // Fallback
             try {
                 localStorage.removeItem('user_consent_given');
                 localStorage.removeItem('consent_timestamp');
@@ -714,10 +685,8 @@
             } catch (_) {}
         }
 
-        // Скрываем баннер
         _hideBanner();
 
-        // Вызываем колбэк
         if (typeof _callbacks.onDecline === 'function') {
             _callbacks.onDecline();
         }
@@ -741,7 +710,6 @@
             _callbacks.onDecline = onDecline || null;
             _callbacks.onSettings = onSettings || null;
 
-            // Создаём баннер
             _createBanner();
             _bindEvents();
 
@@ -752,7 +720,6 @@
          * Показывает баннер
          */
         show: function() {
-            // Проверяем, есть ли уже согласие
             if (window.PrivacyManager && window.PrivacyManager.hasConsent()) {
                 console.log('[ConsentBanner] Согласие уже есть, баннер не показываем');
                 return;
@@ -807,6 +774,6 @@
     // ===== ЭКСПОРТ =====
     window.ConsentBanner = ConsentBanner;
 
-    console.log('[ConsentBanner] Модуль загружен, версия: 2.0.1');
+    console.log('[ConsentBanner] Модуль загружен, версия: 2.1.0');
 
 })();

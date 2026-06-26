@@ -1,7 +1,7 @@
 // ===== SERVICE WORKER ДЛЯ PWA (С ОФЛАЙН-ИНДИКАЦИЕЙ И УВЕДОМЛЕНИЕМ ОБ ОБНОВЛЕНИИ) =====
 
 // Версия кеша (увеличивайте при каждом обновлении)
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const STATIC_CACHE = `realty-static-${CACHE_VERSION}`;
 const DATA_CACHE = `realty-data-${CACHE_VERSION}`;
 
@@ -72,6 +72,7 @@ const urlsToCache = [
   './js/utils/logger.js',
   './js/utils/analytics.js',
   './js/utils/offline-queue.js',
+  './js/utils/ip-helper.js',
   './js/developer/auction.js',
   './js/developer/geology.js',
   './js/developer/shape-drawing.js',

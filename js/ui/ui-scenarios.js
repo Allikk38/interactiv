@@ -1,23 +1,35 @@
 // ===== РЕНДЕРИНГ СЦЕНАРИЕВ =====
 
+// Используем глобальную переменную, объявленную в ui.js
+// currentCategory уже объявлена в ui.js, не объявляем её заново
+
 function sortScenarios(scenarios) {
-    return [...scenarios].sort((a, b) => {
-        const orderA = a.order !== undefined ? a.order : Infinity;
-        const orderB = b.order !== undefined ? b.order : Infinity;
+    return [...scenarios].sort(function(a, b) {
+        var orderA = a.order !== undefined ? a.order : Infinity;
+        var orderB = b.order !== undefined ? b.order : Infinity;
         if (orderA !== orderB) return orderA - orderB;
         return a.name.localeCompare(b.name, 'ru');
     });
 }
 
 function renderScenariosGrid() {
-    const container = document.getElementById('scenarios-grid');
+    var container = document.getElementById('scenarios-grid');
     if (!container) return;
     
     container.innerHTML = '';
     
-    let filteredScenarios = allScenarios;
-    if (currentCategory !== 'all') {
-        filteredScenarios = allScenarios.filter(s => s.group === currentCategory);
+    var scenarios = window.StoreInstance ? StoreInstance.getScenarios() : [];
+    if (scenarios.length === 0) {
+        scenarios = window.allScenarios || [];
+    }
+    
+    window.allScenarios = scenarios;
+    
+    var filteredScenarios = scenarios;
+    if (window.currentCategory !== undefined && window.currentCategory !== 'all') {
+        filteredScenarios = scenarios.filter(function(s) {
+            return s.group === window.currentCategory;
+        });
     }
     
     filteredScenarios = sortScenarios(filteredScenarios);
@@ -27,40 +39,58 @@ function renderScenariosGrid() {
         return;
     }
     
-    for (const scenario of filteredScenarios) {
-        const card = createScenarioCard(scenario);
+    for (var i = 0; i < filteredScenarios.length; i++) {
+        var scenario = filteredScenarios[i];
+        var card = createScenarioCard(scenario);
         container.appendChild(card);
     }
 }
 
 function createScenarioCard(scenario) {
-    const hasBadge = Badges.has(scenario.badge);
-    const { difficulty, difficultyLabel, difficultyStars } = getDifficultyInfo(scenario);
-    const difficultyClass = difficulty === 'easy' ? 'scenario-card-new__difficulty--easy' : 
-                            (difficulty === 'hard' ? 'scenario-card-new__difficulty--hard' : 'scenario-card-new__difficulty--medium');
-    const icon = scenario.icon || 'fa-book-open';
+    var hasBadge = false;
+    try {
+        hasBadge = Badges.has(scenario.badge);
+    } catch (e) {
+        hasBadge = false;
+    }
     
-    const stepCounts = countStepsByType(scenario.steps);
-    let stepsHtml = '';
-    const stepTypes = ['map', 'quiz', 'timer-quiz', 'decision-chain', 'client-journey', 
+    var difficultyInfo = getDifficultyInfo(scenario);
+    var difficulty = difficultyInfo.difficulty;
+    var difficultyLabel = difficultyInfo.difficultyLabel;
+    var difficultyStars = difficultyInfo.difficultyStars;
+    
+    var difficultyClass = difficulty === 'easy' ? 'scenario-card-new__difficulty--easy' : 
+                            (difficulty === 'hard' ? 'scenario-card-new__difficulty--hard' : 'scenario-card-new__difficulty--medium');
+    var icon = scenario.icon || 'fa-book-open';
+    
+    var stepCounts = countStepsByType(scenario.steps);
+    var stepsHtml = '';
+    var stepTypes = ['map', 'quiz', 'timer-quiz', 'decision-chain', 'client-journey', 
                        'platforms', 'rule3t', 'profile', 'content-plan', 'funnel', 
                        'ai-tools', 'analytics', 'matching', 'pipeline', 'dialogue', 'brief'];
-    for (const type of stepTypes) {
+    for (var i = 0; i < stepTypes.length; i++) {
+        var type = stepTypes[i];
         if (stepCounts[type]) {
-            stepsHtml += `<span class="step-tag">${getStepIcon(type)} ${stepCounts[type]}</span>`;
+            stepsHtml += '<span class="step-tag">' + getStepIcon(type) + ' ' + stepCounts[type] + '</span>';
         }
     }
     if (!stepsHtml) {
-        stepsHtml = `<span class="step-tag"><i class="fas fa-cog"></i> ${scenario.steps.filter(s => s.type !== 'finish').length}</span>`;
+        var stepCount = scenario.steps.filter(function(s) { return s.type !== 'finish'; }).length;
+        stepsHtml = '<span class="step-tag"><i class="fas fa-cog"></i> ' + stepCount + '</span>';
     }
     
-    let progressHtml = '';
-    let actionHtml = '';
-    const savedProgress = User.getScenarioProgress(scenario.id);
+    var progressHtml = '';
+    var actionHtml = '';
+    var savedProgress = null;
+    try {
+        savedProgress = User.getScenarioProgress(scenario.id);
+    } catch (e) {
+        savedProgress = null;
+    }
     
     if (savedProgress && savedProgress.stepIndex > 0) {
-        const totalSteps = scenario.steps.filter(s => s.type !== 'finish').length;
-        const percent = Math.round((savedProgress.stepIndex / totalSteps) * 100);
+        var totalSteps = scenario.steps.filter(function(s) { return s.type !== 'finish'; }).length;
+        var percent = Math.round((savedProgress.stepIndex / totalSteps) * 100);
         progressHtml = `
             <div class="scenario-card-new__progress">
                 <div class="scenario-card-new__progress-bar">
@@ -95,7 +125,7 @@ function createScenarioCard(scenario) {
         `;
     }
     
-    const card = document.createElement('div');
+    var card = document.createElement('div');
     card.className = 'scenario-card-new';
     card.dataset.scenarioId = scenario.id;
     
@@ -119,16 +149,20 @@ function createScenarioCard(scenario) {
         </div>
     `;
     
-    card.addEventListener('click', (e) => {
+    card.addEventListener('click', function(e) {
         if (e.target.closest('.scenario-card-new__btn')) return;
-        if (typeof startScenario === 'function') startScenario(scenario);
+        if (typeof startScenario === 'function') {
+            startScenario(scenario);
+        }
     });
     
-    const btn = card.querySelector('.scenario-card-new__btn');
+    var btn = card.querySelector('.scenario-card-new__btn');
     if (btn) {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', function(e) {
             e.stopPropagation();
-            if (typeof startScenario === 'function') startScenario(scenario);
+            if (typeof startScenario === 'function') {
+                startScenario(scenario);
+            }
         });
     }
     
@@ -136,14 +170,53 @@ function createScenarioCard(scenario) {
 }
 
 function renderScenarios() {
-    if (!AppState.scenarios) return;
-    allScenarios = AppState.scenarios;
-    renderAgentDashboard();
-    updateQuickStats();
-    renderCategoryChips();
-    renderScenariosGrid();
-    renderRecommendations();
-    updateContinueLearning();
-    updateHeaderXP();
-    updateHeaderUser();
+    var scenarios = window.StoreInstance ? StoreInstance.getScenarios() : [];
+    if (scenarios.length === 0) {
+        scenarios = window.allScenarios || [];
+    }
+    
+    if (!scenarios || scenarios.length === 0) {
+        console.warn('[UI] Сценарии ещё не загружены');
+        return;
+    }
+    
+    window.allScenarios = scenarios;
+    
+    if (typeof renderAgentDashboard === 'function') {
+        renderAgentDashboard();
+    }
+    
+    if (typeof updateQuickStats === 'function') {
+        updateQuickStats();
+    }
+    
+    if (typeof renderCategoryChips === 'function') {
+        renderCategoryChips();
+    }
+    
+    if (typeof renderScenariosGrid === 'function') {
+        renderScenariosGrid();
+    }
+    
+    if (typeof renderRecommendations === 'function') {
+        renderRecommendations();
+    }
+    
+    if (typeof updateContinueLearning === 'function') {
+        updateContinueLearning();
+    }
+    
+    if (typeof updateHeaderXP === 'function') {
+        updateHeaderXP();
+    }
+    
+    if (typeof updateHeaderUser === 'function') {
+        updateHeaderUser();
+    }
 }
+
+// Экспортируем функции в глобальную область
+window.renderScenarios = renderScenarios;
+window.renderScenariosGrid = renderScenariosGrid;
+window.sortScenarios = sortScenarios;
+window.createScenarioCard = createScenarioCard;

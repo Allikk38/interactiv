@@ -1,35 +1,51 @@
 // ===== КАТЕГОРИИ =====
 
-let currentCategory = 'all';
+// Используем глобальную переменную currentCategory из ui.js
 
 function renderCategoryChips() {
-    const container = document.getElementById('categories-list');
+    var container = document.getElementById('categories-list');
     if (!container) return;
     
-    const categories = new Set();
-    const categoryCounts = {};
+    var scenarios = window.allScenarios || [];
+    if (window.StoreInstance) {
+        var storeScenarios = StoreInstance.getScenarios();
+        if (storeScenarios && storeScenarios.length > 0) {
+            scenarios = storeScenarios;
+            window.allScenarios = scenarios;
+        }
+    }
+    
+    if (!scenarios || scenarios.length === 0) {
+        console.warn('[UI] Нет сценариев для отображения категорий');
+        return;
+    }
+    
+    var categories = new Set();
+    var categoryCounts = {};
     
     categories.add('all');
-    categoryCounts['all'] = allScenarios.length;
+    categoryCounts['all'] = scenarios.length;
     
-    for (const scenario of allScenarios) {
+    for (var i = 0; i < scenarios.length; i++) {
+        var scenario = scenarios[i];
         if (scenario.group) {
             categories.add(scenario.group);
             categoryCounts[scenario.group] = (categoryCounts[scenario.group] || 0) + 1;
         }
     }
     
-    const sortedCategories = Array.from(categories).sort((a, b) => {
+    var sortedCategories = Array.from(categories).sort(function(a, b) {
         if (a === 'all') return -1;
         if (b === 'all') return 1;
         return a.localeCompare(b);
     });
     
-    let chipsHTML = '';
-    for (const cat of sortedCategories) {
-        const displayName = cat === 'all' ? 'Все' : cat;
-        const activeClass = currentCategory === cat ? 'category-chip--active' : '';
-        const icon = cat === 'all' ? '<i class="fas fa-th-large"></i>' : 
+    var chipsHTML = '';
+    for (var i = 0; i < sortedCategories.length; i++) {
+        var cat = sortedCategories[i];
+        var displayName = cat === 'all' ? 'Все' : cat;
+        var activeClass = window.currentCategory === cat ? 'category-chip--active' : '';
+        var icon = cat === 'all' ? '<i class="fas fa-th-large"></i>' : 
                      cat === 'Картография' ? '<i class="fas fa-map-marked-alt"></i>' :
                      cat === 'Обучение' ? '<i class="fas fa-graduation-cap"></i>' :
                      cat === 'Практика: работа с клиентом' ? '<i class="fas fa-handshake"></i>' :
@@ -46,14 +62,21 @@ function renderCategoryChips() {
     
     container.innerHTML = chipsHTML;
     
-    document.querySelectorAll('.category-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            const category = chip.dataset.category;
-            if (category === currentCategory) return;
-            currentCategory = category;
-            document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('category-chip--active'));
-            chip.classList.add('category-chip--active');
-            if (typeof renderScenariosGrid === 'function') renderScenariosGrid();
+    document.querySelectorAll('.category-chip').forEach(function(chip) {
+        chip.addEventListener('click', function() {
+            var category = this.dataset.category;
+            if (category === window.currentCategory) return;
+            window.currentCategory = category;
+            document.querySelectorAll('.category-chip').forEach(function(c) {
+                c.classList.remove('category-chip--active');
+            });
+            this.classList.add('category-chip--active');
+            if (typeof renderScenariosGrid === 'function') {
+                renderScenariosGrid();
+            }
         });
     });
 }
+
+// Экспортируем функцию
+window.renderCategoryChips = renderCategoryChips;

@@ -46,7 +46,8 @@
         style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
         font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:;
         img-src 'self' data:;
-        script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+        script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://api.ipify.org https://api.my-ip.io https://ipapi.co https://ip-api.com https://icanhazip.com;
+        connect-src 'self' https://api.ipify.org https://api.my-ip.io https://ipapi.co https://ip-api.com https://icanhazip.com;
     ">
     
     <!-- Стили проекта -->
@@ -779,10 +780,13 @@
     <!-- 2. Единый загрузчик -->
     <script src="js/app-loader.js"></script>
 
-    <!-- 3. Анимации лендинга (загружаем после GSAP) -->
+    <!-- 3. IP Helper -->
+    <script src="js/utils/ip-helper.js"></script>
+
+    <!-- 4. Анимации лендинга (загружаем после GSAP) -->
     <script src="js/ui/landing-animations.js"></script>
 
-    <!-- 4. СОГЛАСИЕ И БАННЕР -->
+    <!-- 5. СОГЛАСИЕ И БАННЕР -->
     <script src="js/privacy/privacy-manager.js"></script>
     <script src="js/privacy/consent-banner.js"></script>
     <script src="js/core/app-bootstrap.js"></script>
@@ -790,17 +794,14 @@
         (function() {
             'use strict';
             
-            // Запускаем приложение с управлением согласием (по аналогии с app.html)
             function initLanding() {
                 console.log('[Landing] Запуск...');
                 
-                // Проверяем, что bootApp загружена
                 if (typeof bootApp === 'function') {
                     console.log('[Landing] Вызов bootApp() для управления согласием...');
                     bootApp();
                 } else {
                     console.warn('[Landing] bootApp() не найдена, используется fallback-инициализация');
-                    // Fallback: показываем баннер напрямую
                     if (typeof PrivacyManager !== 'undefined' && typeof ConsentBanner !== 'undefined') {
                         if (!PrivacyManager.hasConsent()) {
                             ConsentBanner.init(
@@ -813,7 +814,6 @@
                 }
             }
             
-            // Плавный скролл для якорных ссылок
             document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
                 anchor.addEventListener('click', function(e) {
                     const targetId = this.getAttribute('href');
@@ -830,7 +830,6 @@
                 });
             });
             
-            // Эффект скролла для шапки
             const header = document.querySelector('.landing-header');
             if (header) {
                 window.addEventListener('scroll', function() {
@@ -842,10 +841,8 @@
                 });
             }
             
-            // Запускаем инициализацию после загрузки DOM
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', function() {
-                    // Ждём загрузку AppLoader
                     if (typeof AppLoader !== 'undefined') {
                         AppLoader.load({
                             debug: false,

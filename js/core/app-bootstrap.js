@@ -1,6 +1,6 @@
 // ============================================================
 // ЗАПУСК ПРИЛОЖЕНИЯ — ТОЧКА ВХОДА (ОБНОВЛЁННЫЙ)
-// Версия: 2.1.0
+// Версия: 2.2.0
 // 
 // Отвечает за:
 // - Инициализацию приложения
@@ -18,6 +18,8 @@
     var _pendingBootCallbacks = [];
     var _bootstrapAttempts = 0;
     var _maxBootstrapAttempts = 10;
+    var _dataLoadAttempts = 0;
+    var _maxDataLoadAttempts = 20;
 
     // ===== ПУБЛИЧНЫЙ API =====
 
@@ -28,27 +30,19 @@
     function bootApp() {
         console.log('[AppBootstrap] Запуск приложения...');
 
-        // Проверяем, не запущено ли уже
         if (_isBooted) {
             console.log('[AppBootstrap] Приложение уже запущено');
             return;
         }
 
-        // Убеждаемся, что стиль pulse есть
         ensurePulseStyle();
-
-        // Навешиваем обработчики событий
         setupEventListeners();
-
-        // Регистрируем Service Worker
         registerServiceWorker();
 
-        // Инициализируем PWA установку
         if (window.setupPWAInstall) {
             window.setupPWAInstall();
         }
 
-        // Запускаем процесс получения согласия
         requestConsentAndBoot();
     }
 
@@ -58,15 +52,12 @@
     function requestConsentAndBoot() {
         _bootstrapAttempts++;
 
-        // Проверяем, не превышено ли количество попыток
         if (_bootstrapAttempts > _maxBootstrapAttempts) {
             console.error('[AppBootstrap] Превышено количество попыток загрузки');
-            // Запускаем приложение в упрощённом режиме
             initializeAppAfterConsent();
             return;
         }
 
-        // Проверяем, загружен ли PrivacyManager
         if (!window.PrivacyManager) {
             console.log('[AppBootstrap] Ожидание PrivacyManager... (попытка ' + _bootstrapAttempts + ')');
             setTimeout(function() {
@@ -75,14 +66,12 @@
             return;
         }
 
-        // Проверяем, есть ли уже согласие
         if (window.PrivacyManager.hasConsent()) {
             console.log('[AppBootstrap] Согласие уже есть, запуск приложения');
             initializeAppAfterConsent();
             return;
         }
 
-        // Проверяем, загружен ли ConsentBanner
         if (!window.ConsentBanner) {
             console.log('[AppBootstrap] Ожидание ConsentBanner... (попытка ' + _bootstrapAttempts + ')');
             setTimeout(function() {
@@ -91,19 +80,15 @@
             return;
         }
 
-        // Согласия нет — показываем баннер
         console.log('[AppBootstrap] Запрос согласия у пользователя');
         _isWaitingForConsent = true;
 
-        // Инициализируем баннер через ConsentBanner
         window.ConsentBanner.init(
-            // onAccept — пользователь согласился
             function(categories) {
                 console.log('[AppBootstrap] Пользователь дал согласие', categories);
                 _isWaitingForConsent = false;
                 initializeAppAfterConsent();
             },
-            // onDecline — пользователь отказался
             function() {
                 console.log('[AppBootstrap] Пользователь отказался от согласия');
                 _isWaitingForConsent = false;
@@ -111,7 +96,6 @@
             }
         );
 
-        // ПОКАЗЫВАЕМ БАННЕР
         window.ConsentBanner.show();
     }
 
@@ -121,26 +105,21 @@
     function initializeAppAfterConsent() {
         console.log('[AppBootstrap] Инициализация после согласия');
 
-        // Проверяем, можно ли загружать карты
         if (window.canLoadYandexMaps && window.canLoadYandexMaps()) {
             if (window.loadYandexMaps) {
                 window.loadYandexMaps();
             }
         } else {
             console.log('[AppBootstrap] Яндекс.Карты не загружены: нет согласия на аналитику');
-            // Показываем заглушку на карте
             showMapPlaceholder();
         }
 
-        // Загружаем FontAwesome (безопасно)
         if (window.loadFontAwesome) {
             window.loadFontAwesome();
         }
 
-        // Загружаем данные и запускаем приложение
         loadAppData();
 
-        // Выполняем отложенные колбэки
         _pendingBootCallbacks.forEach(function(callback) {
             try {
                 callback();
@@ -160,7 +139,6 @@
     function handleConsentDeclined() {
         console.log('[AppBootstrap] Пользователь отказался от согласия — упрощённый режим');
 
-        // Показываем тост
         if (typeof showToast === 'function') {
             showToast(
                 '🔒',
@@ -169,13 +147,9 @@
             );
         }
 
-        // Показываем заглушку на карте
         showMapPlaceholder();
-
-        // Загружаем данные
         loadAppData();
 
-        // Выполняем отложенные колбэки
         _pendingBootCallbacks.forEach(function(callback) {
             try {
                 callback();
@@ -196,7 +170,6 @@
         var mapContainer = document.getElementById('map');
         if (!mapContainer) return;
 
-        // Проверяем, не занят ли контейнер уже картой
         if (mapContainer.querySelector('.ymaps-map')) {
             return;
         }
@@ -238,14 +211,14 @@
      * Загрузка данных приложения
      */
     function loadAppData() {
-        // Проверяем, есть ли уже данные в Store
         if (window.StoreInstance && window.StoreInstance.getAllJks().length > 0) {
-            console.log('[AppBootstrap] Данные уже загружены');
+            console.log('[AppBootstrap] Данные уже загружены в Store');
             renderUI();
             return;
         }
 
-        // Загружаем данные
+        console.log('[AppBootstrap] Загрузка данных...');
+
         var jksPromise = fetch('data/jks.json');
         var questionsPromise = fetch('data/questions.json');
         var scenariosPromise = fetch('data/scenarios.json');
@@ -271,14 +244,15 @@
                 var scenariosData = data[1];
                 var questionsData = data[2] || [];
 
-                // Сохраняем в Store
                 if (window.StoreInstance) {
                     window.StoreInstance.setAllJks(jksData);
                     window.StoreInstance.setScenarios(scenariosData);
                     window.StoreInstance.setAllQuestions(questionsData);
                 }
 
-                // Загружаем marketing-steps.json
+                // Сохраняем сценарии в глобальную переменную
+                window.allScenarios = scenariosData;
+
                 return fetch('data/marketing-steps.json')
                     .then(function(res) {
                         if (res.ok) return res.json();
@@ -297,15 +271,14 @@
                     });
             })
             .then(function() {
+                console.log('[AppBootstrap] Данные загружены, количество сценариев:', window.allScenarios ? window.allScenarios.length : 0);
                 renderUI();
-                console.log('[AppBootstrap] Данные загружены');
             })
             .catch(function(error) {
                 console.error('[AppBootstrap] Ошибка загрузки данных:', error);
                 if (typeof showToast === 'function') {
                     showToast('❌', 'Не удалось загрузить данные. Обновите страницу.', 'error');
                 }
-                // Пробуем показать UI с уже имеющимися данными
                 renderUI();
             });
     }
@@ -314,7 +287,6 @@
      * Рендер UI после загрузки данных
      */
     function renderUI() {
-        // Проверяем пользователя
         var user = null;
         if (window.User) {
             user = window.User.get();
@@ -340,8 +312,35 @@
      * Рендер UI компонентов
      */
     function renderUIComponents() {
+        // Проверяем, что данные загружены
+        var scenarios = window.allScenarios || [];
+        if (window.StoreInstance) {
+            var storeScenarios = StoreInstance.getScenarios();
+            if (storeScenarios && storeScenarios.length > 0) {
+                scenarios = storeScenarios;
+                window.allScenarios = scenarios;
+            }
+        }
+
+        if (!scenarios || scenarios.length === 0) {
+            console.warn('[AppBootstrap] Сценарии ещё не загружены, повторная попытка...');
+            _dataLoadAttempts++;
+            if (_dataLoadAttempts < _maxDataLoadAttempts) {
+                setTimeout(function() {
+                    renderUIComponents();
+                }, 500);
+            } else {
+                console.error('[AppBootstrap] Превышено количество попыток загрузки сценариев');
+            }
+            return;
+        }
+
+        console.log('[AppBootstrap] Рендеринг UI, сценариев:', scenarios.length);
+
         if (typeof renderScenarios === 'function') {
             renderScenarios();
+        } else {
+            console.warn('[AppBootstrap] renderScenarios не определена');
         }
 
         if (typeof addUserChangeButton === 'function') {
@@ -360,24 +359,28 @@
             checkForSavedProgress();
         }
 
-        // Настраиваем Drawer
         if (window.Drawer && window.Drawer.init) {
             window.Drawer.init();
         }
 
-        // Настройка автосохранения
         if (typeof setupAutoSave === 'function') {
             setupAutoSave();
         }
 
-        // Инициализация аналитики
         if (typeof initAnalytics === 'function') {
             initAnalytics();
         }
 
-        // Инициализация PWA обновлений
         if (typeof initPWAUpdates === 'function') {
             initPWAUpdates();
+        }
+
+        if (typeof initOfflineIndicator === 'function') {
+            initOfflineIndicator();
+        }
+
+        if (typeof Onboarding !== 'undefined' && Onboarding.init) {
+            Onboarding.init();
         }
     }
 
@@ -385,7 +388,6 @@
      * Навешивает обработчики событий на элементы UI
      */
     function setupEventListeners() {
-        // Кнопки возврата на главную
         var buttons = [
             'journey-back-btn',
             'back-to-scenarios-btn',
@@ -404,7 +406,6 @@
             }
         });
 
-        // Кнопка перезапуска сценария
         var restartBtn = document.getElementById('finish-restart-btn');
         if (restartBtn) {
             restartBtn.addEventListener('click', function() {
@@ -428,7 +429,6 @@
             });
         }
 
-        // Кнопка подсказки на карте
         var hintBtn = document.getElementById('hint-btn');
         if (hintBtn) {
             hintBtn.addEventListener('click', function() {
@@ -456,7 +456,6 @@
             });
         }
 
-        // Кнопка сброса шага
         var resetBtn = document.getElementById('reset-step-btn');
         if (resetBtn) {
             resetBtn.addEventListener('click', function() {
@@ -538,6 +537,6 @@
     window.initializeAppAfterConsent = initializeAppAfterConsent;
     window.handleConsentDeclined = handleConsentDeclined;
 
-    console.log('[AppBootstrap] Модуль загружен, версия: 2.1.0');
+    console.log('[AppBootstrap] Модуль загружен, версия: 2.2.0');
 
 })();
