@@ -1,6 +1,6 @@
 // ============================================================
 // УПРАВЛЕНИЕ СЦЕНАРИЯМИ
-// Версия: 1.1 — ИСПРАВЛЕНА РАБОТА С ПРЕМИУМ-ХЕДЕРОМ
+// Версия: 1.3 — ДОБАВЛЕНА ПОДДЕРЖКА ОНБОРДИНГ-СЦЕНАРИЯ
 // ============================================================
 
 (function() {
@@ -34,22 +34,18 @@
             startStepTimer();
         }
 
-        // Скрываем экран выбора сценариев
         var scenarioScreen = document.getElementById('scenario-screen');
         if (scenarioScreen) scenarioScreen.classList.add('hidden');
 
-        // Обновляем информацию в хедере (поддерживаем оба варианта)
         var headerInfo = document.getElementById('header-info');
         if (headerInfo) {
             headerInfo.innerHTML = (scenario.icon ? '<i class="fas ' + scenario.icon + '"></i>' : '') + ' ' + scenario.name;
             headerInfo.style.display = 'block';
         }
 
-        // Для премиум-хедера обновляем заголовок
         var premiumLogo = document.querySelector('.premium-header__logo-text');
         if (premiumLogo) {
             var originalText = premiumLogo.innerHTML;
-            // Сохраняем оригинальный текст в data-атрибуте, если ещё не сохранён
             if (!premiumLogo.dataset.original) {
                 premiumLogo.dataset.original = originalText;
             }
@@ -57,7 +53,6 @@
                 '<span style="font-weight:400;font-size:0.9rem;">' + escapeHtml(scenario.name) + '</span>';
         }
 
-        // Обновляем хлебные крошки
         var breadcrumb = document.getElementById('breadcrumb');
         var breadcrumbCurrent = document.getElementById('breadcrumb-current');
         if (breadcrumb) breadcrumb.style.display = 'flex';
@@ -280,7 +275,6 @@
         var headerInfo = document.getElementById('header-info');
         if (headerInfo) headerInfo.innerHTML = AppState.currentScenario ? AppState.currentScenario.name : '';
 
-        // Восстанавливаем оригинальный заголовок в премиум-хедера
         var premiumLogo = document.querySelector('.premium-header__logo-text');
         if (premiumLogo && premiumLogo.dataset.original) {
             premiumLogo.innerHTML = premiumLogo.dataset.original;
@@ -293,6 +287,93 @@
             ProgressBar.hide();
         }
 
+        // ===== СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ ОНБОРДИНГ-СЦЕНАРИЯ =====
+        // Проверяем, запущен ли онбординг-сценарий (вводный тур)
+        if (window._isOnboardingScenario && AppState.currentScenario && AppState.currentScenario.id === 'onboarding-tutorial') {
+            // Завершаем онбординг через Onboarding
+            if (typeof Onboarding !== 'undefined' && Onboarding.finishOnboardingScenario) {
+                Onboarding.finishOnboardingScenario();
+            }
+            
+            // Показываем специальное сообщение
+            var finishText = document.getElementById('finish-text');
+            if (finishText) {
+                finishText.textContent = '🎉 Отлично! Вы освоили основные механики тренажёра! Теперь вы готовы к полноценному обучению.';
+            }
+            
+            // Меняем кнопки
+            var scenariosBtn = document.getElementById('finish-scenarios-btn');
+            if (scenariosBtn) {
+                scenariosBtn.innerHTML = '<i class="fas fa-th-large"></i> Выбрать сценарий';
+                scenariosBtn.onclick = function() {
+                    exitToScenarios();
+                    if (typeof showToast === 'function') {
+                        showToast('🚀', 'Выберите первый сценарий для обучения!', 'success');
+                    }
+                };
+            }
+            
+            var restartBtn = document.getElementById('finish-restart-btn');
+            if (restartBtn) {
+                restartBtn.style.display = 'none';
+            }
+            
+            // Скрываем статистику
+            var finishStats = document.getElementById('finish-stats');
+            if (finishStats) {
+                finishStats.style.display = 'none';
+            }
+            
+            // Возвращаемся, чтобы не выполнять обычную логику финиша
+            return;
+        }
+
+        // ===== ПРОВЕРКА НА ОБЫЧНЫЙ ОНБОРДИНГ (из сценария onboarding-tutorial с флагом isOnboarding) =====
+        var isOnboarding = AppState.currentScenario && AppState.currentScenario.isOnboarding === true;
+        
+        if (isOnboarding) {
+            // Отмечаем онбординг как завершённый
+            if (window.User) {
+                User.completeOnboarding();
+            }
+
+            var finishText = document.getElementById('finish-text');
+            if (finishText) {
+                finishText.textContent = '🎉 Отлично! Вы освоили основные механики тренажёра! Теперь вы готовы к полноценному обучению.';
+            }
+
+            var scenariosBtn = document.getElementById('finish-scenarios-btn');
+            if (scenariosBtn) {
+                scenariosBtn.innerHTML = '<i class="fas fa-th-large"></i> Выбрать сценарий';
+                scenariosBtn.onclick = function() {
+                    exitToScenarios();
+                    var user = User.get();
+                    if (user && typeof showToast === 'function') {
+                        showToast('🚀', 'Готовы начать обучение? Выберите первый сценарий!', 'success');
+                    }
+                };
+            }
+
+            var restartBtn = document.getElementById('finish-restart-btn');
+            if (restartBtn) {
+                restartBtn.style.display = 'none';
+            }
+
+            var finishStats = document.getElementById('finish-stats');
+            if (finishStats) {
+                finishStats.style.display = 'none';
+            }
+
+            setTimeout(function() {
+                if (typeof showToast === 'function') {
+                    showToast('🎉', 'Добро пожаловать в тренажёр! Выберите сценарий для обучения.', 'success');
+                }
+            }, 500);
+
+            return;
+        }
+
+        // ===== ОБЫЧНАЯ ОБРАБОТКА ДЛЯ ОСТАЛЬНЫХ СЦЕНАРИЕВ =====
         var totalCorrect = AppState.stepStats.reduce(function(sum, s) {
             if (s.type === 'map') return sum + s.placed;
             return sum + (s.correct || 0);
@@ -401,7 +482,6 @@
         var headerInfo = document.getElementById('header-info');
         if (headerInfo) headerInfo.innerHTML = '';
 
-        // Восстанавливаем оригинальный заголовок в премиум-хедера
         var premiumLogo = document.querySelector('.premium-header__logo-text');
         if (premiumLogo && premiumLogo.dataset.original) {
             premiumLogo.innerHTML = premiumLogo.dataset.original;
@@ -443,6 +523,6 @@
     window.showFinish = showFinish;
     window.updateHeaderAfterXP = updateHeaderAfterXP;
 
-    console.log('[AppScenario] Модуль загружен, версия: 1.1');
+    console.log('[AppScenario] Модуль загружен, версия: 1.3');
 
 })();

@@ -3,6 +3,18 @@
 // Используем глобальную переменную, объявленную в ui.js
 // currentCategory уже объявлена в ui.js, не объявляем её заново
 
+/**
+ * Возвращает список видимых сценариев (исключая онбординг)
+ * @param {Array} scenarios - массив всех сценариев
+ * @returns {Array} - отфильтрованный массив
+ */
+function getVisibleScenarios(scenarios) {
+    if (!scenarios || !Array.isArray(scenarios)) return [];
+    return scenarios.filter(function(s) {
+        return s.isOnboarding !== true;
+    });
+}
+
 function sortScenarios(scenarios) {
     return [...scenarios].sort(function(a, b) {
         var orderA = a.order !== undefined ? a.order : Infinity;
@@ -25,9 +37,12 @@ function renderScenariosGrid() {
     
     window.allScenarios = scenarios;
     
-    var filteredScenarios = scenarios;
+    // Фильтруем скрытые сценарии (онбординг)
+    var visibleScenarios = getVisibleScenarios(scenarios);
+    
+    var filteredScenarios = visibleScenarios;
     if (window.currentCategory !== undefined && window.currentCategory !== 'all') {
-        filteredScenarios = scenarios.filter(function(s) {
+        filteredScenarios = visibleScenarios.filter(function(s) {
             return s.group === window.currentCategory;
         });
     }
@@ -175,12 +190,16 @@ function renderScenarios() {
         scenarios = window.allScenarios || [];
     }
     
-    if (!scenarios || scenarios.length === 0) {
-        console.warn('[UI] Сценарии ещё не загружены');
-        return;
-    }
+    // Фильтруем скрытые сценарии (онбординг)
+    var visibleScenarios = getVisibleScenarios(scenarios);
     
-    window.allScenarios = scenarios;
+    if (!visibleScenarios || visibleScenarios.length === 0) {
+        console.warn('[UI] Нет видимых сценариев для отображения');
+        // Если есть только онбординг, всё равно показываем UI, но с пустым списком
+        window.allScenarios = visibleScenarios;
+    } else {
+        window.allScenarios = visibleScenarios;
+    }
     
     if (typeof renderAgentDashboard === 'function') {
         renderAgentDashboard();
@@ -220,3 +239,4 @@ window.renderScenarios = renderScenarios;
 window.renderScenariosGrid = renderScenariosGrid;
 window.sortScenarios = sortScenarios;
 window.createScenarioCard = createScenarioCard;
+window.getVisibleScenarios = getVisibleScenarios;

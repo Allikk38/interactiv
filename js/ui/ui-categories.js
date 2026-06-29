@@ -2,18 +2,26 @@
 
 // Используем глобальную переменную currentCategory из ui.js
 
+/**
+ * Возвращает список видимых сценариев (исключая онбординг)
+ * Использует ту же логику, что и в ui-scenarios.js
+ */
+function getVisibleScenariosForCategories() {
+    var scenarios = window.StoreInstance ? StoreInstance.getScenarios() : [];
+    if (scenarios.length === 0) {
+        scenarios = window.allScenarios || [];
+    }
+    if (!scenarios || !Array.isArray(scenarios)) return [];
+    return scenarios.filter(function(s) {
+        return s.isOnboarding !== true;
+    });
+}
+
 function renderCategoryChips() {
     var container = document.getElementById('categories-list');
     if (!container) return;
     
-    var scenarios = window.allScenarios || [];
-    if (window.StoreInstance) {
-        var storeScenarios = StoreInstance.getScenarios();
-        if (storeScenarios && storeScenarios.length > 0) {
-            scenarios = storeScenarios;
-            window.allScenarios = scenarios;
-        }
-    }
+    var scenarios = getVisibleScenariosForCategories();
     
     if (!scenarios || scenarios.length === 0) {
         console.warn('[UI] Нет сценариев для отображения категорий');

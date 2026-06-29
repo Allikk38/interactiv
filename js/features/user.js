@@ -3,11 +3,20 @@ const User = {
     STORAGE_KEY: 'realty_trainer_user',
     XP_KEY: 'realty_trainer_xp',
     STREAK_KEY: 'realty_trainer_streak',
+    ONBOARDING_KEY: 'onboarding_tutorial_completed',
 
     get() {
         try {
-            return JSON.parse(localStorage.getItem(this.STORAGE_KEY));
-        } catch {
+            const data = localStorage.getItem(this.STORAGE_KEY);
+            if (!data) return null;
+            const user = JSON.parse(data);
+            // Проверяем, что объект корректен
+            if (user && typeof user === 'object' && user.name) {
+                return user;
+            }
+            return null;
+        } catch (e) {
+            console.warn('[User] Ошибка чтения пользователя:', e);
             return null;
         }
     },
@@ -24,12 +33,21 @@ const User = {
             };
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
             
+            // Инициализируем XP и Streak, если их нет
             if (this.getXP() === null) {
                 this.setXP(0);
             }
             
             if (this.getStreak() === null) {
                 this.updateStreak();
+            }
+            
+            // Обновляем статус онбординга в Onboarding, если модуль загружен
+            if (typeof Onboarding !== 'undefined' && Onboarding.checkAndAutoStart) {
+                setTimeout(function() {
+                    console.log('[User] Вызов Onboarding.checkAndAutoStart() после сохранения пользователя');
+                    Onboarding.checkAndAutoStart();
+                }, 300);
             }
             
             return user;
@@ -66,6 +84,12 @@ const User = {
         localStorage.removeItem(this.STORAGE_KEY);
         localStorage.removeItem(this.XP_KEY);
         localStorage.removeItem(this.STREAK_KEY);
+        localStorage.removeItem(this.ONBOARDING_KEY);
+        // Также очищаем флаги онбординга
+        try {
+            localStorage.removeItem('onboarding_completed');
+            localStorage.removeItem('onboarding_skipped');
+        } catch (_) {}
     },
 
     getXP() {
@@ -168,6 +192,46 @@ const User = {
         };
         localStorage.setItem(this.STREAK_KEY, JSON.stringify(streak));
         return streak;
+    },
+
+    // ===== СТАТУС ОНБОРДИНГА =====
+    hasCompletedOnboarding() {
+        try {
+            return localStorage.getItem(this.ONBOARDING_KEY) === 'true' ||
+                   localStorage.getItem('onboarding_completed') === 'true';
+        } catch {
+            return false;
+        }
+    },
+
+    completeOnboarding() {
+        try {
+            localStorage.setItem(this.ONBOARDING_KEY, 'true');
+            localStorage.setItem('onboarding_completed', 'true');
+            return true;
+        } catch {
+            return false;
+        }
+    },
+
+    skipOnboarding() {
+        try {
+            localStorage.setItem('onboarding_skipped', 'true');
+            return this.completeOnboarding();
+        } catch {
+            return false;
+        }
+    },
+
+    resetOnboarding() {
+        try {
+            localStorage.removeItem(this.ONBOARDING_KEY);
+            localStorage.removeItem('onboarding_completed');
+            localStorage.removeItem('onboarding_skipped');
+            return true;
+        } catch {
+            return false;
+        }
     },
 
     // ===== ПРОГРЕСС СЦЕНАРИЕВ (БАЗОВЫЙ) =====
@@ -429,6 +493,7 @@ const User = {
         saveBtn.addEventListener('click', () => {
             const name = input.value.trim();
             if (name.length >= 3) {
+                // Сохраняем пользователя
                 this.save(name).then(() => {
                     overlay.remove();
                     if (callback) callback(name);
@@ -442,6 +507,10 @@ const User = {
                 input.value = '';
                 validate();
                 clearBtn.remove();
+                // Показываем тост
+                if (typeof showToast === 'function') {
+                    showToast('🔄', 'Данные очищены. Введите новое имя.', 'info');
+                }
             });
         }
     }

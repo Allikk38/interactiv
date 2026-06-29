@@ -1,5 +1,6 @@
-/* ===== ОНБОРДИНГ (КНОПКА "ОБУЧЕНИЕ") ===== */
+/* ===== ОНБОРДИНГ (ПОШАГОВЫЙ ТУР) ===== */
 
+/* Кнопка вызова онбординга */
 .onboarding-btn {
     position: fixed;
     bottom: 24px;
@@ -29,230 +30,496 @@
     transform: scale(0.95);
 }
 
-/* Оверлей */
+/* ===== ОВЕРЛЕЙ (ЗАТЕМНЕНИЕ ФОНА) ===== */
 .onboarding-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    z-index: 2000;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
+    padding: 20px;
 }
 
+/* ===== КОГДА ОВЕРЛЕЙ ВИДЕН ===== */
 .onboarding-overlay--visible {
     opacity: 1;
     visibility: visible;
 }
 
-/* Модальное окно */
+/* ===== МОДАЛЬНОЕ ОКНО (ПО УМОЛЧАНИЮ — ВНИЗУ СПРАВА) ===== */
 .onboarding-modal {
-    background: var(--color-surface);
-    border-radius: var(--radius);
+    position: relative;
+    z-index: 10000;
+    background: var(--color-surface, #ffffff);
+    border-radius: var(--radius, 16px);
     max-width: 90vw;
-    width: 480px;
-    max-height: 85vh;
+    width: 400px;
+    max-height: 55vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
     animation: onboardingSlideUp 0.4s ease;
+    transition: transform 0.2s ease;
+    pointer-events: auto;
+    margin-bottom: 30px;
+}
+
+/* ===== ПОЗИЦИИ ОКНА В ЗАВИСИМОСТИ ОТ ШАГА ===== */
+
+/* Шаг 1: Приветствие — центр экрана */
+.onboarding-modal--step-0 {
+    max-width: 480px;
+    max-height: 60vh;
+    margin-bottom: 0;
+}
+
+/* Шаг 2: Выбор сценария — окно ВНИЗУ (так как подсветка в центре) */
+.onboarding-modal--step-1 {
+    max-width: 420px;
+    max-height: 50vh;
+    margin-bottom: 30px;
+}
+
+/* Шаг 3: Прогресс — окно ВНИЗУ-СЛЕВА (так как подсветка в центре/справа) */
+.onboarding-modal--step-2 {
+    max-width: 400px;
+    max-height: 50vh;
+    margin-bottom: 30px;
+}
+
+/* Шаг 4: Вводное обучение — окно ВНИЗУ-СПРАВА (нет подсветки) */
+.onboarding-modal--step-3 {
+    max-width: 420px;
+    max-height: 55vh;
+    margin-bottom: 30px;
+}
+
+/* На десктопе окно в правом нижнем углу */
+@media (min-width: 769px) {
+    .onboarding-overlay {
+        align-items: flex-end;
+        justify-content: flex-end;
+        padding: 30px;
+    }
+    
+    .onboarding-modal {
+        max-width: 380px;
+        max-height: 60vh;
+        margin-bottom: 0;
+        border-radius: var(--radius, 16px);
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+    }
+    
+    /* Шаг 1: Приветствие — центр (немного выше) */
+    .onboarding-modal--step-0 {
+        max-width: 460px;
+        max-height: 60vh;
+        margin-bottom: 0;
+    }
+    
+    /* Шаг 2: Выбор сценария — левый нижний угол (подсветка в центре) */
+    .onboarding-modal--step-1 {
+        max-width: 380px;
+        max-height: 55vh;
+        margin-bottom: 0;
+        margin-right: auto;
+        margin-left: 0;
+    }
+    
+    /* Шаг 3: Прогресс — правый нижний угол (подсветка слева) */
+    .onboarding-modal--step-2 {
+        max-width: 380px;
+        max-height: 55vh;
+        margin-bottom: 0;
+        margin-right: 0;
+        margin-left: auto;
+    }
+    
+    /* Шаг 4: Вводное обучение — центр, чуть выше */
+    .onboarding-modal--step-3 {
+        max-width: 420px;
+        max-height: 55vh;
+        margin-bottom: 0;
+        margin-right: auto;
+        margin-left: auto;
+        align-self: center;
+    }
+}
+
+/* На мобильных — окно всегда внизу */
+@media (max-width: 768px) {
+    .onboarding-overlay {
+        padding: 16px;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    
+    .onboarding-modal {
+        width: 95vw;
+        max-width: 100%;
+        max-height: 55vh;
+        border-radius: 16px 16px 0 0;
+        margin-bottom: 0;
+    }
+    
+    .onboarding-modal--step-0,
+    .onboarding-modal--step-1,
+    .onboarding-modal--step-2,
+    .onboarding-modal--step-3 {
+        max-width: 100%;
+        max-height: 55vh;
+        margin-bottom: 0;
+    }
 }
 
 @keyframes onboardingSlideUp {
     from {
-        transform: translateY(40px);
+        transform: translateY(40px) scale(0.96);
         opacity: 0;
     }
     to {
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
         opacity: 1;
     }
 }
 
-/* Заголовок */
+/* Шапка модального окна */
 .onboarding-modal__header {
-    padding: 20px 24px;
-    background: linear-gradient(135deg, var(--color-primary), #1b6dc1);
-    color: white;
+    padding: 14px 18px 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-
-.onboarding-modal__title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    border-bottom: 1px solid var(--color-border, #dfe6e9);
+    flex-shrink: 0;
 }
 
 .onboarding-modal__close {
     background: none;
     border: none;
-    color: white;
-    font-size: 1.6rem;
+    font-size: 1.3rem;
     cursor: pointer;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    color: var(--color-text-light, #636e72);
+    padding: 4px 8px;
     border-radius: 50%;
     transition: background 0.2s;
+    line-height: 1;
 }
 
 .onboarding-modal__close:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Индикатор прогресса (точки) */
+.onboarding-modal__progress {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.onboarding-progress__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-border, #dfe6e9);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.onboarding-progress__dot.active {
+    background: var(--color-primary, #2e86de);
+    transform: scale(1.2);
+    box-shadow: 0 0 0 3px rgba(46, 134, 222, 0.2);
+}
+
+.onboarding-progress__dot.done {
+    background: var(--color-success, #27ae60);
 }
 
 /* Содержимое */
 .onboarding-modal__content {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 24px;
+    padding: 16px 20px 12px;
 }
 
-/* Шаги онбординга */
 .onboarding-step {
     display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--color-border);
-}
-
-.onboarding-step:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
+    gap: 14px;
+    align-items: flex-start;
 }
 
 .onboarding-step__number {
-    width: 36px;
-    height: 36px;
-    background: var(--color-primary);
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--color-primary, #2e86de), #1b6dc1);
     color: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     flex-shrink: 0;
+    margin-top: 2px;
 }
 
-.onboarding-step__content h3 {
-    font-size: 1rem;
+.onboarding-step__content {
+    flex: 1;
+}
+
+.onboarding-step__content h2 {
+    font-size: 1.1rem;
     font-weight: 700;
-    margin-bottom: 6px;
-    color: var(--color-text);
+    margin: 0 0 4px 0;
+    color: var(--color-text, #2d3436);
+    line-height: 1.3;
 }
 
 .onboarding-step__content p {
-    font-size: 0.85rem;
-    color: var(--color-text-light);
-    line-height: 1.5;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--color-text-light, #636e72);
+    margin: 0;
 }
 
-.onboarding-step__content i {
-    color: var(--color-warning);
-    margin-right: 6px;
-}
-
-/* Бейджи */
-.onboarding-badge {
-    display: inline-block;
-    background: #fef9e7;
-    color: #e67e22;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    margin-top: 8px;
-}
-
-/* Футер */
+/* Футер с кнопками */
 .onboarding-modal__footer {
-    padding: 16px 24px;
-    border-top: 1px solid var(--color-border);
+    padding: 10px 18px 14px;
+    border-top: 1px solid var(--color-border, #dfe6e9);
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
-.onboarding-modal__footer-text {
-    font-size: 0.75rem;
-    color: var(--color-text-light);
-}
-
-/* Кнопки */
 .onboarding-modal__btn {
-    padding: 8px 20px;
+    padding: 8px 16px;
     border: none;
-    border-radius: 24px;
+    border-radius: var(--radius-sm, 8px);
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    min-height: 38px;
+    min-width: 70px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.onboarding-modal__btn:active {
+    transform: scale(0.96);
 }
 
 .onboarding-modal__btn--primary {
-    background: var(--color-primary);
+    background: var(--color-primary, #2e86de);
     color: white;
 }
 
 .onboarding-modal__btn--primary:hover {
-    background: var(--color-primary-hover);
+    background: var(--color-primary-hover, #1b6dc1);
 }
 
-/* Адаптив для мобильных */
-@media (max-width: 600px) {
-    .onboarding-btn {
-        bottom: 16px;
-        right: 16px;
-        width: 48px;
-        height: 48px;
-        font-size: 1.3rem;
+.onboarding-modal__btn--secondary {
+    background: var(--color-bg, #f5f6fa);
+    color: var(--color-text, #2d3436);
+    border: 1px solid var(--color-border, #dfe6e9);
+}
+
+.onboarding-modal__btn--secondary:hover {
+    background: var(--color-border, #dfe6e9);
+}
+
+.onboarding-modal__btn--skip {
+    background: transparent;
+    color: var(--color-text-light, #636e72);
+    margin-right: auto;
+}
+
+.onboarding-modal__btn--skip:hover {
+    color: var(--color-text, #2d3436);
+    text-decoration: underline;
+}
+
+/* ===== ПОДСВЕЧЕННЫЙ ЭЛЕМЕНТ ===== */
+.onboarding-highlight {
+    position: relative;
+    z-index: 9999 !important;
+    outline: 3px solid #f39c12 !important;
+    outline-offset: 4px !important;
+    box-shadow: 0 0 30px rgba(243, 156, 18, 0.5) !important;
+    transform: scale(1.02) !important;
+    transition: all 0.3s ease !important;
+    pointer-events: auto !important;
+}
+
+/* ===== АНИМАЦИЯ ПУЛЬСАЦИИ ДЛЯ ПОДСВЕЧЕННЫХ ЭЛЕМЕНТОВ ===== */
+@keyframes highlightPulse {
+    0%, 100% {
+        outline-color: #f39c12;
+        box-shadow: 0 0 20px rgba(243, 156, 18, 0.4);
+    }
+    50% {
+        outline-color: #e67e22;
+        box-shadow: 0 0 40px rgba(243, 156, 18, 0.7);
+    }
+}
+
+.onboarding-highlight.pulse {
+    animation: highlightPulse 2s ease-in-out infinite;
+}
+
+/* ===== АДАПТИВ ===== */
+
+/* Планшеты */
+@media (max-width: 768px) {
+    .onboarding-overlay {
+        padding: 12px;
+        align-items: flex-end;
+        justify-content: center;
     }
     
     .onboarding-modal {
-        width: 95vw;
-        max-height: 90vh;
+        width: 100%;
+        max-width: 100%;
+        max-height: 60vh;
+        border-radius: 16px 16px 0 0;
+        margin-bottom: 0;
     }
-    
-    .onboarding-modal__header {
-        padding: 16px 20px;
-    }
-    
+
     .onboarding-modal__content {
-        padding: 16px 20px;
+        padding: 14px 16px 10px;
     }
-    
-    .onboarding-step {
-        gap: 12px;
-        margin-bottom: 20px;
-        padding-bottom: 16px;
-    }
-    
+
     .onboarding-step__number {
-        width: 30px;
-        height: 30px;
-        font-size: 0.9rem;
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
     }
-    
-    .onboarding-step__content h3 {
-        font-size: 0.9rem;
+
+    .onboarding-step__content h2 {
+        font-size: 1rem;
     }
-    
+
     .onboarding-step__content p {
+        font-size: 0.85rem;
+    }
+
+    .onboarding-modal__footer {
+        padding: 8px 14px 12px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .onboarding-modal__btn {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        min-height: 36px;
+        min-width: 60px;
+    }
+
+    .onboarding-modal__btn--skip {
+        order: -1;
+        width: 100%;
+        margin-right: 0;
+        justify-content: center;
+        padding: 4px 0;
         font-size: 0.75rem;
+    }
+
+    .onboarding-btn {
+        bottom: 12px;
+        right: 12px;
+        width: 44px;
+        height: 44px;
+        font-size: 1.2rem;
+    }
+
+    .onboarding-highlight {
+        transform: scale(1) !important;
+        outline-offset: 2px !important;
+    }
+}
+
+/* Очень маленькие экраны (до 400px) */
+@media (max-width: 480px) {
+    .onboarding-modal__content {
+        padding: 10px 12px 8px;
+    }
+
+    .onboarding-step {
+        gap: 10px;
+    }
+
+    .onboarding-step__number {
+        width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+    }
+
+    .onboarding-step__content h2 {
+        font-size: 0.9rem;
+    }
+
+    .onboarding-step__content p {
+        font-size: 0.8rem;
+    }
+
+    .onboarding-modal__footer {
+        padding: 6px 10px 10px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .onboarding-modal__btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .onboarding-modal__btn--skip {
+        order: -1;
+        width: 100%;
+    }
+
+    .onboarding-progress__dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    .onboarding-highlight {
+        outline-width: 2px !important;
+        outline-offset: 1px !important;
+        box-shadow: 0 0 10px rgba(243, 156, 18, 0.3) !important;
+    }
+}
+
+/* Отключаем анимации для пользователей с vestibular disorders */
+@media (prefers-reduced-motion: reduce) {
+    .onboarding-modal {
+        animation: none;
+    }
+    .onboarding-overlay {
+        transition: none;
+    }
+    .onboarding-modal__btn:active {
+        transform: none;
+    }
+    .onboarding-highlight {
+        animation: none !important;
+        transition: none !important;
+    }
+    .onboarding-highlight.pulse {
+        animation: none !important;
     }
 }

@@ -89,9 +89,50 @@
         StepRegistry.register('consultation', runConsultationStep);
     }
     
+    // ===== СПЕЦИАЛЬНЫЕ ШАГИ ДЛЯ ОНБОРДИНГА =====
+    // Из onboarding-steps.js
+    // Регистрируем для обратной совместимости
+    if (typeof runOnboardingWelcomeStep === 'function') {
+        StepRegistry.register('onboarding-welcome', runOnboardingWelcomeStep);
+        console.log('[StepRegistry] Зарегистрирован тип шага "onboarding-welcome" (для обратной совместимости)');
+    }
+    if (typeof runOnboardingProgressStep === 'function') {
+        StepRegistry.register('onboarding-progress', runOnboardingProgressStep);
+        console.log('[StepRegistry] Зарегистрирован тип шага "onboarding-progress" (для обратной совместимости)');
+    }
+    
     // Регистрируем finish как специальный тип (хотя он обрабатывается отдельно)
     // finish не требует обработчика, так как runStep сам его ловит
     
     var registeredTypes = StepRegistry.getRegisteredTypes ? StepRegistry.getRegisteredTypes() : [];
     console.log('[StepRegistry] Зарегистрировано ' + registeredTypes.length + ' типов шагов:', registeredTypes);
+    
+    // ===== ДОПОЛНИТЕЛЬНАЯ ИНИЦИАЛИЗАЦИЯ ДЛЯ ОНБОРДИНГА =====
+    // Убеждаемся, что Onboarding инициализируется после загрузки всех модулей
+    if (typeof Onboarding !== 'undefined' && Onboarding.init) {
+        // Не вызываем Onboarding.init() здесь, так как он уже вызывается в app.js
+        // Просто проверяем, что модуль загружен
+        console.log('[StepRegistry] Модуль Onboarding доступен');
+    }
+    
+    // ===== ОБРАБОТКА СЦЕНАРИЯ ОНБОРДИНГА (УСТАРЕВШЕЕ) =====
+    // NOTE: Сценарий онбординга больше не используется как отдельный сценарий.
+    // Онбординг теперь управляется через Onboarding.checkAndAutoStart() в onboarding.js
+    // Этот код оставлен для обратной совместимости, но фактически не используется
+    console.log('[StepRegistry] Онбординг теперь управляется через модуль Onboarding');
+    
 })();
+
+// Дополнительная регистрация в StepRegistry (на случай, если файл загрузился после инициализации)
+if (typeof StepRegistry !== 'undefined') {
+    // Проверяем, что все обработчики зарегистрированы
+    // Если какие-то обработчики отсутствуют, они будут зарегистрированы здесь
+    if (typeof runOnboardingWelcomeStep !== 'undefined' && !StepRegistry.hasHandler('onboarding-welcome')) {
+        StepRegistry.register('onboarding-welcome', runOnboardingWelcomeStep);
+        console.log('[OnboardingSteps] Зарегистрирован шаг "onboarding-welcome" в StepRegistry');
+    }
+    if (typeof runOnboardingProgressStep !== 'undefined' && !StepRegistry.hasHandler('onboarding-progress')) {
+        StepRegistry.register('onboarding-progress', runOnboardingProgressStep);
+        console.log('[OnboardingSteps] Зарегистрирован шаг "onboarding-progress" в StepRegistry');
+    }
+}

@@ -1,6 +1,6 @@
 // ============================================================
 // ЗАПУСК ПРИЛОЖЕНИЯ — ТОЧКА ВХОДА (ОБНОВЛЁННЫЙ)
-// Версия: 2.3.0
+// Версия: 2.7.0
 // 
 // Отвечает за:
 // - Инициализацию приложения
@@ -297,8 +297,10 @@
 
         if (!user) {
             if (window.User && window.User.showNamePrompt) {
-                window.User.showNamePrompt(function() {
+                window.User.showNamePrompt(function(name) {
+                    console.log('[AppBootstrap] Пользователь создан:', name);
                     renderUIComponents();
+                    // Онбординг запустится автоматически через Onboarding.checkAndAutoStart()
                 });
             } else {
                 renderUIComponents();
@@ -382,9 +384,10 @@
             initOfflineIndicator();
         }
 
-        if (typeof Onboarding !== 'undefined' && Onboarding.init) {
-            Onboarding.init();
-        }
+        // ===== ВАЖНО: Onboarding.init() уже вызывается в app.js =====
+        // Не дублируем вызов здесь, чтобы избежать конфликтов
+        // Онбординг сам проверит, нужно ли запускаться
+        console.log('[AppBootstrap] UI компоненты отрендерены');
     }
 
     /**
@@ -540,6 +543,6 @@
     window.initializeAppAfterConsent = initializeAppAfterConsent;
     window.handleConsentDeclined = handleConsentDeclined;
 
-    console.log('[AppBootstrap] Модуль загружен, версия: 2.3.0');
+    console.log('[AppBootstrap] Модуль загружен, версия: 2.7.0');
 
 })();

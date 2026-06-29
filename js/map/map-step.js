@@ -3,19 +3,16 @@
 // Ожидание загрузки Яндекс.Карт с таймаутом
 function waitForYmaps(timeoutMs = 10000) {
     return new Promise((resolve, reject) => {
-        // Проверяем, есть ли согласие
         if (window.PrivacyManager && !window.PrivacyManager.isAnalyticsAllowed()) {
             reject(new Error('Нет согласия на загрузку карт'));
             return;
         }
 
-        // Проверяем, не загружены ли уже
         if (typeof ymaps !== 'undefined' && ymaps.Map) {
             resolve();
             return;
         }
 
-        // Пробуем загрузить карты через нашу функцию
         if (typeof window.loadYandexMaps === 'function') {
             window.loadYandexMaps();
         }
@@ -33,6 +30,46 @@ function waitForYmaps(timeoutMs = 10000) {
             }
         }, 200);
     });
+}
+
+// ===== ПОКАЗАТЬ КНОПКУ "ПРОДОЛЖИТЬ" =====
+function showContinueButton() {
+    // Удаляем старую кнопку, если есть
+    const oldBtn = document.getElementById('step-continue-btn');
+    if (oldBtn) oldBtn.remove();
+    
+    // Создаём новую кнопку
+    const btn = document.createElement('button');
+    btn.id = 'step-continue-btn';
+    btn.className = 'btn btn--primary';
+    btn.innerHTML = '<i class="fas fa-arrow-right"></i> Продолжить →';
+    btn.style.position = 'fixed';
+    btn.style.bottom = '100px';
+    btn.style.left = '50%';
+    btn.style.transform = 'translateX(-50%)';
+    btn.style.zIndex = '100';
+    btn.style.padding = '14px 32px';
+    btn.style.borderRadius = '32px';
+    btn.style.fontSize = '1rem';
+    btn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
+    btn.style.cursor = 'pointer';
+    
+    btn.addEventListener('click', function() {
+        if (typeof AppState !== 'undefined' && AppState) {
+            if (typeof saveCurrentProgress === 'function') {
+                saveCurrentProgress();
+            }
+            
+            AppState.currentStepIndex++;
+            btn.remove();
+            
+            if (typeof runStep === 'function') {
+                runStep();
+            }
+        }
+    });
+    
+    document.body.appendChild(btn);
 }
 
 function runMapStep(step) {
@@ -70,9 +107,7 @@ function runMapStep(step) {
     StoreInstance.clearPlacedJks();
     StoreInstance.setCurrentStepJks(filteredJks);
     
-    // Восстанавливаем сохранённый прогресс карты для этого шага
     restoreMapProgress();
-    
     updateDesktopDrawerList(filteredJks);
     
     if (window.innerWidth <= 768) {
@@ -84,14 +119,10 @@ function runMapStep(step) {
         mapContainer.innerHTML = renderMapLoadingIndicator();
     }
     
-    // ===== ОСНОВНАЯ ЛОГИКА ЗАГРУЗКИ КАРТЫ =====
-    
-    // Проверяем, есть ли согласие на аналитику
     var hasConsent = false;
     if (window.PrivacyManager) {
         hasConsent = PrivacyManager.isAnalyticsAllowed();
     } else {
-        // Fallback: проверяем localStorage
         try {
             var consentGiven = localStorage.getItem('user_consent_given');
             var categories = localStorage.getItem('user_consent_categories');
@@ -111,7 +142,6 @@ function runMapStep(step) {
     }
     
     if (!hasConsent) {
-        // Нет согласия — показываем заглушку
         if (mapContainer) {
             mapContainer.innerHTML = `
                 <div style="
@@ -148,7 +178,6 @@ function runMapStep(step) {
         return;
     }
     
-    // Есть согласие — загружаем карту
     const startMap = () => {
         try {
             initMap();
@@ -163,21 +192,17 @@ function runMapStep(step) {
         }
     };
     
-    // Проверяем, загружены ли Яндекс.Карты
     if (typeof ymaps !== 'undefined' && ymaps.Map) {
-        // Карты уже загружены
         if (ymaps.ready) {
             ymaps.ready(startMap);
         } else {
             startMap();
         }
     } else {
-        // Пробуем загрузить карты через нашу функцию
         if (typeof window.loadYandexMaps === 'function') {
             window.loadYandexMaps();
         }
         
-        // Ждём загрузки с таймаутом
         waitForYmaps(15000)
             .then(() => {
                 if (ymaps.ready) {
@@ -196,7 +221,6 @@ function runMapStep(step) {
     }
 }
 
-// Восстановление сохранённого прогресса карты
 function restoreMapProgress() {
     const scenarioId = StoreInstance.getCurrentScenario()?.id;
     const stepIndex = StoreInstance.getCurrentStepIndex();
@@ -205,7 +229,6 @@ function restoreMapProgress() {
     
     const savedPlacedJks = User.getMapProgress(scenarioId, stepIndex);
     if (savedPlacedJks && savedPlacedJks.size > 0) {
-        // Восстанавливаем расставленные ЖК
         for (const [id, data] of savedPlacedJks.entries()) {
             StoreInstance.addPlacedJk(id, data);
         }
@@ -214,7 +237,6 @@ function restoreMapProgress() {
     }
 }
 
-// Сохранение прогресса карты
 function saveMapProgress() {
     const scenarioId = StoreInstance.getCurrentScenario()?.id;
     const stepIndex = StoreInstance.getCurrentStepIndex();
@@ -226,20 +248,30 @@ function saveMapProgress() {
 }
 
 function selectJk(id) {
-    if (StoreInstance.hasPlacedJk(id)) {
+    // Приводим ID к числу для единообразия
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    
+    // Проверяем, что ID валидный
+    if (isNaN(numericId)) {
+        console.warn('[MapStep] Некорректный ID ЖК:', id);
+        return;
+    }
+    
+    if (StoreInstance.hasPlacedJk(numericId)) {
         showToast('⚠️', 'Этот ЖК уже расставлен', 'error');
         return;
     }
-    StoreInstance.setSelectedJkId(id);
+    StoreInstance.setSelectedJkId(numericId);
     updateSelectedCard();
     
-    // Засекаем время от выбора ЖК до клика по карте
     window.jkSelectionTime = Date.now();
     
     const allJks = StoreInstance.getAllJks();
-    const jk = allJks.find(j => j.id === id);
+    const jk = allJks.find(j => j.id === numericId);
     if (jk) {
         showToast('📍', `Выбран: ${jk.name}. Нажмите на карту, чтобы поставить метку`, 'success');
+    } else {
+        console.warn('[MapStep] ЖК с ID', numericId, 'не найден в allJks');
     }
 }
 
@@ -271,12 +303,12 @@ function updateMapProgress() {
         updateDesktopDrawerList(currentStepJks);
     }
     
-    // Сохраняем прогресс при каждом изменении
     saveMapProgress();
     
     if (placed === total && total > 0) {
+        // Показываем кнопку "Продолжить"
         showContinueButton();
-        // Отправляем аналитику завершения шага карты
+        
         if (typeof sendStepResult === 'function') {
             sendStepResult(
                 StoreInstance.getCurrentStepIndex(),
@@ -286,10 +318,37 @@ function updateMapProgress() {
                 total
             );
         }
-        // Фиксируем время окончания шага
+        
         if (typeof endStepTimer === 'function') {
             endStepTimer(true, { placed: placed, total: total });
         }
+        
+        const currentStepIndex = StoreInstance.getCurrentStepIndex();
+        const stepStats = StoreInstance.getStepStats();
+        const alreadySaved = stepStats.some(s => 
+            s.step === currentStepIndex + 1 && s.type === 'map'
+        );
+        
+        if (!alreadySaved) {
+            const currentScenario = StoreInstance.getCurrentScenario();
+            StoreInstance.addToStepStats({
+                step: currentStepIndex + 1,
+                type: 'map',
+                title: currentScenario.steps[currentStepIndex].title,
+                placed: placed,
+                total: total,
+            });
+            
+            if (typeof saveCurrentProgress === 'function') {
+                saveCurrentProgress();
+            }
+            
+            if (typeof updateHeaderXP === 'function') {
+                updateHeaderXP();
+            }
+        }
+        
+        showToast('🎉', 'Все ЖК расставлены! Нажмите "Продолжить".', 'success');
     }
 }
 
@@ -301,9 +360,24 @@ function onMapClick(e) {
         return;
     }
     
+    // Приводим ID к числу для единообразия
+    const numericId = typeof selectedJkId === 'string' ? parseInt(selectedJkId, 10) : selectedJkId;
+    
+    // Проверяем, что ID валидный
+    if (isNaN(numericId)) {
+        console.warn('[MapStep] Некорректный ID выбранного ЖК:', selectedJkId);
+        showToast('❌', 'Ошибка: некорректный ID ЖК', 'error');
+        return;
+    }
+    
     const allJks = StoreInstance.getAllJks();
-    const jk = allJks.find(j => j.id === selectedJkId);
-    if (!jk) return;
+    const jk = allJks.find(j => j.id === numericId);
+    
+    if (!jk) {
+        console.warn('[MapStep] ЖК с ID', numericId, 'не найден в allJks');
+        showToast('❌', 'Ошибка: ЖК не найден', 'error');
+        return;
+    }
     
     const coords = e.get('coords');
     const lat = coords[0];
@@ -312,14 +386,12 @@ function onMapClick(e) {
     const distance = getDistance(lat, lng, jk.lat, jk.lng);
     const isCorrect = distance <= jk.radius;
     
-    // Рассчитываем время от выбора ЖК до клика
     let timeToPlaceSec = 0;
     if (window.jkSelectionTime) {
         timeToPlaceSec = Math.round((Date.now() - window.jkSelectionTime) / 1000);
         window.jkSelectionTime = null;
     }
     
-    // Отправляем аналитику клика по карте
     if (typeof sendMapClick === 'function') {
         sendMapClick(
             jk.id,
@@ -341,7 +413,7 @@ function onMapClick(e) {
         StoreInstance.setSelectedJkId(null);
         updateSelectedCard();
         sendToGoogle(jk.name, true, distance);
-        updateMapProgress();
+        
         renderMarkers();
         
         const currentStepJks = StoreInstance.getCurrentStepJks();
@@ -351,9 +423,13 @@ function onMapClick(e) {
             updateDesktopDrawerList(currentStepJks);
         }
         
+        // Обновляем прогресс (это вызовет проверку завершения)
+        updateMapProgress();
+        
         if (window.navigator && window.navigator.vibrate) {
             window.navigator.vibrate(100);
         }
+        
     } else {
         const currentMap = StoreInstance.getMap();
         const wrongMarker = new ymaps.Placemark([lat, lng], {
@@ -374,60 +450,20 @@ function onMapClick(e) {
             window.navigator.vibrate([100, 50, 100]);
         }
     }
-    
-    checkMapStepComplete();
 }
 
 function checkMapStepComplete() {
-    const currentStepJks = StoreInstance.getCurrentStepJks();
-    const filteredJks = currentStepJks;
-    const placedSize = StoreInstance.getPlacedJksSize();
-    const currentStepIndex = StoreInstance.getCurrentStepIndex();
-    const stepStats = StoreInstance.getStepStats();
-    
-    if (placedSize === filteredJks.length && filteredJks.length > 0) {
-        const alreadySaved = stepStats.some(s => 
-            s.step === currentStepIndex + 1 && s.type === 'map'
-        );
-        
-        if (!alreadySaved) {
-            const currentScenario = StoreInstance.getCurrentScenario();
-            StoreInstance.addToStepStats({
-                step: currentStepIndex + 1,
-                type: 'map',
-                title: currentScenario.steps[currentStepIndex].title,
-                placed: placedSize,
-                total: filteredJks.length,
-            });
-            
-            // Очищаем сохранённый прогресс карты после завершения шага
-            const scenarioId = currentScenario?.id;
-            if (scenarioId) {
-                User.clearMapProgress(scenarioId);
-            }
-            
-            if (typeof saveCurrentProgress === 'function') {
-                saveCurrentProgress();
-            }
-            
-            if (typeof updateHeaderXP === 'function') {
-                updateHeaderXP();
-            }
-        }
-        
-        showToast('🎉', 'Все ЖК расставлены! Нажмите "Продолжить".', 'success');
-    }
+    updateMapProgress();
 }
 
 function resetMapStep() {
     if (confirm('Вы уверены? Весь прогресс на этом шаге будет потерян.')) {
         StoreInstance.resetMapState();
         
-        // Очищаем сохранённый прогресс
         const scenarioId = StoreInstance.getCurrentScenario()?.id;
         const stepIndex = StoreInstance.getCurrentStepIndex();
         if (scenarioId) {
-            User.saveMapProgress(scenarioId, stepIndex, new Map()); // Очищаем
+            User.saveMapProgress(scenarioId, stepIndex, new Map());
         }
         
         const currentMap = StoreInstance.getMap();
