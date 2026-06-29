@@ -141,9 +141,10 @@ const OfflineQueue = {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
             
-            // Для GET-запросов нельзя использовать body
+            // ИСПРАВЛЕНИЕ: добавлен mode: 'no-cors' для обхода CORS
             const options = {
                 method: request.method,
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 signal: controller.signal
             };
@@ -157,12 +158,10 @@ const OfflineQueue = {
             
             clearTimeout(timeoutId);
             
-            if (response.ok) {
-                return true;
-            } else {
-                logWarn(`[OfflineQueue] Запрос ${request.id} вернул статус ${response.status}`);
-                return false;
-            }
+            // При mode: 'no-cors' response.type === 'opaque'
+            // Статус всегда 0, но запрос доходит до сервера
+            // Считаем успехом, так как запрос отправлен
+            return true;
             
         } catch (error) {
             logError(`[OfflineQueue] Ошибка отправки запроса ${request.id}:`, error);

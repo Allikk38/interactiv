@@ -1,17 +1,19 @@
 // ===== АНАЛИТИКА И МЕТРИКИ (ОБНОВЛЁННАЯ) =====
-// Версия: 2.0.0
+// Версия: 2.1.1
 // 
 // Отвечает за:
 // - Отправку аналитических данных
 // - Проверку согласия перед отправкой
 // - Отслеживание времени на шагах
 // - Сбор метрик производительности
+// - ИСПРАВЛЕНИЕ: исправлен URL Google Apps Script
 
 (function() {
     'use strict';
 
     // ===== КОНСТАНТЫ =====
-    var GOOGLE_SCRIPT_URL = window.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzHxrLqYze95Sws7gCvUEz8g4jzBVI3NdTDm_jLLZ-YWYD-ofjsD1iGC7S0UGf-wb2x/exec';
+    // ИСПРАВЛЕНИЕ: используем тот же URL, что и в остальных модулях
+    var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
     var ANALYTICS_ENABLED_KEY = 'analytics_enabled';
     var SESSION_ID_KEY = 'analytics_session_id';
     var SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 минут
@@ -489,6 +491,6 @@
     // ===== ЭКСПОРТ =====
     window.Analytics = Analytics;
 
-    console.log('[Analytics] Модуль загружен, версия: 2.0.0');
+    console.log('[Analytics] Модуль загружен, версия: 2.1.1');
 
 })();

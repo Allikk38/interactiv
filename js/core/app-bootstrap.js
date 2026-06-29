@@ -1,6 +1,6 @@
 // ============================================================
 // ЗАПУСК ПРИЛОЖЕНИЯ — ТОЧКА ВХОДА (ОБНОВЛЁННЫЙ)
-// Версия: 2.7.0
+// Версия: 2.7.1 — ДОБАВЛЕН ВЫЗОВ ANALYTICS.FLUSH()
 // 
 // Отвечает за:
 // - Инициализацию приложения
@@ -8,6 +8,7 @@
 // - Запуск приложения после получения согласия
 // - Координацию между модулями
 // - Передачу IP-адреса при отправке согласия
+// - ОТПРАВКУ НАКОПЛЕННЫХ АНАЛИТИЧЕСКИХ СОБЫТИЙ ПОСЛЕ ПОЛУЧЕНИЯ СОГЛАСИЯ
 // ============================================================
 
 (function() {
@@ -106,6 +107,19 @@
      */
     function initializeAppAfterConsent() {
         console.log('[AppBootstrap] Инициализация после согласия');
+
+        // ===== НОВОЕ: Отправляем накопленные аналитические события =====
+        if (window.Analytics && typeof window.Analytics.flush === 'function') {
+            var pendingCount = window.Analytics.getPendingCount ? window.Analytics.getPendingCount() : 0;
+            if (pendingCount > 0) {
+                console.log('[AppBootstrap] Отправка накопленных аналитических событий (' + pendingCount + ' шт.)');
+                window.Analytics.flush();
+            } else {
+                console.log('[AppBootstrap] Нет накопленных аналитических событий');
+            }
+        } else {
+            console.warn('[AppBootstrap] Analytics.flush() не доступна');
+        }
 
         // Загружаем карты, если есть согласие на аналитику
         if (window.canLoadYandexMaps && window.canLoadYandexMaps()) {
@@ -543,6 +557,6 @@
     window.initializeAppAfterConsent = initializeAppAfterConsent;
     window.handleConsentDeclined = handleConsentDeclined;
 
-    console.log('[AppBootstrap] Модуль загружен, версия: 2.7.0');
+    console.log('[AppBootstrap] Модуль загружен, версия: 2.7.1');
 
 })();
