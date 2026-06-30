@@ -704,78 +704,96 @@
                 });
             }
 
-            async function loadLeaderboard() {
-                const tableContent = document.getElementById('table-content');
-                const refreshBtn = document.getElementById('refresh-btn');
-                
-                refreshBtn.classList.add('refresh-btn--spinning');
-                
+        // ===== ВСТРОЕННЫЙ СКРИПТ В RATINGS.HTML =====
+// Заменяем функцию loadLeaderboard()
+
+    async function loadLeaderboard() {
+        const tableContent = document.getElementById('table-content');
+        const refreshBtn = document.getElementById('refresh-btn');
+        
+        refreshBtn.classList.add('refresh-btn--spinning');
+        
+        tableContent.innerHTML = `
+            <div class="loading">
+                <i class="fas fa-spinner"></i>
+                <p>Загрузка рейтингов...</p>
+            </div>
+        `;
+        
+        try {
+            // ===== ИСПРАВЛЕНИЕ: используем mode: 'cors' для чтения =====
+            // GET-запросы с CORS работают для чтения данных
+            const url = `${GOOGLE_SCRIPT_URL}?action=getLeaderboard&_=${Date.now()}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                mode: 'cors',  // Для чтения данных нужен CORS
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Ошибка загрузки: ' + response.status);
+            }
+            
+            const data = await response.json();
+            
+            if (data.error) {
                 tableContent.innerHTML = `
-                    <div class="loading">
-                        <i class="fas fa-spinner"></i>
-                        <p>Загрузка рейтингов...</p>
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>${escapeHtml(data.error)}</p>
                     </div>
                 `;
-                
-                try {
-                    const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getLeaderboard`);
-                    const data = await response.json();
-                    
-                    if (data.error) {
-                        tableContent.innerHTML = `
-                            <div class="error-message">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <p>${escapeHtml(data.error)}</p>
-                            </div>
-                        `;
-                        showToast('❌', data.error, 'error');
-                        return;
-                    }
-                    
-                    currentLeaderboard = data.leaderboard || [];
-                    
-                    if (currentLeaderboard.length === 0) {
-                        tableContent.innerHTML = `
-                            <div class="empty-message">
-                                <i class="fas fa-chart-simple"></i>
-                                <p>Пока нет данных. Пройдите первый сценарий, чтобы попасть в рейтинг!</p>
-                                <a href="./app.html" class="btn btn--primary">
-                                    <i class="fas fa-play"></i> Начать обучение
-                                </a>
-                            </div>
-                        `;
-                        document.getElementById('stats-cards').style.display = 'none';
-                        document.getElementById('user-rank-profile').classList.remove('user-rank-profile--visible');
-                        return;
-                    }
-                    
-                    updateStats(currentLeaderboard);
-                    document.getElementById('stats-cards').style.display = 'grid';
-                    
-                    updateUserProfile(currentLeaderboard);
-                    
-                    renderLeaderboard(currentLeaderboard);
-                    
-                    document.getElementById('update-time').textContent = new Date().toLocaleString();
-                    
-                    showToast('✅', 'Рейтинги обновлены', 'success');
-                    
-                } catch (error) {
-                    console.error('Ошибка загрузки:', error);
-                    tableContent.innerHTML = `
-                        <div class="error-message">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <p>Ошибка загрузки рейтингов. Проверьте подключение к интернету.</p>
-                            <button class="btn btn--primary" onclick="location.reload()" style="margin-top:12px;">
-                                <i class="fas fa-sync-alt"></i> Повторить
-                            </button>
-                        </div>
-                    `;
-                    showToast('❌', 'Ошибка загрузки рейтингов', 'error');
-                }
-                
-                refreshBtn.classList.remove('refresh-btn--spinning');
+                showToast('❌', data.error, 'error');
+                return;
             }
+            
+            currentLeaderboard = data.leaderboard || [];
+            
+            if (currentLeaderboard.length === 0) {
+                tableContent.innerHTML = `
+                    <div class="empty-message">
+                        <i class="fas fa-chart-simple"></i>
+                        <p>Пока нет данных. Пройдите первый сценарий, чтобы попасть в рейтинг!</p>
+                        <a href="./app.html" class="btn btn--primary">
+                            <i class="fas fa-play"></i> Начать обучение
+                        </a>
+                    </div>
+                `;
+                document.getElementById('stats-cards').style.display = 'none';
+                document.getElementById('user-rank-profile').classList.remove('user-rank-profile--visible');
+                return;
+            }
+            
+            updateStats(currentLeaderboard);
+            document.getElementById('stats-cards').style.display = 'grid';
+            
+            updateUserProfile(currentLeaderboard);
+            
+            renderLeaderboard(currentLeaderboard);
+            
+            document.getElementById('update-time').textContent = new Date().toLocaleString();
+            
+            showToast('✅', 'Рейтинги обновлены', 'success');
+            
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            tableContent.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Ошибка загрузки рейтингов. Проверьте подключение к интернету.</p>
+                    <button class="btn btn--primary" onclick="location.reload()" style="margin-top:12px;">
+                        <i class="fas fa-sync-alt"></i> Повторить
+                    </button>
+                </div>
+            `;
+            showToast('❌', 'Ошибка загрузки рейтингов', 'error');
+        }
+        
+        refreshBtn.classList.remove('refresh-btn--spinning');
+    }
             
             function updateStats(leaderboard) {
                 const totalUsers = leaderboard.length;

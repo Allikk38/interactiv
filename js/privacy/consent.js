@@ -1,6 +1,6 @@
 // ============================================================
 // МОДУЛЬ СОГЛАСИЯ (ИСПРАВЛЕННЫЙ)
-// Версия: 4.0.0
+// Версия: 4.0.2
 // ============================================================
 
 (function() {
@@ -8,7 +8,7 @@
 
     // ===== ПРИВАТНЫЕ КОНСТАНТЫ =====
     var GOOGLE_SCRIPT_URL = window.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
-    var CONSENT_VERSION = '4.0.0';
+    var CONSENT_VERSION = '4.0.2';
     var IP_NOT_AVAILABLE = 'IP_NOT_AVAILABLE';
 
     // ===== ПРИВАТНОЕ СОСТОЯНИЕ =====
@@ -231,7 +231,7 @@
         });
     }
 
-    // ===== ЕДИНСТВЕННЫЙ РАБОЧИЙ МЕТОД: fetch с mode: 'no-cors' =====
+    // ===== ОТПРАВКА СОГЛАСИЯ (no-cors, без попытки прочитать ответ) =====
     function _sendConsentToServer(userData, categories) {
         var now = new Date();
         var payload = {
@@ -263,11 +263,8 @@
         };
 
         console.log('[Consent] Отправка согласия, IP:', payload.ip);
-        console.log('[Consent] Payload:', payload);
 
-        // ===== ЕДИНСТВЕННЫЙ РАБОЧИЙ МЕТОД: fetch с mode: 'no-cors' =====
-        // no-cors позволяет обойти CORS, но ответ будет opaque (нечитаемый)
-        // Это нормально для fire-and-forget запросов
+        // Только отправка, без обработки ответа (no-cors)
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -276,15 +273,12 @@
             },
             body: JSON.stringify(payload)
         })
-        .then(function(response) {
-            // При mode: 'no-cors' response.type === 'opaque'
-            // Статус всегда 0, но запрос доходит до сервера
-            console.log('[Consent] fetch no-cors отправлен, тип ответа:', response.type);
-            console.log('[Consent] ✅ Запрос отправлен (результат в Google Sheets)');
-        })
         .catch(function(err) {
-            console.error('[Consent] fetch no-cors ошибка:', err);
+            console.error('[Consent] Ошибка отправки:', err);
         });
+        
+        // Сразу логируем успех, так как no-cors не даёт прочитать ответ
+        console.log('[Consent] ✅ Запрос отправлен (результат в Google Sheets)');
     }
 
     // ===== ОБРАБОТЧИКИ =====
