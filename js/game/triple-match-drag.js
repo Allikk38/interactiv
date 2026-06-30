@@ -14,7 +14,7 @@ async function runTripleMatchDragStep(step) {
     const pointsPerCorrect = step.pointsPerCorrect || 10;
     const pointsPerWrong = step.pointsPerWrong || -5;
     const attributesPerJk = step.attributesPerJk || 3;
-    const availableAttributes = step.availableAttributes || ['class_segment', 'build_tech', 'finish_type', 'parking_type', 'has_concierge'];
+    const availableAttributes = step.availableAttributes || ['developer', 'district', 'class_segment', 'finish_type', 'year_built'];
     
     // Загружаем все ЖК
     const allJks = StoreInstance.getAllJks();
@@ -27,9 +27,14 @@ async function runTripleMatchDragStep(step) {
     }
     
     // Фильтруем ЖК, у которых есть все необходимые поля
+    // Для district используем sector как fallback
     const validJks = allJks.filter(jk => {
         for (const attr of availableAttributes) {
-            const value = jk[attr];
+            let value = jk[attr];
+            // Для district используем sector как fallback
+            if (attr === 'district' && (!value || value === '')) {
+                value = jk.sector;
+            }
             if (value === undefined || value === null || value === '') {
                 return false;
             }
@@ -95,11 +100,17 @@ function initTripleMatchRound() {
         
         for (const attrKey of selectedAttrs) {
             let attrValue = jk[attrKey];
+            
+            // Для district используем sector как fallback
+            if (attrKey === 'district' && (!attrValue || attrValue === '')) {
+                attrValue = jk.sector;
+            }
+            
             // Преобразуем булевы значения в читаемый текст
             if (typeof attrValue === 'boolean') {
                 attrValue = attrValue ? 'Есть' : 'Нет';
             }
-            // Преобразуем snake_case в читаемый вид
+            // Преобразуем в читаемый вид
             const displayKey = getAttributeDisplayName(attrKey);
             const displayValue = getValueDisplayName(attrKey, attrValue);
             
@@ -126,11 +137,18 @@ function initTripleMatchRound() {
 
 function getAttributeDisplayName(attrKey) {
     const names = {
-        'class_segment': 'Класс',
-        'build_tech': 'Технология',
+        // Основные поля
+        'developer': 'Застройщик',
+        'district': 'Район',
+        'class_segment': 'Класс жилья',
         'finish_type': 'Отделка',
+        'year_built': 'Год сдачи',
         'parking_type': 'Парковка',
-        'has_concierge': 'Консьерж'
+        'has_concierge': 'Консьерж',
+        'build_tech': 'Технология',
+        'facade_type': 'Фасад',
+        'ceiling_height': 'Высота потолков',
+        'has_playground': 'Детская площадка'
     };
     return names[attrKey] || attrKey;
 }
@@ -138,35 +156,77 @@ function getAttributeDisplayName(attrKey) {
 function getValueDisplayName(attrKey, value) {
     if (typeof value === 'string') {
         const mappings = {
+            // developer
+            'Расцветай': 'Расцветай',
+            'Брусника': 'Брусника',
+            'КПД-Газстрой': 'КПД-Газстрой',
+            'Союз': 'Союз',
+            'ВИРА': 'ВИРА',
+            'Страна-Девелопмент': 'Страна-Девелопмент',
+            'OneCompany': 'OneCompany',
+            'СМСС': 'СМСС',
+            'Мета': 'Мета',
+            'ГК Поляков': 'ГК Поляков',
+            'Энергомонтаж': 'Энергомонтаж',
+            'СЛК': 'СЛК',
+            'Вотэтодом': 'Вотэтодом',
+            'СГ Девелопмент': 'СГ Девелопмент',
+            'СЗ Аврора': 'СЗ Аврора',
+            // district / sector
+            'C3': 'C3',
+            'B2': 'B2',
+            'A1': 'A1',
+            'D4': 'D4',
+            'B3': 'B3',
+            'A3': 'A3',
+            'D2': 'D2',
+            'B4': 'B4',
+            'Центральный': 'Центральный',
+            'Железнодорожный': 'Железнодорожный',
+            'Заельцовский': 'Заельцовский',
+            'Калининский': 'Калининский',
+            'Кировский': 'Кировский',
+            'Ленинский': 'Ленинский',
+            'Октябрьский': 'Октябрьский',
             // class_segment
-            'эконом': 'Эконом',
-            'комфорт': 'Комфорт',
-            'бизнес': 'Бизнес',
-            'премиум': 'Премиум',
-            'стандарт': 'Стандарт',
-            // build_tech
-            'монолит': 'Монолит',
-            'кирпич': 'Кирпич',
-            'панель': 'Панель',
-            'панельный': 'Панельный',
-            'монолит-кирпич': 'Монолит-кирпич',
-            'кирпично-монолитный': 'Кирпично-монолитный',
+            'Стандарт': 'Стандарт',
+            'Комфорт': 'Комфорт',
+            'Бизнес': 'Бизнес',
+            'Премиум': 'Премиум',
+            'Эконом': 'Эконом',
             // finish_type
-            'черновая': 'Черновая',
-            'white_box': 'White box',
-            'чистовая': 'Чистовая',
-            'под_ключ': 'Под ключ',
-            'под ключ!': 'Под ключ',
+            'Черновая': 'Черновая',
+            'White box': 'White box',
+            'white box': 'White box',
+            'Чистовая': 'Чистовая',
+            'Под ключ': 'Под ключ',
+            'Под Ключ!': 'Под ключ',
             // parking_type
-            'подземная': 'Подземная',
-            'наземная': 'Наземная',
-            'многоуровневый': 'Многоуровневый',
-            'отсутствует': 'Нет',
-            'стоянка': 'Стоянка'
+            'Подземный паркинг': 'Подземный',
+            'Стоянка': 'Стоянка',
+            'Отдельный многоуровневый паркинг': 'Многоуровневый',
+            'Нет': 'Нет',
+            // year_built
+            '2024': '2024',
+            '2025': '2025',
+            '2026': '2026',
+            '2027': '2027',
+            '2030': '2030'
         };
-        return mappings[value.toLowerCase()] || value;
+        
+        // Ищем точное совпадение
+        if (mappings[value]) return mappings[value];
+        
+        // Ищем частичное совпадение (для сложных названий)
+        for (const [key, mapped] of Object.entries(mappings)) {
+            if (value.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(value.toLowerCase())) {
+                return mapped;
+            }
+        }
+        
+        return value;
     }
-    return value === true ? 'Есть' : 'Нет';
+    return value === true ? 'Есть' : (value === false ? 'Нет' : String(value));
 }
 
 function renderTripleMatchRound() {
@@ -189,14 +249,14 @@ function renderTripleMatchRound() {
                 </div>
             `).join('');
         } else {
-            placedHTML = '<div class="triple-drop-zone__empty">Перетащите сюда характеристики</div>';
+            placedHTML = '<div class="triple-drop-zone__empty">Перетащите сюда факты о ЖК</div>';
         }
         
         jksHTML += `
             <div class="triple-jk-card" data-jk-id="${jk.id}">
                 <div class="triple-jk-card__header">
+                    <div class="triple-jk-card__badge">ЖК ${i + 1}</div>
                     <h3 class="triple-jk-card__title">${escapeHtml(jk.name)}</h3>
-                    <span class="triple-jk-card__developer">${escapeHtml(jk.developer)}</span>
                 </div>
                 <div class="triple-jk-card__drop-zone" data-jk-id="${jk.id}">
                     ${placedHTML}
@@ -218,7 +278,7 @@ function renderTripleMatchRound() {
             `;
         });
     } else {
-        unplacedHTML = '<div class="triple-unplaced-empty">Все характеристики размещены! Нажмите "Проверить".</div>';
+        unplacedHTML = '<div class="triple-unplaced-empty">Все факты размещены! Нажмите "Проверить".</div>';
     }
     
     const progress = `${state.currentRound} / ${state.totalRounds} раундов`;
@@ -280,7 +340,7 @@ function initTripleMatchDragDrop() {
         // Проверяем, не превышен ли лимит характеристик для ЖК
         const attrsInTarget = state.currentAttributes.filter(a => a.placedInJkId === targetJkId);
         if (attrsInTarget.length >= state.attributesPerJk) {
-            showToast('⚠️', `В этом ЖК уже ${state.attributesPerJk} характеристики. Удалите лишнюю, чтобы добавить новую.`, 'warning');
+            showToast('⚠️', `В этом ЖК уже ${state.attributesPerJk} факта. Удалите лишний, чтобы добавить новый.`, 'warning');
             return false;
         }
         
@@ -475,15 +535,21 @@ function checkTripleMatchRound() {
         
         // Получаем значение этой характеристики у целевого ЖК
         let targetValue = targetJk[attr.attrKey];
+        
+        // Для district используем sector как fallback
+        if (attr.attrKey === 'district' && (!targetValue || targetValue === '')) {
+            targetValue = targetJk.sector;
+        }
+        
         if (typeof targetValue === 'boolean') {
             targetValue = targetValue ? 'Есть' : 'Нет';
         }
         
         // Приводим к строке для сравнения
-        const attrValueStr = String(attr.attrValue).toLowerCase();
-        const targetValueStr = String(targetValue).toLowerCase();
+        const attrValueStr = String(attr.attrValue).toLowerCase().trim();
+        const targetValueStr = String(targetValue).toLowerCase().trim();
         
-        // Проверка на частичное совпадение (для случаев с перечислением через запятую)
+        // Проверка на точное совпадение или частичное (для сложных названий)
         const isExactMatch = (attrValueStr === targetValueStr);
         const isPartialMatch = (targetValueStr.includes(attrValueStr) || attrValueStr.includes(targetValueStr));
         const isCorrect = isExactMatch || isPartialMatch;
@@ -503,11 +569,14 @@ function checkTripleMatchRound() {
             const targetJk = state.currentJks.find(jk => jk.id === attr.placedInJkId);
             if (targetJk) {
                 let targetValue = targetJk[attr.attrKey];
+                if (attr.attrKey === 'district' && (!targetValue || targetValue === '')) {
+                    targetValue = targetJk.sector;
+                }
                 if (typeof targetValue === 'boolean') {
                     targetValue = targetValue ? 'Есть' : 'Нет';
                 }
-                const attrValueStr = String(attr.attrValue).toLowerCase();
-                const targetValueStr = String(targetValue).toLowerCase();
+                const attrValueStr = String(attr.attrValue).toLowerCase().trim();
+                const targetValueStr = String(targetValue).toLowerCase().trim();
                 const isExactMatch = (attrValueStr === targetValueStr);
                 const isPartialMatch = (targetValueStr.includes(attrValueStr) || attrValueStr.includes(targetValueStr));
                 const isCorrect = isExactMatch || isPartialMatch;
