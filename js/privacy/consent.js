@@ -7,7 +7,7 @@
     'use strict';
 
     // ===== ПРИВАТНЫЕ КОНСТАНТЫ =====
-    var GOOGLE_SCRIPT_URL = window.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
+    var GOOGLE_SCRIPT_URL = window.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzvFwEopjXdZb6QIjmM1RfLzJXtlFnzJPU2bamtdtY2TnzvcUH0oedwPfteLvxOckGt/exec';
     var CONSENT_VERSION = '4.0.3';
     var IP_NOT_AVAILABLE = 'IP_NOT_AVAILABLE';
 

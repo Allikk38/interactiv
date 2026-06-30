@@ -79,7 +79,7 @@ const User = {
             var userName = name || this.getUserName();
             
             var url = typeof GOOGLE_SCRIPT_URL !== 'undefined' ? GOOGLE_SCRIPT_URL : 
-                        'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
+                        'https://script.google.com/macros/s/AKfycbzvFwEopjXdZb6QIjmM1RfLzJXtlFnzJPU2bamtdtY2TnzvcUH0oedwPfteLvxOckGt/exec';
 
             var now = new Date();
             var formattedDate = now.toLocaleString('ru-RU', {
@@ -498,7 +498,7 @@ const User = {
         };
         
         var url = typeof GOOGLE_SCRIPT_URL !== 'undefined' ? GOOGLE_SCRIPT_URL : 
-                    'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
+                    'https://script.google.com/macros/s/AKfycbzvFwEopjXdZb6QIjmM1RfLzJXtlFnzJPU2bamtdtY2TnzvcUH0oedwPfteLvxOckGt/exec';
         
         console.log('[User] sendResult: отправка для', finalUserName, 'сценарий:', scenarioName);
         console.log('[User] sendResult: payload', payload);

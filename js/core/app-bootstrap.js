@@ -1,6 +1,6 @@
 // ============================================================
 // ЗАПУСК ПРИЛОЖЕНИЯ — ТОЧКА ВХОДА (ОБНОВЛЁННЫЙ)
-// Версия: 2.7.1 — ДОБАВЛЕН ВЫЗОВ ANALYTICS.FLUSH()
+// Версия: 2.7.2 — ИСПРАВЛЕНА АСИНХРОННАЯ ИНИЦИАЛИЗАЦИЯ ПОЛЬЗОВАТЕЛЯ
 // 
 // Отвечает за:
 // - Инициализацию приложения
@@ -302,6 +302,7 @@
 
     /**
      * Рендер UI после загрузки данных
+     * ИСПРАВЛЕНО: добавлена обработка асинхронного создания пользователя
      */
     function renderUI() {
         var user = null;
@@ -311,8 +312,10 @@
 
         if (!user) {
             if (window.User && window.User.showNamePrompt) {
+                // ===== ИСПРАВЛЕНИЕ: Дожидаемся сохранения пользователя =====
                 window.User.showNamePrompt(function(name) {
                     console.log('[AppBootstrap] Пользователь создан:', name);
+                    // НЕМЕДЛЕННО вызываем рендер UI компонентов
                     renderUIComponents();
                     // Онбординг запустится автоматически через Onboarding.checkAndAutoStart()
                 });
@@ -557,6 +560,6 @@
     window.initializeAppAfterConsent = initializeAppAfterConsent;
     window.handleConsentDeclined = handleConsentDeclined;
 
-    console.log('[AppBootstrap] Модуль загружен, версия: 2.7.1');
+    console.log('[AppBootstrap] Модуль загружен, версия: 2.7.2');
 
 })();

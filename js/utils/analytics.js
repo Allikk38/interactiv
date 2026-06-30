@@ -11,7 +11,7 @@
     'use strict';
 
     // ===== КОНСТАНТЫ =====
-    var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
+    var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvFwEopjXdZb6QIjmM1RfLzJXtlFnzJPU2bamtdtY2TnzvcUH0oedwPfteLvxOckGt/exec';
     var ANALYTICS_ENABLED_KEY = 'analytics_enabled';
     var SESSION_ID_KEY = 'analytics_session_id';
     var SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 минут
