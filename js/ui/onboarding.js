@@ -1,12 +1,7 @@
 // ===== ОНБОРДИНГ (ПОШАГОВЫЙ ТУР) =====
 
 const Onboarding = {
-    STORAGE_KEY: (window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.ONBOARDING_COMPLETED) 
-        ? STORAGE_KEYS.USER.ONBOARDING_COMPLETED 
-        : 'onboarding_tutorial_completed',
-    SKIP_KEY: (window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.ONBOARDING_SKIPPED) 
-        ? STORAGE_KEYS.USER.ONBOARDING_SKIPPED 
-        : 'onboarding_skipped',
+    STORAGE_KEY: 'onboarding_completed',
     isOpen: false,
     modal: null,
     overlay: null,
@@ -21,24 +16,20 @@ const Onboarding = {
         {
             title: '👋 Добро пожаловать в тренажёр!',
             text: 'Здесь вы будете проходить сценарии и отрабатывать навыки агента недвижимости. Каждый сценарий — это набор заданий, которые приближены к реальной работе.',
-            modalPosition: 'center',
         },
         {
             title: '🧭 Выберите сценарий',
             text: 'Начните обучение с выбора сценария. Каждый сценарий развивает отдельный навык агента:\n\n• Картография — расстановка ЖК на карте\n• Обучение — теория и тесты\n• Практика — работа с клиентами\n• Быстрые игры — проверка реакции',
             highlightSelector: '.scenarios-grid, .premium-grid',
-            modalPosition: 'top-center',
         },
         {
             title: '📊 Отслеживайте прогресс',
             text: 'Здесь отображаются ваши достижения. Получайте XP за правильные ответы, повышайте уровень и открывайте бейджи!',
             highlightSelector: '.xp-card, .agent-dashboard, .premium-banner',
-            modalPosition: 'bottom-left',
         },
         {
             title: '🚀 Вводное обучение',
             text: 'Сейчас запустится короткий вводный сценарий. Он покажет, как работают задания в тренажёре.\n\nВнутри вас ждут:\n\n• 🗺️ Расстановка объектов на карте\n• 📝 Вопросы с выбором ответа\n• 🎯 Интерактивные задания\n\nПросто следуйте инструкциям на экране!',
-            modalPosition: 'center',
             isLast: true,
         },
     ],
@@ -69,7 +60,7 @@ const Onboarding = {
         }
 
         try {
-            const skipped = localStorage.getItem(this.SKIP_KEY);
+            const skipped = localStorage.getItem('onboarding_skipped');
             if (skipped === 'true') {
                 console.log('[Onboarding] Онбординг был пропущен');
                 return;
@@ -127,18 +118,8 @@ const Onboarding = {
 
     hasCompleted() {
         try {
-            // Проверяем новый ключ
-            if (localStorage.getItem(this.STORAGE_KEY) === 'true') {
-                return true;
-            }
-            // Для обратной совместимости проверяем старые ключи
-            if (localStorage.getItem('onboarding_tutorial_completed') === 'true') {
-                return true;
-            }
-            if (localStorage.getItem('onboarding_completed') === 'true') {
-                return true;
-            }
-            return false;
+            return localStorage.getItem(this.STORAGE_KEY) === 'true' ||
+                   localStorage.getItem('onboarding_tutorial_completed') === 'true';
         } catch {
             return false;
         }
@@ -152,6 +133,7 @@ const Onboarding = {
         btn.className = 'onboarding-btn';
         btn.innerHTML = '<i class="fas fa-graduation-cap"></i>';
         btn.title = 'Как пользоваться тренажёром';
+        btn.style.zIndex = '100000';
         document.body.appendChild(btn);
     },
 
@@ -159,10 +141,10 @@ const Onboarding = {
         const oldOverlay = document.getElementById('onboarding-overlay');
         if (oldOverlay) oldOverlay.remove();
 
+        // Создаём оверлей как отдельный слой поверх всего
         const overlay = document.createElement('div');
         overlay.id = 'onboarding-overlay';
         overlay.className = 'onboarding-overlay';
-        // Оверлей должен быть под модальным окном
         overlay.style.cssText = `
             position: fixed;
             top: 0;
@@ -170,7 +152,9 @@ const Onboarding = {
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.5);
-            z-index: 9998;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 999999;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -178,25 +162,28 @@ const Onboarding = {
             align-items: center;
             justify-content: center;
             padding: 20px;
+            isolation: isolate;
         `;
 
         overlay.innerHTML = `
             <div class="onboarding-modal" style="
                 position: relative;
-                z-index: 10001;
+                z-index: 1000000;
                 background: var(--color-surface, #ffffff);
                 border-radius: var(--radius, 16px);
                 max-width: 90vw;
-                width: 400px;
-                max-height: 55vh;
+                width: 480px;
+                max-height: 80vh;
                 overflow: hidden;
                 display: flex;
                 flex-direction: column;
-                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+                box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
                 pointer-events: auto;
+                isolation: isolate;
+                margin: 20px;
             ">
                 <div class="onboarding-modal__header" style="
-                    padding: 14px 18px 10px;
+                    padding: 16px 20px 12px;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
@@ -225,12 +212,12 @@ const Onboarding = {
                 <div class="onboarding-modal__content" id="onboarding-content" style="
                     flex: 1;
                     overflow-y: auto;
-                    padding: 16px 20px 12px;
+                    padding: 20px 24px 16px;
                 ">
                     <!-- Динамический контент -->
                 </div>
                 <div class="onboarding-modal__footer" id="onboarding-footer" style="
-                    padding: 10px 18px 14px;
+                    padding: 12px 20px 16px;
                     border-top: 1px solid var(--color-border, #dfe6e9);
                     display: flex;
                     justify-content: flex-end;
@@ -244,7 +231,6 @@ const Onboarding = {
             </div>
         `;
 
-        // Добавляем в конец body, чтобы быть поверх всех элементов
         document.body.appendChild(overlay);
         this.overlay = overlay;
         this.modal = overlay.querySelector('.onboarding-modal');
@@ -257,7 +243,6 @@ const Onboarding = {
         const step = this.steps[this.currentStep];
         const totalSteps = this.steps.length;
         const stepNumber = this.currentStep + 1;
-        const modal = document.querySelector('.onboarding-modal');
         const overlay = this.overlay;
 
         if (!content || !footer) return;
@@ -272,47 +257,11 @@ const Onboarding = {
             }, 50);
         }
 
-        // ===== УСТАНАВЛИВАЕМ ПОЗИЦИЮ МОДАЛЬНОГО ОКНА =====
+        // Оверлей всегда по центру
         if (overlay) {
-            // Сбрасываем стили позиционирования
             overlay.style.alignItems = 'center';
             overlay.style.justifyContent = 'center';
-            
-            // В зависимости от шага меняем позицию
-            if (step.modalPosition === 'top-center') {
-                overlay.style.alignItems = 'flex-start';
-                overlay.style.justifyContent = 'center';
-                overlay.style.paddingTop = '40px';
-            } else if (step.modalPosition === 'bottom-left') {
-                overlay.style.alignItems = 'flex-end';
-                overlay.style.justifyContent = 'flex-start';
-                overlay.style.padding = '20px';
-            } else if (step.modalPosition === 'center') {
-                overlay.style.alignItems = 'center';
-                overlay.style.justifyContent = 'center';
-                overlay.style.padding = '20px';
-            }
-        }
-
-        if (modal) {
-            // Убираем лишние классы, оставляем только базовый
-            modal.className = 'onboarding-modal';
-            
-            // В зависимости от шага меняем размер и стиль окна
-            if (step.modalPosition === 'top-center') {
-                modal.style.maxWidth = '480px';
-                modal.style.width = '90%';
-                modal.style.marginTop = '40px';
-            } else if (step.modalPosition === 'bottom-left') {
-                modal.style.maxWidth = '380px';
-                modal.style.width = '90%';
-                modal.style.marginBottom = '20px';
-                modal.style.marginLeft = '20px';
-            } else if (step.modalPosition === 'center') {
-                modal.style.maxWidth = '480px';
-                modal.style.width = '90%';
-                modal.style.margin = '0';
-            }
+            overlay.style.padding = '20px';
         }
 
         // Контент
@@ -324,12 +273,12 @@ const Onboarding = {
         content.innerHTML = `
             <div class="onboarding-step" style="
                 display: flex;
-                gap: 14px;
+                gap: 16px;
                 align-items: flex-start;
             ">
                 <div class="onboarding-step__number" style="
-                    width: 32px;
-                    height: 32px;
+                    width: 36px;
+                    height: 36px;
                     background: linear-gradient(135deg, var(--color-primary, #2e86de), #1b6dc1);
                     color: white;
                     border-radius: 50%;
@@ -337,21 +286,21 @@ const Onboarding = {
                     align-items: center;
                     justify-content: center;
                     font-weight: 700;
-                    font-size: 0.9rem;
+                    font-size: 1rem;
                     flex-shrink: 0;
                     margin-top: 2px;
                 ">${stepNumber}</div>
                 <div class="onboarding-step__content" style="flex: 1;">
                     <h2 style="
-                        font-size: 1.1rem;
+                        font-size: 1.15rem;
                         font-weight: 700;
-                        margin: 0 0 4px 0;
+                        margin: 0 0 6px 0;
                         color: var(--color-text, #2d3436);
                         line-height: 1.3;
                     ">${step.title}</h2>
                     <p style="
-                        font-size: 0.9rem;
-                        line-height: 1.6;
+                        font-size: 0.95rem;
+                        line-height: 1.7;
                         color: var(--color-text-light, #636e72);
                         margin: 0;
                     ">${textHtml}</p>
@@ -477,8 +426,9 @@ const Onboarding = {
             el.style.outlineOffset = '4px';
             el.style.boxShadow = '0 0 30px rgba(243, 156, 18, 0.5)';
             el.style.transform = 'scale(1.02)';
-            el.style.zIndex = '9999';
+            el.style.zIndex = '99999';
             el.style.transition = 'all 0.3s ease';
+            el.style.position = 'relative';
 
             el.classList.add('onboarding-highlight');
             el.classList.add('pulse');
@@ -493,6 +443,7 @@ const Onboarding = {
             el.style.transform = el.dataset.originalTransform || '';
             el.style.zIndex = el.dataset.originalZIndex || '';
             el.style.transition = '';
+            el.style.position = '';
 
             el.classList.remove('onboarding-highlight');
             el.classList.remove('pulse');
@@ -509,6 +460,7 @@ const Onboarding = {
             el.style.boxShadow = '';
             el.style.transform = '';
             el.style.zIndex = '';
+            el.style.position = '';
         });
     },
 
@@ -586,9 +538,7 @@ const Onboarding = {
 
     completeOnboarding() {
         localStorage.setItem(this.STORAGE_KEY, 'true');
-        // Для обратной совместимости сохраняем и старые ключи
         localStorage.setItem('onboarding_tutorial_completed', 'true');
-        localStorage.setItem('onboarding_completed', 'true');
         this.clearHighlights();
         console.log('[Onboarding] Онбординг завершён');
     },
@@ -597,7 +547,7 @@ const Onboarding = {
         this.completeOnboarding();
         this.close();
         try {
-            localStorage.setItem(this.SKIP_KEY, 'true');
+            localStorage.setItem('onboarding_skipped', 'true');
         } catch (_) {}
         console.log('[Onboarding] Онбординг пропущен');
     },
