@@ -249,7 +249,7 @@ function runPipelineStep(step) {
     });
 }
 
-// ----- ДИАЛОГ С КЛИЕНТОМ -----
+// ----- ДИАЛОГ С КЛИЕНТОМ (ИСПРАВЛЕН) -----
 function runDialogueStep(step) {
     const quizScreen = document.getElementById('quiz-screen');
     const quizStepTitle = document.getElementById('quiz-step-title');
@@ -261,17 +261,21 @@ function runDialogueStep(step) {
     quizStepCounter.textContent = `Шаг ${AppState.currentStepIndex + 1} из ${AppState.currentScenario.steps.length}`;
 
     const data = AppState.currentScenario.dialogue;
+    
+    // 🔧 ИСПРАВЛЕНИЕ: добавляем fallback для clientQuestion
+    // Если clientQuestion отсутствует, пробуем использовать clientMessage
+    const questionText = data.clientQuestion || data.clientMessage || 'Сообщение клиента не найдено';
 
     quizContainer.innerHTML = `
         <div class="interactive-step">
             <div class="dialogue-card">
                 <div class="dialogue-card__avatar">👩‍💼</div>
-                <div class="dialogue-card__client">${data.clientName}</div>
-                <div class="dialogue-card__question">«${data.clientQuestion}»</div>
+                <div class="dialogue-card__client">${escapeHtml(data.clientName)}</div>
+                <div class="dialogue-card__question">«${escapeHtml(questionText)}»</div>
                 <div class="dialogue-card__options">
                     ${data.options.map(opt => `
-                        <div class="dialogue-option" data-id="${opt.id}" data-correct="${opt.correct}" data-feedback="${opt.feedback}">
-                            ${opt.text}
+                        <div class="dialogue-option" data-id="${opt.id}" data-correct="${opt.correct}" data-feedback="${escapeHtml(opt.feedback)}">
+                            ${escapeHtml(opt.text)}
                         </div>
                     `).join('')}
                 </div>
