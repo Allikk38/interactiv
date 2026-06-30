@@ -1,6 +1,6 @@
 // ============================================================
 // МОДУЛЬ СОГЛАСИЯ (ИСПРАВЛЕННЫЙ)
-// Версия: 4.0.3
+// Версия: 4.0.4 — УДАЛЕНО ДУБЛИРОВАНИЕ _getUserName() и _isLocalIP()
 // ============================================================
 
 (function() {
@@ -8,7 +8,7 @@
 
     // ===== ПРИВАТНЫЕ КОНСТАНТЫ =====
     var GOOGLE_SCRIPT_URL = window.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzvFwEopjXdZb6QIjmM1RfLzJXtlFnzJPU2bamtdtY2TnzvcUH0oedwPfteLvxOckGt/exec';
-    var CONSENT_VERSION = '4.0.3';
+    var CONSENT_VERSION = '4.0.4';
     var IP_NOT_AVAILABLE = 'IP_NOT_AVAILABLE';
 
     // ===== ПРИВАТНОЕ СОСТОЯНИЕ =====
@@ -21,7 +21,17 @@
 
     // ===== ПРИВАТНЫЕ МЕТОДЫ =====
 
+    /**
+     * Проверяет, является ли IP локальным
+     * ИСПРАВЛЕНО: используем IPHelper.isLocalIP() вместо дублирования
+     */
     function _isLocalIP(ip) {
+        // Используем единую функцию из IPHelper
+        if (window.IPHelper && typeof window.IPHelper.isLocalIP === 'function') {
+            return window.IPHelper.isLocalIP(ip);
+        }
+        
+        // Fallback: если IPHelper не загружен, простая проверка
         if (!ip || typeof ip !== 'string') return true;
         return ip.startsWith('192.168.') ||
                ip.startsWith('10.') ||
@@ -47,17 +57,17 @@
                ip === 'localhost';
     }
 
+    /**
+     * Получает имя пользователя через централизованный User модуль
+     * ИСПРАВЛЕНО: используем User.getUserName() вместо дублирования
+     */
     function _getUserName() {
+        if (window.User && typeof window.User.getUserName === 'function') {
+            return window.User.getUserName();
+        }
+        
+        // Fallback: если User не загружен, пробуем прочитать напрямую
         try {
-            if (window.User && typeof window.User.getUserName === 'function') {
-                return window.User.getUserName();
-            }
-            if (window.User && typeof window.User.get === 'function') {
-                var user = window.User.get();
-                if (user && user.name) {
-                    return user.name;
-                }
-            }
             var data = localStorage.getItem('realty_trainer_user');
             if (data) {
                 var parsed = JSON.parse(data);

@@ -425,28 +425,31 @@
     <!-- 1. ЕДИНЫЙ ЗАГРУЗЧИК (самый первый) -->
     <script src="js/app-loader.js"></script>
 
-    <!-- 2. БАЗОВЫЕ UTILS (должны быть загружены как можно раньше) -->
+    <!-- 2. КОНФИГИ И КЛЮЧИ (должны быть загружены как можно раньше) -->
+    <script src="js/config/storage-keys.js"></script>
+    <script src="js/config.js"></script>
+
+    <!-- 3. БАЗОВЫЕ UTILS -->
     <script src="js/utils/escape.js"></script>
     <script src="js/utils/toast.js"></script>
     <script src="js/utils/logger.js"></script>
     <script src="js/utils/ip-helper.js"></script>
 
-    <!-- 3. PRIVACY MANAGER (критично — загружается до всего остального) -->
+    <!-- 4. PRIVACY MANAGER -->
     <script src="js/privacy/privacy-manager.js"></script>
 
-    <!-- 4. ОСТАЛЬНЫЕ UTILS (зависят от PrivacyManager) -->
+    <!-- 5. ОСТАЛЬНЫЕ UTILS -->
     <script src="js/utils/analytics.js"></script>
     <script src="js/utils/offline-queue.js"></script>
 
-    <!-- 5. ОСНОВНЫЕ МОДУЛИ (зависят от утилит) -->
+    <!-- 6. ОСНОВНЫЕ МОДУЛИ -->
     <script src="js/constants.js"></script>
-    <script src="js/config.js"></script>
     <script src="js/features/store.js"></script>
     <script src="js/features/user.js"></script>
     <script src="js/features/badges.js"></script>
     <script src="js/features/progress.js"></script>
 
-    <!-- 6. ШАБЛОНЫ -->
+    <!-- 7. ШАБЛОНЫ -->
     <script src="js/templates/ui-templates.js"></script>
     <script src="js/templates/quiz-templates.js"></script>
     <script src="js/templates/map-templates.js"></script>
@@ -454,7 +457,7 @@
     <script src="js/templates/interactive-templates.js"></script>
     <script src="js/templates/triple-templates.js"></script>
 
-    <!-- 7. UI МОДУЛИ -->
+    <!-- 8. UI МОДУЛИ -->
     <script src="js/ui/ui-helpers.js"></script>
     <script src="js/ui/ui-dashboard.js"></script>
     <script src="js/ui/ui-categories.js"></script>
@@ -464,37 +467,37 @@
     <script src="js/ui/ui-admin.js"></script>
     <script src="js/ui/ui.js"></script>
 
-    <!-- 8. ЛОГИКА -->
+    <!-- 9. ЛОГИКА -->
     <script src="js/features/dragdrop.js"></script>
     <script src="js/steps/brief.js"></script>
     <script src="js/steps/interactive-lesson1.js"></script>
     <script src="js/steps/client-journey.js"></script>
     <script src="js/ui/drawer.js"></script>
 
-    <!-- 9. КАРТА -->
+    <!-- 10. КАРТА -->
     <script src="js/map/map-core.js"></script>
     <script src="js/map/map-utils.js"></script>
     <script src="js/map/map-ui.js"></script>
     <script src="js/map/map-step.js"></script>
 
-    <!-- 10. ИНТЕРАКТИВНЫЕ ШАГИ -->
+    <!-- 11. ИНТЕРАКТИВНЫЕ ШАГИ -->
     <script src="js/steps/quiz.js"></script>
     <script src="js/game/timer-quiz.js"></script>
     <script src="js/game/decision-chain.js"></script>
     <script src="js/game/triple-match-drag.js"></script>
     <script src="js/steps/interactive.js"></script>
 
-    <!-- 11. РЕЕСТР ШАГОВ -->
+    <!-- 12. РЕЕСТР ШАГОВ -->
     <script src="js/steps/stepRegistry.js"></script>
     <!-- ШАГИ ОНБОРДИНГА -->
     <script src="js/steps/onboarding-steps.js"></script>    
     <script src="js/steps/stepRegistry-init.js"></script>
     
-    <!-- 12. СОГЛАСИЕ -->
+    <!-- 13. СОГЛАСИЕ -->
     <script src="js/privacy/consent.js"></script>
     <script src="js/privacy/consent-banner.js"></script>
 
-    <!-- 13. CORE МОДУЛИ -->
+    <!-- 14. CORE МОДУЛИ -->
     <script src="js/core/app-analytics.js"></script>
     <script src="js/core/app-offline.js"></script>
     <script src="js/core/app-pwa.js"></script>
@@ -503,13 +506,13 @@
     <script src="js/core/app-initializer.js"></script>
     <script src="js/core/app-scenario.js"></script>
 
-    <!-- 14. ОНБОРДИНГ И ПРЕМИУМ -->
+    <!-- 15. ОНБОРДИНГ И ПРЕМИУМ -->
     <script src="js/ui/onboarding.js"></script>
     <script src="js/ui/premium-ui.js"></script>
 
-    <!-- 15. ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ -->
+    <!-- 16. ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ -->
     <script src="js/core/app-bootstrap.js"></script>
     <script src="js/app.js"></script>
-
+    
 </body>
 </html>

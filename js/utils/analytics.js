@@ -1,5 +1,5 @@
 // ===== АНАЛИТИКА И МЕТРИКИ (ОБНОВЛЁННАЯ) =====
-// Версия: 2.1.2
+// Версия: 2.2.0 — ИСПОЛЬЗУЕТ ЦЕНТРАЛИЗОВАННЫЕ КЛЮЧИ STORAGE_KEYS
 // 
 // Отвечает за:
 // - Отправку аналитических данных
@@ -12,8 +12,18 @@
 
     // ===== КОНСТАНТЫ =====
     var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvFwEopjXdZb6QIjmM1RfLzJXtlFnzJPU2bamtdtY2TnzvcUH0oedwPfteLvxOckGt/exec';
-    var ANALYTICS_ENABLED_KEY = 'analytics_enabled';
-    var SESSION_ID_KEY = 'analytics_session_id';
+    
+    // ИСПРАВЛЕНО: используем централизованные ключи из STORAGE_KEYS
+    var ANALYTICS_ENABLED_KEY = (window.STORAGE_KEYS && STORAGE_KEYS.CONSENT && STORAGE_KEYS.CONSENT.ANALYTICS_ENABLED) 
+        ? STORAGE_KEYS.CONSENT.ANALYTICS_ENABLED 
+        : 'analytics_enabled';
+    var SESSION_ID_KEY = (window.STORAGE_KEYS && STORAGE_KEYS.ANALYTICS && STORAGE_KEYS.ANALYTICS.SESSION_ID) 
+        ? STORAGE_KEYS.ANALYTICS.SESSION_ID 
+        : 'analytics_session_id';
+    var SESSION_TIME_KEY = (window.STORAGE_KEYS && STORAGE_KEYS.ANALYTICS && STORAGE_KEYS.ANALYTICS.SESSION_TIME) 
+        ? STORAGE_KEYS.ANALYTICS.SESSION_TIME 
+        : 'analytics_session_time';
+    
     var SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 минут
 
     // ===== СОСТОЯНИЕ =====
@@ -28,21 +38,17 @@
     // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
 
     /**
-     * Получает имя пользователя с гарантией
+     * Получает имя пользователя через централизованный User модуль
      * @returns {string}
      */
     function _getUserName() {
+        // Используем единую функцию из User
+        if (window.User && typeof window.User.getUserName === 'function') {
+            return window.User.getUserName();
+        }
+        
+        // Fallback: если User не загружен, пробуем прочитать напрямую
         try {
-            if (window.User && typeof window.User.getUserName === 'function') {
-                return window.User.getUserName();
-            }
-            if (window.User && typeof window.User.get === 'function') {
-                var user = window.User.get();
-                if (user && user.name) {
-                    return user.name;
-                }
-            }
-            // Пробуем прочитать из localStorage напрямую
             var data = localStorage.getItem('realty_trainer_user');
             if (data) {
                 var parsed = JSON.parse(data);
@@ -51,6 +57,7 @@
                 }
             }
         } catch (_) {}
+        
         return 'Аноним';
     }
 
@@ -88,7 +95,7 @@
 
         try {
             var storedId = localStorage.getItem(SESSION_ID_KEY);
-            var storedTime = localStorage.getItem('analytics_session_time');
+            var storedTime = localStorage.getItem(SESSION_TIME_KEY);
             var now = Date.now();
 
             // Если есть сохранённая сессия и она не истекла
@@ -106,7 +113,7 @@
             _sessionStartTime = now;
             
             localStorage.setItem(SESSION_ID_KEY, _sessionId);
-            localStorage.setItem('analytics_session_time', String(now));
+            localStorage.setItem(SESSION_TIME_KEY, String(now));
 
             return _sessionId;
         } catch (_) {
@@ -518,6 +525,6 @@
     // ===== ЭКСПОРТ =====
     window.Analytics = Analytics;
 
-    console.log('[Analytics] Модуль загружен, версия: 2.1.2');
+    console.log('[Analytics] Модуль загружен, версия: 2.2.0');
 
 })();

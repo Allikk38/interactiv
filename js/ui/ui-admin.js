@@ -7,8 +7,12 @@ function isAdmin() {
     const adminNames = ['admin', 'тренер', 'Админ', 'Admin', 'Тренер'];
     if (adminNames.includes(user.name.toLowerCase())) return true;
     
-    const adminKey = localStorage.getItem('realty_admin_key');
-    if (adminKey === 'true') return true;
+    // Используем централизованный ключ
+    const adminKey = window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.ADMIN_KEY 
+        ? STORAGE_KEYS.USER.ADMIN_KEY 
+        : 'realty_admin_key';
+    
+    if (localStorage.getItem(adminKey) === 'true') return true;
     
     const xpProgress = User.getXPProgress();
     if (xpProgress.level >= 10) return true;
@@ -17,14 +21,22 @@ function isAdmin() {
 }
 
 function enableAdminMode() {
-    localStorage.setItem('realty_admin_key', 'true');
+    const adminKey = window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.ADMIN_KEY 
+        ? STORAGE_KEYS.USER.ADMIN_KEY 
+        : 'realty_admin_key';
+    
+    localStorage.setItem(adminKey, 'true');
     showToast('🔑', 'Режим администратора включён. Доступен пропуск шагов.', 'success');
     if (typeof renderScenarios === 'function') renderScenarios();
     addSkipStepButton();
 }
 
 function disableAdminMode() {
-    localStorage.removeItem('realty_admin_key');
+    const adminKey = window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.ADMIN_KEY 
+        ? STORAGE_KEYS.USER.ADMIN_KEY 
+        : 'realty_admin_key';
+    
+    localStorage.removeItem(adminKey);
     showToast('🔒', 'Режим администратора выключен.', 'warning');
     removeSkipStepButton();
 }

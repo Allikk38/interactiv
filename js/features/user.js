@@ -1,9 +1,18 @@
 // ===== ПОЛЬЗОВАТЕЛЬ И ОТПРАВКА РЕЗУЛЬТАТОВ =====
 const User = {
-    STORAGE_KEY: 'realty_trainer_user',
-    XP_KEY: 'realty_trainer_xp',
-    STREAK_KEY: 'realty_trainer_streak',
-    ONBOARDING_KEY: 'onboarding_tutorial_completed',
+    // ИСПРАВЛЕНО: используем централизованные ключи из STORAGE_KEYS
+    STORAGE_KEY: (window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.USER_DATA) 
+        ? STORAGE_KEYS.USER.USER_DATA 
+        : 'realty_trainer_user',
+    XP_KEY: (window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.XP) 
+        ? STORAGE_KEYS.USER.XP 
+        : 'realty_trainer_xp',
+    STREAK_KEY: (window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.STREAK) 
+        ? STORAGE_KEYS.USER.STREAK 
+        : 'realty_trainer_streak',
+    ONBOARDING_KEY: (window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.ONBOARDING_COMPLETED) 
+        ? STORAGE_KEYS.USER.ONBOARDING_COMPLETED 
+        : 'onboarding_tutorial_completed',
 
     // ===== ГАРАНТИРОВАННОЕ ПОЛУЧЕНИЕ ИМЕНИ =====
     getUserName() {

@@ -1,6 +1,9 @@
 // ===== СИСТЕМА БЕЙДЖЕЙ (НАГРАД) =====
 const Badges = {
-    STORAGE_KEY: 'realty_trainer_badges',
+    // ИСПРАВЛЕНО: используем централизованный ключ из STORAGE_KEYS
+    STORAGE_KEY: (window.STORAGE_KEYS && STORAGE_KEYS.BADGE && STORAGE_KEYS.BADGE.BADGES) 
+        ? STORAGE_KEYS.BADGE.BADGES 
+        : 'realty_trainer_badges',
 
     // Загрузить все полученные бейджи
     getAll() {

@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * ЕДИНЫЙ ЗАГРУЗЧИК МОДУЛЕЙ
- * Версия: 1.0.4 (ДОБАВЛЕН onReady)
+ * Версия: 1.0.5 — ДОБАВЛЕН storage-keys.js В СПИСОК ОБЩИХ МОДУЛЕЙ
  * 
  * Отвечает за:
  * - Загрузку общих зависимостей
@@ -20,6 +20,8 @@
     const CONFIG = {
         // Общие модули, которые нужны на всех страницах
         commonModules: [
+            // НОВЫЙ МОДУЛЬ: централизованные ключи для localStorage
+            { src: 'js/config/storage-keys.js', required: true },
             { src: 'js/utils/escape.js', required: true },
             { src: 'js/utils/toast.js', required: true },
             { src: 'js/utils/logger.js', required: true },
@@ -294,7 +296,7 @@
         isLoading: isLoadingNow,
         onReady: onReady,
         reset: reset,
-        version: '1.0.4'
+        version: '1.0.5'
     };
 
     // ===== АВТОЗАГРУЗКА =====
@@ -308,6 +310,6 @@
         }, 100);
     }
 
-    console.log('[AppLoader] Модуль загружен, версия 1.0.4');
+    console.log('[AppLoader] Модуль загружен, версия 1.0.5');
 
 })();

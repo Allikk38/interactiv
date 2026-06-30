@@ -1,7 +1,12 @@
 // ===== ОНБОРДИНГ (ПОШАГОВЫЙ ТУР) =====
 
 const Onboarding = {
-    STORAGE_KEY: 'onboarding_completed',
+    STORAGE_KEY: (window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.ONBOARDING_COMPLETED) 
+        ? STORAGE_KEYS.USER.ONBOARDING_COMPLETED 
+        : 'onboarding_tutorial_completed',
+    SKIP_KEY: (window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.ONBOARDING_SKIPPED) 
+        ? STORAGE_KEYS.USER.ONBOARDING_SKIPPED 
+        : 'onboarding_skipped',
     isOpen: false,
     modal: null,
     overlay: null,
@@ -64,7 +69,7 @@ const Onboarding = {
         }
 
         try {
-            const skipped = localStorage.getItem('onboarding_skipped');
+            const skipped = localStorage.getItem(this.SKIP_KEY);
             if (skipped === 'true') {
                 console.log('[Onboarding] Онбординг был пропущен');
                 return;
@@ -122,8 +127,18 @@ const Onboarding = {
 
     hasCompleted() {
         try {
-            return localStorage.getItem(this.STORAGE_KEY) === 'true' ||
-                   localStorage.getItem('onboarding_tutorial_completed') === 'true';
+            // Проверяем новый ключ
+            if (localStorage.getItem(this.STORAGE_KEY) === 'true') {
+                return true;
+            }
+            // Для обратной совместимости проверяем старые ключи
+            if (localStorage.getItem('onboarding_tutorial_completed') === 'true') {
+                return true;
+            }
+            if (localStorage.getItem('onboarding_completed') === 'true') {
+                return true;
+            }
+            return false;
         } catch {
             return false;
         }
@@ -571,7 +586,9 @@ const Onboarding = {
 
     completeOnboarding() {
         localStorage.setItem(this.STORAGE_KEY, 'true');
+        // Для обратной совместимости сохраняем и старые ключи
         localStorage.setItem('onboarding_tutorial_completed', 'true');
+        localStorage.setItem('onboarding_completed', 'true');
         this.clearHighlights();
         console.log('[Onboarding] Онбординг завершён');
     },
@@ -580,7 +597,7 @@ const Onboarding = {
         this.completeOnboarding();
         this.close();
         try {
-            localStorage.setItem('onboarding_skipped', 'true');
+            localStorage.setItem(this.SKIP_KEY, 'true');
         } catch (_) {}
         console.log('[Onboarding] Онбординг пропущен');
     },

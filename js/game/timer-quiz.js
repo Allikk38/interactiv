@@ -1,4 +1,5 @@
 // ===== ГОНКА С ТАЙМЕРОМ (TIMER QUIZ) =====
+// Версия: 1.1.0 — ИСПОЛЬЗУЕТ ЦЕНТРАЛИЗОВАННЫЙ КЛЮЧ STORAGE_KEYS
 
 /**
  * Запускает шаг "Гонка с таймером"
@@ -60,8 +61,16 @@ async function runTimerQuizStep(step) {
         questionStartTime: null      // Время начала текущего вопроса
     };
     
+    // ИСПРАВЛЕНО: используем централизованный ключ для рекорда
+    function _getRecordKey(title) {
+        if (window.STORAGE_KEYS && STORAGE_KEYS.GAME && STORAGE_KEYS.GAME.timerQuizRecord) {
+            return STORAGE_KEYS.GAME.timerQuizRecord(title);
+        }
+        return 'timer_quiz_record_' + title.replace(/\s/g, '_');
+    }
+    
     // Получаем рекорд
-    const recordKey = `timer_quiz_record_${(step.title || 'default').replace(/\s/g, '_')}`;
+    const recordKey = _getRecordKey(step.title || 'default');
     let highScore = parseInt(localStorage.getItem(recordKey)) || 0;
     
     // Рендерим первый вопрос
@@ -363,3 +372,6 @@ function waitForQuestions(maxWaitMs = 5000) {
         }, 100);
     });
 }
+
+// Экспортируем функцию в глобальную область
+window.runTimerQuizStep = runTimerQuizStep;

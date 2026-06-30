@@ -1,8 +1,12 @@
 // ===== ОЧЕРЕДЬ ЗАПРОСОВ ДЛЯ ОФЛАЙН-РЕЖИМА =====
 // Сохраняет запросы, когда нет интернета, и отправляет их при восстановлении соединения
+// Версия: 1.2.0 — ИСПОЛЬЗУЕТ ЦЕНТРАЛИЗОВАННЫЙ КЛЮЧ STORAGE_KEYS
 
 const OfflineQueue = {
-    storageKey: 'offline_request_queue',
+    // ИСПРАВЛЕНО: используем централизованный ключ из STORAGE_KEYS
+    storageKey: (window.STORAGE_KEYS && STORAGE_KEYS.ANALYTICS && STORAGE_KEYS.ANALYTICS.OFFLINE_QUEUE) 
+        ? STORAGE_KEYS.ANALYTICS.OFFLINE_QUEUE 
+        : 'offline_request_queue',
     maxRetryCount: 3,
     retryDelayMs: 5000,
     maxQueueSize: 100,
@@ -32,21 +36,17 @@ const OfflineQueue = {
     },
     
     /**
-     * Получает имя пользователя с гарантией
+     * Получает имя пользователя через централизованный User модуль
      * @returns {string}
      */
     _getUserName() {
+        // Используем единую функцию из User
+        if (window.User && typeof window.User.getUserName === 'function') {
+            return window.User.getUserName();
+        }
+        
+        // Fallback: если User не загружен, пробуем прочитать напрямую
         try {
-            if (window.User && typeof window.User.getUserName === 'function') {
-                return window.User.getUserName();
-            }
-            if (window.User && typeof window.User.get === 'function') {
-                var user = window.User.get();
-                if (user && user.name) {
-                    return user.name;
-                }
-            }
-            // Пробуем прочитать из localStorage напрямую
             var data = localStorage.getItem('realty_trainer_user');
             if (data) {
                 var parsed = JSON.parse(data);

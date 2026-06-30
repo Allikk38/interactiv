@@ -1,6 +1,6 @@
 // ============================================================
 // PREMIUM UI — УЛУЧШЕННЫЙ ИНТЕРФЕЙС
-// Версия: 1.2 — ИСПРАВЛЕН ЗАПУСК СЦЕНАРИЕВ
+// Версия: 1.3 — ИСПОЛЬЗУЕТ ЦЕНТРАЛИЗОВАННЫЙ КЛЮЧ ADMIN_KEY
 // ============================================================
 
 (function() {
@@ -9,6 +9,14 @@
     // ===== СОСТОЯНИЕ =====
     var _isInitialized = false;
     var _isUpgrading = false;
+
+    // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+    function _getAdminKey() {
+        if (window.STORAGE_KEYS && STORAGE_KEYS.USER && STORAGE_KEYS.USER.ADMIN_KEY) {
+            return STORAGE_KEYS.USER.ADMIN_KEY;
+        }
+        return 'realty_admin_key';
+    }
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     function initPremiumUI() {
@@ -474,6 +482,6 @@
         handleScenarioStart: handleScenarioStart
     };
 
-    console.log('[PremiumUI] Модуль загружен, версия: 1.2');
+    console.log('[PremiumUI] Модуль загружен, версия: 1.3');
 
 })();
