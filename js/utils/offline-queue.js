@@ -32,6 +32,33 @@ const OfflineQueue = {
     },
     
     /**
+     * Получает имя пользователя с гарантией
+     * @returns {string}
+     */
+    _getUserName() {
+        try {
+            if (window.User && typeof window.User.getUserName === 'function') {
+                return window.User.getUserName();
+            }
+            if (window.User && typeof window.User.get === 'function') {
+                var user = window.User.get();
+                if (user && user.name) {
+                    return user.name;
+                }
+            }
+            // Пробуем прочитать из localStorage напрямую
+            var data = localStorage.getItem('realty_trainer_user');
+            if (data) {
+                var parsed = JSON.parse(data);
+                if (parsed && parsed.name) {
+                    return parsed.name;
+                }
+            }
+        } catch (_) {}
+        return 'Аноним';
+    },
+    
+    /**
      * Добавить запрос в очередь
      * @param {Object} payload - данные для отправки
      * @param {string} url - URL для отправки
@@ -39,6 +66,25 @@ const OfflineQueue = {
      * @returns {boolean} - успешно ли добавлено
      */
     add(payload, url = GOOGLE_SCRIPT_URL, method = 'POST') {
+        // Добавляем имя пользователя в payload, если его нет
+        if (!payload.user_name) {
+            payload.user_name = this._getUserName();
+        }
+        // Добавляем временную метку, если её нет
+        if (!payload.timestamp) {
+            payload.timestamp = new Date().toISOString();
+        }
+        // Добавляем форматированную дату, если её нет
+        if (!payload.formatted_date) {
+            payload.formatted_date = new Date().toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
         const queue = this.getQueue();
         if (queue.length >= this.maxQueueSize) {
             logWarn('[OfflineQueue] Очередь переполнена, старый запрос удалён');
@@ -141,7 +187,11 @@ const OfflineQueue = {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
             
-            // ИСПРАВЛЕНИЕ: добавлен mode: 'no-cors' для обхода CORS
+            // Добавляем имя пользователя перед отправкой (на случай, если оно изменилось)
+            if (!request.payload.user_name || request.payload.user_name === 'Аноним') {
+                request.payload.user_name = this._getUserName();
+            }
+            
             const options = {
                 method: request.method,
                 mode: 'no-cors',

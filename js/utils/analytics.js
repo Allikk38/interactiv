@@ -1,18 +1,16 @@
 // ===== АНАЛИТИКА И МЕТРИКИ (ОБНОВЛЁННАЯ) =====
-// Версия: 2.1.1
+// Версия: 2.1.2
 // 
 // Отвечает за:
 // - Отправку аналитических данных
 // - Проверку согласия перед отправкой
 // - Отслеживание времени на шагах
 // - Сбор метрик производительности
-// - ИСПРАВЛЕНИЕ: исправлен URL Google Apps Script
 
 (function() {
     'use strict';
 
     // ===== КОНСТАНТЫ =====
-    // ИСПРАВЛЕНИЕ: используем тот же URL, что и в остальных модулях
     var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
     var ANALYTICS_ENABLED_KEY = 'analytics_enabled';
     var SESSION_ID_KEY = 'analytics_session_id';
@@ -28,6 +26,33 @@
     var _isEnabled = true; // По умолчанию включено, но проверяем согласие
 
     // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+
+    /**
+     * Получает имя пользователя с гарантией
+     * @returns {string}
+     */
+    function _getUserName() {
+        try {
+            if (window.User && typeof window.User.getUserName === 'function') {
+                return window.User.getUserName();
+            }
+            if (window.User && typeof window.User.get === 'function') {
+                var user = window.User.get();
+                if (user && user.name) {
+                    return user.name;
+                }
+            }
+            // Пробуем прочитать из localStorage напрямую
+            var data = localStorage.getItem('realty_trainer_user');
+            if (data) {
+                var parsed = JSON.parse(data);
+                if (parsed && parsed.name) {
+                    return parsed.name;
+                }
+            }
+        } catch (_) {}
+        return 'Аноним';
+    }
 
     /**
      * Проверяет, можно ли отправлять аналитику
@@ -121,16 +146,11 @@
         }
 
         // Добавляем общие поля
-        var user = null;
-        try {
-            if (window.User && typeof window.User.get === 'function') {
-                user = window.User.get();
-            }
-        } catch (_) {}
+        var userName = _getUserName();
 
         var fullPayload = {
             action: 'analytics',
-            user_name: user ? user.name : 'Аноним',
+            user_name: userName,
             session_id: _getSessionId(),
             device_type: _getDeviceType(),
             screen_width: window.innerWidth || 0,
@@ -138,6 +158,13 @@
             user_agent: navigator.userAgent || 'unknown',
             language: navigator.language || 'unknown',
             timestamp: new Date().toISOString(),
+            formatted_date: new Date().toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
             ...payload
         };
 
@@ -491,6 +518,6 @@
     // ===== ЭКСПОРТ =====
     window.Analytics = Analytics;
 
-    console.log('[Analytics] Модуль загружен, версия: 2.1.1');
+    console.log('[Analytics] Модуль загружен, версия: 2.1.2');
 
 })();

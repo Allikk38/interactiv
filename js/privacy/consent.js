@@ -1,6 +1,6 @@
 // ============================================================
 // МОДУЛЬ СОГЛАСИЯ (ИСПРАВЛЕННЫЙ)
-// Версия: 4.0.2
+// Версия: 4.0.3
 // ============================================================
 
 (function() {
@@ -8,7 +8,7 @@
 
     // ===== ПРИВАТНЫЕ КОНСТАНТЫ =====
     var GOOGLE_SCRIPT_URL = window.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
-    var CONSENT_VERSION = '4.0.2';
+    var CONSENT_VERSION = '4.0.3';
     var IP_NOT_AVAILABLE = 'IP_NOT_AVAILABLE';
 
     // ===== ПРИВАТНОЕ СОСТОЯНИЕ =====
@@ -45,6 +45,28 @@
                ip === '0.0.0.0' ||
                ip === '::1' ||
                ip === 'localhost';
+    }
+
+    function _getUserName() {
+        try {
+            if (window.User && typeof window.User.getUserName === 'function') {
+                return window.User.getUserName();
+            }
+            if (window.User && typeof window.User.get === 'function') {
+                var user = window.User.get();
+                if (user && user.name) {
+                    return user.name;
+                }
+            }
+            var data = localStorage.getItem('realty_trainer_user');
+            if (data) {
+                var parsed = JSON.parse(data);
+                if (parsed && parsed.name) {
+                    return parsed.name;
+                }
+            }
+        } catch (_) {}
+        return 'Аноним';
     }
 
     function _getIPAsync() {
@@ -162,16 +184,7 @@
 
     function _getUserDataAsync() {
         return new Promise(function(resolve) {
-            var userName = 'Аноним';
-            try {
-                if (window.User && typeof window.User.get === 'function') {
-                    var user = window.User.get();
-                    if (user && user.name) {
-                        userName = user.name;
-                    }
-                }
-            } catch (_) {}
-
+            var userName = _getUserName();
             var userAgent = navigator.userAgent || 'unknown';
             var screenWidth = window.screen ? window.screen.width : 'unknown';
             var screenHeight = window.screen ? window.screen.height : 'unknown';
@@ -231,24 +244,33 @@
         });
     }
 
-    // ===== ОТПРАВКА СОГЛАСИЯ (no-cors, без попытки прочитать ответ) =====
+    // ===== ОТПРАВКА СОГЛАСИЯ (GET + POST для надёжности) =====
     function _sendConsentToServer(userData, categories) {
+        var userName = _getUserName();
+        
+        // Если userData передал имя, но оно отличается от актуального — используем актуальное
+        if (userData && userData.name && userData.name !== 'Аноним' && userName === 'Аноним') {
+            userName = userData.name;
+        }
+        
         var now = new Date();
+        var formattedDate = now.toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
         var payload = {
             action: 'save_consent',
             consent_version: CONSENT_VERSION,
             ip: userData.ip || IP_NOT_AVAILABLE,
             user_agent: userData.agent || navigator.userAgent || 'unknown',
             timestamp: now.toISOString(),
-            formatted_date: now.toLocaleString('ru-RU', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            }),
+            formatted_date: formattedDate,
             consent_given: true,
-            user_name: userData.name || 'Аноним',
+            user_name: userName,
             categories: categories || {
                 functional: true,
                 analytics: true,
@@ -262,23 +284,36 @@
             do_not_track: navigator.doNotTrack || 'unknown'
         };
 
-        console.log('[Consent] Отправка согласия, IP:', payload.ip);
+        console.log('[Consent] Отправка согласия, пользователь:', userName, 'IP:', payload.ip);
 
-        // Только отправка, без обработки ответа (no-cors)
-        fetch(GOOGLE_SCRIPT_URL, {
+        var url = GOOGLE_SCRIPT_URL;
+
+        // GET-запрос с параметрами (для Google Apps Script)
+        var getUrl = url + '?action=save_consent' +
+                     '&user_name=' + encodeURIComponent(userName) +
+                     '&ip=' + encodeURIComponent(payload.ip) +
+                     '&timestamp=' + encodeURIComponent(now.toISOString()) +
+                     '&formatted_date=' + encodeURIComponent(formattedDate) +
+                     '&consent_given=true';
+
+        fetch(getUrl, {
+            method: 'GET',
+            mode: 'no-cors'
+        }).catch(function() {});
+
+        // POST-запрос для полных данных
+        fetch(url, {
             method: 'POST',
             mode: 'no-cors',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
-        })
-        .catch(function(err) {
-            console.error('[Consent] Ошибка отправки:', err);
+        }).catch(function(err) {
+            console.error('[Consent] Ошибка отправки POST:', err);
         });
         
-        // Сразу логируем успех, так как no-cors не даёт прочитать ответ
-        console.log('[Consent] ✅ Запрос отправлен (результат в Google Sheets)');
+        console.log('[Consent] ✅ Запросы отправлены (результат в Google Sheets)');
     }
 
     // ===== ОБРАБОТЧИКИ =====

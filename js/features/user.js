@@ -5,12 +5,33 @@ const User = {
     STREAK_KEY: 'realty_trainer_streak',
     ONBOARDING_KEY: 'onboarding_tutorial_completed',
 
+    // ===== ГАРАНТИРОВАННОЕ ПОЛУЧЕНИЕ ИМЕНИ =====
+    getUserName() {
+        // Сначала пробуем получить из User
+        var user = this.get();
+        if (user && user.name) {
+            return user.name;
+        }
+        
+        // Если User.get() не дал результат — читаем напрямую из localStorage
+        try {
+            var data = localStorage.getItem(this.STORAGE_KEY);
+            if (data) {
+                var parsed = JSON.parse(data);
+                if (parsed && parsed.name) {
+                    return parsed.name;
+                }
+            }
+        } catch (_) {}
+        
+        return 'Аноним';
+    },
+
     get() {
         try {
             const data = localStorage.getItem(this.STORAGE_KEY);
             if (!data) return null;
             const user = JSON.parse(data);
-            // Проверяем, что объект корректен
             if (user && typeof user === 'object' && user.name) {
                 return user;
             }
@@ -22,7 +43,6 @@ const User = {
     },
 
     save(name) {
-        // Сначала синхронизируемся с сервером
         return this.syncWithServer(name).then((serverData) => {
             const user = {
                 name: name,
@@ -33,7 +53,6 @@ const User = {
             };
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
             
-            // Инициализируем XP и Streak, если их нет
             if (this.getXP() === null) {
                 this.setXP(0);
             }
@@ -42,7 +61,6 @@ const User = {
                 this.updateStreak();
             }
             
-            // Обновляем статус онбординга в Onboarding, если модуль загружен
             if (typeof Onboarding !== 'undefined' && Onboarding.checkAndAutoStart) {
                 setTimeout(function() {
                     console.log('[User] Вызов Onboarding.checkAndAutoStart() после сохранения пользователя');
@@ -54,28 +72,73 @@ const User = {
         });
     },
 
-    // ===== СИНХРОНИЗАЦИЯ С СЕРВЕРОМ (GET-запрос) =====
+    // ===== СИНХРОНИЗАЦИЯ С СЕРВЕРОМ (GET + POST для надёжности) =====
     syncWithServer(name) {
         return new Promise((resolve) => {
-            const url = typeof GOOGLE_SCRIPT_URL !== 'undefined' ? GOOGLE_SCRIPT_URL : 
+            // ===== ГАРАНТИРУЕМ ИМЯ =====
+            var userName = name || this.getUserName();
+            
+            var url = typeof GOOGLE_SCRIPT_URL !== 'undefined' ? GOOGLE_SCRIPT_URL : 
                         'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
 
-            // GET-запрос с параметрами в URL (обходит CORS)
-            const getUrl = url + '?action=getUser&user_name=' + encodeURIComponent(name);
+            var now = new Date();
+            var formattedDate = now.toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            var payload = {
+                action: 'save_user',
+                user_name: userName,
+                timestamp: now.toISOString(),
+                formatted_date: formattedDate,
+                user_agent: navigator.userAgent || 'unknown',
+                screen_width: window.screen ? window.screen.width : 'unknown',
+                screen_height: window.screen ? window.screen.height : 'unknown',
+                language: navigator.language || 'unknown',
+                platform: navigator.platform || 'unknown',
+                cookie_enabled: navigator.cookieEnabled || false,
+                do_not_track: navigator.doNotTrack || 'unknown'
+            };
+
+            console.log('[User] syncWithServer: отправка данных пользователя:', userName);
+
+            // GET-запрос с параметрами (для Google Apps Script)
+            var getUrl = url + '?action=save_user' +
+                         '&user_name=' + encodeURIComponent(userName) +
+                         '&timestamp=' + encodeURIComponent(now.toISOString()) +
+                         '&formatted_date=' + encodeURIComponent(formattedDate);
 
             fetch(getUrl, {
                 method: 'GET',
                 mode: 'no-cors'
+            }).catch(function() {});
+
+            // POST-запрос для полных данных
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
             }).catch(function(err) {
-                console.warn('[User] syncWithServer GET error:', err);
+                console.warn('[User] syncWithServer ошибка:', err);
+                if (typeof OfflineQueue !== 'undefined' && OfflineQueue.add) {
+                    OfflineQueue.add(payload, url, 'POST');
+                    console.log('[User] Данные пользователя добавлены в офлайн-очередь');
+                }
             });
 
-            console.log('[User] syncWithServer: GET-запрос отправлен для:', name);
+            // Всегда разрешаем локально, так как no-cors не даёт прочитать ответ
             resolve({
                 id: Date.now(),
                 token: 'local_' + Date.now(),
                 isNew: true,
-                name: name
+                name: userName
             });
         });
     },
@@ -85,7 +148,6 @@ const User = {
         localStorage.removeItem(this.XP_KEY);
         localStorage.removeItem(this.STREAK_KEY);
         localStorage.removeItem(this.ONBOARDING_KEY);
-        // Также очищаем флаги онбординга
         try {
             localStorage.removeItem('onboarding_completed');
             localStorage.removeItem('onboarding_skipped');
@@ -143,7 +205,6 @@ const User = {
         };
     },
 
-    // ===== СИСТЕМА СЕРИЙ (STREAK) =====
     getStreak() {
         try {
             return JSON.parse(localStorage.getItem(this.STREAK_KEY));
@@ -194,7 +255,6 @@ const User = {
         return streak;
     },
 
-    // ===== СТАТУС ОНБОРДИНГА =====
     hasCompletedOnboarding() {
         try {
             return localStorage.getItem(this.ONBOARDING_KEY) === 'true' ||
@@ -234,7 +294,6 @@ const User = {
         }
     },
 
-    // ===== ПРОГРЕСС СЦЕНАРИЕВ (БАЗОВЫЙ) =====
     saveScenarioProgress(scenarioId, stepIndex, stepStats) {
         const key = `scenario_progress_${scenarioId}`;
         const progress = {
@@ -263,7 +322,6 @@ const User = {
         this.clearMapProgress(scenarioId);
     },
 
-    // ===== РАСШИРЕННОЕ СОХРАНЕНИЕ ПРОГРЕССА (ДЛЯ АВТОСОХРАНЕНИЯ) =====
     saveDetailedScenarioProgress(scenarioId, stepIndex, stepStats, quizAnswers, mapPlacedJks) {
         const key = `scenario_progress_${scenarioId}`;
         const progress = {
@@ -301,7 +359,6 @@ const User = {
         }
     },
 
-    // ===== СОХРАНЕНИЕ ОТВЕТОВ НА ВОПРОСЫ =====
     saveQuizAnswer(scenarioId, questionId, userAnswer, isCorrect) {
         const key = `scenario_answers_${scenarioId}`;
         let answers = {};
@@ -332,7 +389,6 @@ const User = {
         localStorage.removeItem(key);
     },
 
-    // ===== СОХРАНЕНИЕ ПРОГРЕССА НА КАРТЕ =====
     saveMapProgress(scenarioId, stepIndex, placedJks) {
         const key = `scenario_map_${scenarioId}_step_${stepIndex}`;
         const data = {
@@ -364,7 +420,6 @@ const User = {
         }
     },
 
-    // ===== РАСЧЁТ XP =====
     calculateScenarioXP(totalCorrect, totalItems, durationSec) {
         const baseXP = (typeof XP_CONFIG !== 'undefined') ? XP_CONFIG.CORRECT_ANSWER_BASE_XP : 10;
         const perfectBonus = (typeof XP_CONFIG !== 'undefined') ? XP_CONFIG.PERFECT_SCENARIO_BONUS_XP : 50;
@@ -392,22 +447,44 @@ const User = {
         return Math.min(xp, maxXP);
     },
 
-    // ===== ОТПРАВКА РЕЗУЛЬТАТОВ (С ИСПОЛЬЗОВАНИЕМ ОЧЕРЕДИ) =====
-    sendResult(scenarioName, stepStats, totalCorrect, totalItems, durationSec) {
-        const user = this.get();
-        if (!user) return;
+    // ===== ОТПРАВКА РЕЗУЛЬТАТА (ИСПРАВЛЕННАЯ) =====
+    sendResult: function(scenarioName, stepStats, totalCorrect, totalItems, durationSec) {
+        // ===== ГАРАНТИРУЕМ ПОЛУЧЕНИЕ ИМЕНИ =====
+        var userName = this.getUserName(); // ВСЕГДА возвращает строку!
         
-        const xpEarned = this.calculateScenarioXP(totalCorrect, totalItems, durationSec);
-        const xpResult = this.addXP(xpEarned);
+        console.log('[User] sendResult: пользователь:', userName, 'сценарий:', scenarioName);
+        console.log('[User] sendResult: totalCorrect:', totalCorrect, 'totalItems:', totalItems);
         
-        const scenarioId = AppState?.currentScenario?.id;
+        // Если пользователя нет в localStorage — создаём
+        var user = this.get();
+        if (!user) {
+            this.save(userName);
+            user = this.get();
+        }
+        
+        // Если user всё ещё null — используем userName как fallback
+        var finalUserName = user ? user.name : userName;
+        
+        var xpEarned = this.calculateScenarioXP(totalCorrect, totalItems, durationSec);
+        var xpResult = this.addXP(xpEarned);
+        
+        var scenarioId = AppState?.currentScenario?.id;
         if (scenarioId) {
             this.clearScenarioProgress(scenarioId);
         }
         
-        const payload = {
+        var now = new Date();
+        var formattedDate = now.toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        var payload = {
             action: 'save_result',
-            user_name: user.name,
+            user_name: finalUserName,
             scenario_name: scenarioName,
             total_correct: totalCorrect,
             total_items: totalItems,
@@ -416,31 +493,55 @@ const User = {
             xp_earned: xpEarned,
             total_xp_after: this.getXP(),
             steps_detail: JSON.stringify(stepStats),
-            timestamp: new Date().toISOString(),
+            timestamp: now.toISOString(),
+            formatted_date: formattedDate
         };
         
-        // Используем очередь офлайн-запросов, если доступна
-        if (typeof OfflineQueue !== 'undefined' && OfflineQueue.add) {
-            OfflineQueue.add(payload, GOOGLE_SCRIPT_URL, 'POST');
-        } else {
-            // fallback на обычный fetch
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            }).catch(err => logError('Ошибка отправки результата:', err));
-        }
+        var url = typeof GOOGLE_SCRIPT_URL !== 'undefined' ? GOOGLE_SCRIPT_URL : 
+                    'https://script.google.com/macros/s/AKfycbwk8iTsw9gEEKFuPZm2tO4Uyt2IlSPX-Z06hqPE6FfqoG72tYiwgfzTQPHVOjQiBnlh/exec';
+        
+        console.log('[User] sendResult: отправка для', finalUserName, 'сценарий:', scenarioName);
+        console.log('[User] sendResult: payload', payload);
+        
+        // ===== GET-запрос для надёжности (Google Apps Script лучше принимает GET) =====
+        var getUrl = url + '?action=save_result' +
+                     '&user_name=' + encodeURIComponent(finalUserName) +
+                     '&scenario_name=' + encodeURIComponent(scenarioName) +
+                     '&total_correct=' + totalCorrect +
+                     '&total_items=' + totalItems +
+                     '&percent=' + (totalItems > 0 ? Math.round((totalCorrect / totalItems) * 100) : 0) +
+                     '&xp_earned=' + xpEarned +
+                     '&formatted_date=' + encodeURIComponent(formattedDate);
+        
+        fetch(getUrl, {
+            method: 'GET',
+            mode: 'no-cors'
+        }).catch(function() {});
+        
+        // ===== POST-запрос для полных данных =====
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        }).catch(function(err) {
+            console.warn('[User] sendResult ошибка:', err);
+            if (typeof OfflineQueue !== 'undefined' && OfflineQueue.add) {
+                OfflineQueue.add(payload, url, 'POST');
+                console.log('[User] Результат добавлен в офлайн-очередь');
+            }
+        });
         
         return {
-            xpEarned,
+            xpEarned: xpEarned,
             totalXP: xpResult.xp,
             leveledUp: xpResult.leveledUp,
             newLevel: xpResult.newLevel
         };
     },
 
-    // ===== ЭКРАН ВВОДА ИМЕНИ =====
     showNamePrompt(callback) {
         const existing = this.get();
 
@@ -493,7 +594,6 @@ const User = {
         saveBtn.addEventListener('click', () => {
             const name = input.value.trim();
             if (name.length >= 3) {
-                // Сохраняем пользователя
                 this.save(name).then(() => {
                     overlay.remove();
                     if (callback) callback(name);
@@ -507,7 +607,6 @@ const User = {
                 input.value = '';
                 validate();
                 clearBtn.remove();
-                // Показываем тост
                 if (typeof showToast === 'function') {
                     showToast('🔄', 'Данные очищены. Введите новое имя.', 'info');
                 }
